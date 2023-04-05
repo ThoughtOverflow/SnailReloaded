@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
+#include "Camera/CameraComponent.h"
 #include "DefaultPlayerCharacter.generated.h"
 
 UCLASS()
@@ -23,6 +24,9 @@ public:
 	UInputAction* MoveInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* LookInput;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UCameraComponent* CameraComponent;
 
 protected:
 	// Called when the game starts or when spawned

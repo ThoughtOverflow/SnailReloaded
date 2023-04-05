@@ -14,6 +14,11 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerCamera"));
+	CameraComponent->SetupAttachment(GetMesh());
+	CameraComponent->bUsePawnControlRotation = true;
+	CameraComponent->SetFieldOfView(90.f);
+	
 }
 
 // Called when the game starts or when spawned
