@@ -29,7 +29,9 @@ public:
 	UInputAction* MoveInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* LookInput;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* HP_Test;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
@@ -43,6 +45,8 @@ protected:
 	void Move(const FInputActionInstance& Action);
 	UFUNCTION()
 	void Look(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HealthChange(const FInputActionInstance& Action);
 
 public:	
 	// Called every frame

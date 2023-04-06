@@ -91,6 +91,7 @@ FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, 
 		this->ObjectHealth = FMath::Clamp(newHealth, 0.f, ObjectMaxHealth);
 		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourcePlayer, DamageRequest.DeltaDamage, ObjectHealth);
 		ObjectHealthChanged.Broadcast(DamageResponse);
+		UE_LOG(LogTemp, Warning, TEXT("%f"), GetObjectHealth());
 		LatestDamage = DamageResponse;
 		if(FMath::IsNearlyZero(ObjectHealth))
 		{

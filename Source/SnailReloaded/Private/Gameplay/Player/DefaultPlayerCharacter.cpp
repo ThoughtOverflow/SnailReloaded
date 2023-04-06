@@ -8,6 +8,9 @@
 #include "Components/HealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Framework/Combat/CombatGameMode.h"
+#include "Framework/Combat/CombatPlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
@@ -36,8 +39,6 @@ void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
 {
 	FInputActionValue InputActionValue = Action.GetValue();
 	FVector2d MoveVector = InputActionValue.Get<FVector2d>();
-
-	UE_LOG(LogTemp, Warning, TEXT("HEH? %f"), MoveVector.X);
 	
 	if(MoveVector.X != 0.f)
 	{
@@ -66,6 +67,18 @@ void ADefaultPlayerCharacter::Look(const FInputActionInstance& Action)
 	}
 }
 
+void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>() || true)
+	{
+		FDamageRequest DamageRequest;
+		DamageRequest.SourcePlayer = Cast<ACombatPlayerController>(GetController());
+		DamageRequest.DeltaDamage = -10.f;
+		DamageRequest.TargetActor = this;
+		Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -86,6 +99,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	
 	EnhancedInputComponent->BindAction(MoveInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::Move);
 	EnhancedInputComponent->BindAction(LookInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::Look);
+	EnhancedInputComponent->BindAction(HP_Test, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HealthChange);
 	
 }
 
