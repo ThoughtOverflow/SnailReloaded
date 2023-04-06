@@ -5,8 +5,10 @@
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/HealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
+
 
 // Sets default values
 ADefaultPlayerCharacter::ADefaultPlayerCharacter()
@@ -18,7 +20,9 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	CameraComponent->SetupAttachment(GetMesh());
 	CameraComponent->bUsePawnControlRotation = true;
 	CameraComponent->SetFieldOfView(90.f);
-	
+
+	PlayerHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("PlayerHealthComponent"));
+	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 }
 
 // Called when the game starts or when spawned

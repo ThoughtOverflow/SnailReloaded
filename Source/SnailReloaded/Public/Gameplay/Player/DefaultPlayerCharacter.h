@@ -9,6 +9,11 @@
 #include "Camera/CameraComponent.h"
 #include "DefaultPlayerCharacter.generated.h"
 
+
+
+
+
+class UHealthComponent;
 UCLASS()
 class SNAILRELOADED_API ADefaultPlayerCharacter : public ACharacter
 {
@@ -27,6 +32,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UHealthComponent* PlayerHealthComponent;
 
 protected:
 	// Called when the game starts or when spawned
