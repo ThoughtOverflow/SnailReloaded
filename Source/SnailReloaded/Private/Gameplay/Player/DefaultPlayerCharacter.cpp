@@ -5,6 +5,7 @@
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/ArmoredHealthComponent.h"
 #include "Components/HealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
@@ -24,7 +25,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	CameraComponent->bUsePawnControlRotation = true;
 	CameraComponent->SetFieldOfView(90.f);
 
-	PlayerHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("PlayerHealthComponent"));
+	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 }
 
@@ -73,7 +74,7 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 	{
 		FDamageRequest DamageRequest;
 		DamageRequest.SourcePlayer = Cast<ACombatPlayerController>(GetController());
-		DamageRequest.DeltaDamage = -10.f;
+		DamageRequest.DeltaDamage = -15.f;
 		DamageRequest.TargetActor = this;
 		Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
 	}

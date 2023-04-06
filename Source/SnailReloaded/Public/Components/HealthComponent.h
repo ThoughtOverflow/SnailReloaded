@@ -90,13 +90,13 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintPure)
-	float GetObjectHealth() const;
+	virtual float GetObjectHealth() const;
 	UFUNCTION(BlueprintCallable)
-	FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest);
-	FDamageResponse SetObjectHealth(FDamageRequest DamageRequest, float newHealth);
+	virtual FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest);
+	virtual FDamageResponse SetObjectHealth(FDamageRequest DamageRequest, float newHealth);
 	UFUNCTION(BlueprintPure)
-	float GetObjectMaxHealth() const;
+	virtual float GetObjectMaxHealth() const;
 	UFUNCTION(BlueprintCallable)
-	void SetObjectMaxHealth(float newHealth);
+	virtual void SetObjectMaxHealth(float newHealth);
 		
 };

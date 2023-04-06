@@ -10,14 +10,6 @@ FDamageRequest::FDamageRequest(): SourcePlayer(nullptr), TargetActor(nullptr), D
 {
 }
 
-FDamageRequest FDamageRequest::Initialize(UHealthComponent* HealthComponent)
-{
-	FDamageRequest Request = FDamageRequest();
-	Request.DeltaDamage = HealthComponent->DefaultObjectHealth - HealthComponent->GetObjectHealth();
-	Request.TargetActor = HealthComponent->GetOwner();
-	return Request;
-}
-
 FDamageResponse::FDamageResponse(): SourcePlayer(nullptr), DeltaHealth(0), NewHealth(-1)
 {
 }
@@ -47,7 +39,8 @@ void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ChangeObjectHealth(FDamageRequest::Initialize(this));
+	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
+	UE_LOG(LogTemp, Warning, TEXT("aaaa %f"), GetObjectHealth());
 	
 }
 
@@ -91,7 +84,6 @@ FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, 
 		this->ObjectHealth = FMath::Clamp(newHealth, 0.f, ObjectMaxHealth);
 		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourcePlayer, DamageRequest.DeltaDamage, ObjectHealth);
 		ObjectHealthChanged.Broadcast(DamageResponse);
-		UE_LOG(LogTemp, Warning, TEXT("%f"), GetObjectHealth());
 		LatestDamage = DamageResponse;
 		if(FMath::IsNearlyZero(ObjectHealth))
 		{
