@@ -40,7 +40,6 @@ void UHealthComponent::BeginPlay()
 	Super::BeginPlay();
 
 	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
-	UE_LOG(LogTemp, Warning, TEXT("aaaa %f"), GetObjectHealth());
 	
 }
 

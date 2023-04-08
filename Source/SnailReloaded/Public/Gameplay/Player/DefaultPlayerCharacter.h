@@ -23,6 +23,7 @@ public:
 	// Sets default values for this character's properties
 	ADefaultPlayerCharacter();
 
+	//InputActions
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputMappingContext* PlayerMappingContext;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
@@ -31,6 +32,8 @@ public:
 	UInputAction* LookInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* HP_Test;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* FireInput;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -59,6 +62,8 @@ protected:
 	void Look(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HealthChange(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleFireInput(const FInputActionInstance& Action);
 
 public:	
 	// Called every frame
