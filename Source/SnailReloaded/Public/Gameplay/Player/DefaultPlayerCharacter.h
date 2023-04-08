@@ -50,6 +50,10 @@ public:
 	AWeaponBase* MeleeWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* CurrentlyEquippedWeapon;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
+	float LineTraceMaxDistance;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
+	int32 FiredRoundsPerShootingEvent;
 
 protected:
 	// Called when the game starts or when spawned
@@ -90,6 +94,23 @@ public:
 	UFUNCTION(BlueprintPure)
 	AWeaponBase* GetWeaponAtSlot(EWeaponSlot Slot);
 
+	//Shooting
+
+	UFUNCTION(BlueprintCallable)
+	void BeginShooting();
+	UFUNCTION(Server, Reliable)
+	void Server_BeginShooting();
+	UFUNCTION(BlueprintCallable)
+	void EndShooting();
+	UFUNCTION(Server, Reliable)
+	void Server_EndShooting();
+	UFUNCTION(BlueprintCallable)
+	void UseMeleeWeapon();
+	UFUNCTION(BlueprintCallable)
+	void FireEquippedWeapon();
+	UFUNCTION(BlueprintPure)
+	bool CanWeaponFireInMode();
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;
 	UPROPERTY(EditAnywhere)

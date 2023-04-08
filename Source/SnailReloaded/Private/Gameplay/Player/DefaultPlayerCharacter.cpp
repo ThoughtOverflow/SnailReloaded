@@ -13,6 +13,7 @@
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatPlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -34,7 +35,8 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
 	MeleeWeapon = nullptr;
-	
+	LineTraceMaxDistance = 20000.f;
+	FiredRoundsPerShootingEvent = 0;
 	
 }
 
@@ -56,6 +58,8 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, PrimaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, SecondaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, CurrentlyEquippedWeapon);
+	DOREPLIFETIME(ADefaultPlayerCharacter, LineTraceMaxDistance);
+	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 }
 
 void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
@@ -114,10 +118,11 @@ void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action
 	if(ShootingInput)
 	{
 		//Begin Shooting
+		BeginShooting();
 	}else
 	{
 		// End Shooting
-		
+		EndShooting();
 	}
 }
 
@@ -259,5 +264,147 @@ AWeaponBase* ADefaultPlayerCharacter::GetWeaponAtSlot(EWeaponSlot Slot)
 	default: Weapon = nullptr;
 	}
 	return Weapon;
+}
+
+void ADefaultPlayerCharacter::BeginShooting()
+{
+	if(!HasAuthority())
+	{
+		Server_BeginShooting();
+	}
+	//Double thread - both Auth and Remote;
+
+	if (CurrentlyEquippedWeapon)
+	{
+		if (CurrentlyEquippedWeapon->WeaponSlot != EWeaponSlot::Melee)
+		{
+			//Shootus
+			FireEquippedWeapon();
+		}
+		else
+		{
+			//Do melee;
+			UseMeleeWeapon();
+		}
+	}
+	
+	
+}
+
+void ADefaultPlayerCharacter::Server_BeginShooting_Implementation()
+{
+	BeginShooting();
+}
+
+void ADefaultPlayerCharacter::EndShooting()
+{
+	if(!HasAuthority())
+	{
+		Server_EndShooting();
+	}
+
+	if(HasAuthority())
+	{
+		//Reset fired combo;
+		FiredRoundsPerShootingEvent = 0;
+	}
+	
+}
+
+void ADefaultPlayerCharacter::UseMeleeWeapon()
+{
+	
+}
+
+void ADefaultPlayerCharacter::FireEquippedWeapon()
+{
+	if(HasAuthority() && GetController() && !IsPendingKillPending())
+	{
+		if(CurrentlyEquippedWeapon->bShotgunSpread)
+		{
+
+			FHitResult HitResult;
+			FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+			//Can Shoot:
+			if(CanWeaponFireInMode())
+			{
+				//Add to Combo counter
+				FiredRoundsPerShootingEvent++;
+				float MaxEndDeviation = FMath::Tan(FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
+				float MinEndDeviation = FMath::Tan(FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * LineTraceMaxDistance;
+				for(int i=0; i<CurrentlyEquippedWeapon->NumOfPellets; i++)
+				{
+					FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
+					
+					float RandDeviationX = FMath::RandRange(-(MaxEndDeviation-MinEndDeviation), MaxEndDeviation-MinEndDeviation);
+					RandDeviationX += RandDeviationX<0 ? RandDeviationX-MinEndDeviation : RandDeviationX + MinEndDeviation;
+					float RandDeviationY = FMath::RandRange(-(MaxEndDeviation-MinEndDeviation), MaxEndDeviation-MinEndDeviation);
+					RandDeviationY += RandDeviationY<0 ? RandDeviationY-MinEndDeviation : RandDeviationY + MinEndDeviation;
+					
+					UE_LOG(LogTemp, Warning, TEXT("Values: %f, %f"), RandDeviationX, RandDeviationY);
+					
+					FVector EndDeviation = (UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RandDeviationX) +
+						(UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RandDeviationY);
+					
+					TraceEndLoc += EndDeviation;
+					
+					
+					if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
+					{
+						if(HitResult.GetActor())
+						{
+							DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Orange, true, -1, 0, 3);
+							
+						}
+					}
+				}
+				
+				
+			}
+			
+		}else
+		{
+			FHitResult HitResult;
+			FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+			FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+			//Can Shoot:
+			if(CanWeaponFireInMode())
+			{
+				//Add to Combo counter
+				FiredRoundsPerShootingEvent++;
+				if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
+				{
+					if(HitResult.GetActor())
+					{
+						DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Orange, true, -1, 0, 3);	
+					}
+				}
+			}
+		}
+	}
+}
+
+bool ADefaultPlayerCharacter::CanWeaponFireInMode()
+{
+	if(CurrentlyEquippedWeapon)
+	{
+		switch (CurrentlyEquippedWeapon->WeaponMode)
+		{
+		case EWeaponMode::Automatic: return true;
+		case EWeaponMode::SemiAutomatic: return FiredRoundsPerShootingEvent<1;
+		case EWeaponMode::Burst: return FiredRoundsPerShootingEvent<CurrentlyEquippedWeapon->BurstAmount;
+		default: return false;
+		}
+	}
+	return false;
+}
+
+void ADefaultPlayerCharacter::Server_EndShooting_Implementation()
+{
+	EndShooting();
 }
 
