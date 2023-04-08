@@ -338,12 +338,13 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				{
 					FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
 					
+										
 					float RandDeviationX = FMath::RandRange(-(MaxEndDeviation-MinEndDeviation), MaxEndDeviation-MinEndDeviation);
 					RandDeviationX += RandDeviationX<0 ? RandDeviationX-MinEndDeviation : RandDeviationX + MinEndDeviation;
 					float RandDeviationY = FMath::RandRange(-(MaxEndDeviation-MinEndDeviation), MaxEndDeviation-MinEndDeviation);
 					RandDeviationY += RandDeviationY<0 ? RandDeviationY-MinEndDeviation : RandDeviationY + MinEndDeviation;
 					
-					UE_LOG(LogTemp, Warning, TEXT("Values: %f, %f"), RandDeviationX, RandDeviationY);
+					UE_LOG(LogTemp, Warning, TEXT("Values: %f, %f"), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationX), LineTraceMaxDistance)), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationY), LineTraceMaxDistance)));
 					
 					FVector EndDeviation = (UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RandDeviationX) +
 						(UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RandDeviationY);
