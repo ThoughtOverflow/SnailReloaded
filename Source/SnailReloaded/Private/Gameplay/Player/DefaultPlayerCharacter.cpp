@@ -8,6 +8,7 @@
 #include "ThumbnailHelpers.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/HealthComponent.h"
+#include "Engine/DamageEvents.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
 #include "Framework/Combat/CombatGameMode.h"
@@ -106,7 +107,7 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 		}
 		return;
 		FDamageRequest DamageRequest;
-		DamageRequest.SourcePlayer = Cast<ACombatPlayerController>(GetController());
+		DamageRequest.SourceActor = Cast<ACombatPlayerController>(GetController());
 		DamageRequest.DeltaDamage = -15.f;
 		DamageRequest.TargetActor = this;
 		Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
@@ -318,71 +319,97 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 
 void ADefaultPlayerCharacter::FireEquippedWeapon()
 {
-	if(HasAuthority() && GetController() && !IsPendingKillPending())
+	if (HasAuthority() && GetController() && !IsPendingKillPending())
 	{
-		if(CurrentlyEquippedWeapon->bShotgunSpread)
+		FHitResult HitResult;
+		FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+		FVector TraceEndLoc;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+		if (CurrentlyEquippedWeapon->bShotgunSpread)
 		{
-
-			FHitResult HitResult;
-			FVector TraceStartLoc = CameraComponent->GetComponentLocation();
-			FCollisionQueryParams QueryParams;
 			QueryParams.AddIgnoredActor(this);
 			//Can Shoot:
-			if(CanWeaponFireInMode())
+			if (CanWeaponFireInMode())
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
-				float MaxEndDeviation = FMath::Tan(FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
-				float MinEndDeviation = FMath::Tan(FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * LineTraceMaxDistance;
-				for(int i=0; i<CurrentlyEquippedWeapon->NumOfPellets; i++)
+				float MaxEndDeviation = FMath::Tan(
+					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
+				float MinEndDeviation = FMath::Tan(
+					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * LineTraceMaxDistance;
+				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
-					FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
-					
-										
-					float RandDeviationX = FMath::RandRange(-(MaxEndDeviation-MinEndDeviation), MaxEndDeviation-MinEndDeviation);
-					RandDeviationX += RandDeviationX<0 ? RandDeviationX-MinEndDeviation : RandDeviationX + MinEndDeviation;
-					float RandDeviationY = FMath::RandRange(-(MaxEndDeviation-MinEndDeviation), MaxEndDeviation-MinEndDeviation);
-					RandDeviationY += RandDeviationY<0 ? RandDeviationY-MinEndDeviation : RandDeviationY + MinEndDeviation;
-					
-					UE_LOG(LogTemp, Warning, TEXT("Values: %f, %f"), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationX), LineTraceMaxDistance)), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationY), LineTraceMaxDistance)));
-					
-					FVector EndDeviation = (UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RandDeviationX) +
-						(UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RandDeviationY);
-					
+					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
+						LineTraceMaxDistance;
+
+
+					float DeviationDistance = FMath::RandRange(MinEndDeviation, MaxEndDeviation);
+					float DeviationAngle = FMath::RandRange(0.f, 2 * PI);
+					FVector2d DeviationVector = FVector2d(FMath::Cos(DeviationAngle), FMath::Sin(DeviationAngle)) *
+						DeviationDistance;
+
+					FVector EndDeviation = (UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) *
+							DeviationVector.X) +
+						(UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * DeviationVector.Y);
+
+					// UE_LOG(LogTemp, Warning, TEXT("Values: %f, %f"), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationX), LineTraceMaxDistance)), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationY), LineTraceMaxDistance)));
+
 					TraceEndLoc += EndDeviation;
-					
-					
-					if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
+
+
+					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
+						HitResult, TraceStartLoc, TraceEndLoc, ECC_GameTraceChannel1, QueryParams))
 					{
+				
+						//Process hit results:
 						if(HitResult.GetActor())
 						{
-							DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Orange, true, -1, 0, 3);
-							
+								
+							DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0,
+							              3);
+							if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
+							{
+								FDamageRequest DamageRequest;
+								DamageRequest.SourceActor = this;
+								DamageRequest.TargetActor = HitResult.GetActor();
+								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
+									                            -CurrentlyEquippedWeapon->ConstantDamage : - FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size()/100.f));
+				
+								Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+							}
 						}
 					}
 				}
-				
-				
 			}
-			
-		}else
+		}
+		else
 		{
-			FHitResult HitResult;
-			FVector TraceStartLoc = CameraComponent->GetComponentLocation();
-			FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
-			FCollisionQueryParams QueryParams;
-			QueryParams.AddIgnoredActor(this);
+			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
 			//Can Shoot:
-			if(CanWeaponFireInMode())
+			if (CanWeaponFireInMode())
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
-				if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
+				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
+				                                                       ECC_GameTraceChannel1, QueryParams))
 				{
+					//Process hit results:
 					if(HitResult.GetActor())
 					{
-						DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Orange, true, -1, 0, 3);	
+						DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0, 3);
+						if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
+						{
+							FDamageRequest DamageRequest;
+							DamageRequest.SourceActor = this;
+							DamageRequest.TargetActor = HitResult.GetActor();
+							DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
+								                            -CurrentlyEquippedWeapon->ConstantDamage : - FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size() / 100.f));
+				
+							Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+						}
 					}
+					
 				}
 			}
 		}

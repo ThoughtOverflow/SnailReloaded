@@ -19,7 +19,7 @@ public:
 	static FDamageRequest Initialize(UHealthComponent* HealthComponent);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ACombatPlayerController* SourcePlayer;
+	AActor* SourceActor;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AActor* TargetActor;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -36,10 +36,10 @@ struct FDamageResponse
 public:
 	
 	FDamageResponse();
-	FDamageResponse(ACombatPlayerController* SrcPlayer, float DeltaHealth, float NewHealth);
+	FDamageResponse(AActor* SrcActor, float DeltaHealth, float NewHealth);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ACombatPlayerController* SourcePlayer;
+	AActor* SourceActor;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float DeltaHealth;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

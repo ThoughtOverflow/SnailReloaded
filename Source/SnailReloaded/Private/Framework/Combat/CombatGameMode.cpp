@@ -12,7 +12,7 @@ ACombatGameMode::ACombatGameMode()
 
 FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest DamageRequest)
 {
-	if(DamageRequest.SourcePlayer)
+	if(DamageRequest.SourceActor)
 	{
 		if(UHealthComponent* TargetHealthComponent = Cast<UHealthComponent>(DamageRequest.TargetActor->GetComponentByClass(UHealthComponent::StaticClass())))
 		{

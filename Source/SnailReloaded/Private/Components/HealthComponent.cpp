@@ -6,17 +6,18 @@
 #include "Net/UnrealNetwork.h"
 
 
-FDamageRequest::FDamageRequest(): SourcePlayer(nullptr), TargetActor(nullptr), DeltaDamage(0)
+FDamageRequest::FDamageRequest(): SourceActor(nullptr), TargetActor(nullptr), DeltaDamage(0)
 {
 }
 
-FDamageResponse::FDamageResponse(): SourcePlayer(nullptr), DeltaHealth(0), NewHealth(-1)
+FDamageResponse::FDamageResponse(): SourceActor(nullptr), DeltaHealth(0), NewHealth(-1)
 {
 }
 
 
-FDamageResponse::FDamageResponse(ACombatPlayerController* SrcPlayer, float DeltaHealth, float NewHealth):
-	SourcePlayer(SrcPlayer), DeltaHealth(DeltaHealth), NewHealth(NewHealth)
+
+FDamageResponse::FDamageResponse(AActor* SrcActor, float DeltaHealth, float NewHealth):
+	SourceActor(SrcActor), DeltaHealth(DeltaHealth), NewHealth(NewHealth)
 {
 }
 
@@ -80,8 +81,8 @@ FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, 
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-		this->ObjectHealth = FMath::Clamp(newHealth, 0.f, ObjectMaxHealth);
-		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourcePlayer, DamageRequest.DeltaDamage, ObjectHealth);
+		this->ObjectHealth = FMath::Floor(FMath::Clamp(newHealth, 0.f, ObjectMaxHealth));
+		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourceActor, DamageRequest.DeltaDamage, ObjectHealth);
 		ObjectHealthChanged.Broadcast(DamageResponse);
 		LatestDamage = DamageResponse;
 		if(FMath::IsNearlyZero(ObjectHealth))
