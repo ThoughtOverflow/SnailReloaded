@@ -11,6 +11,7 @@
 #include "DefaultPlayerCharacter.generated.h"
 
 
+class ADefaultPlayerController;
 class UArmoredHealthComponent;
 class UHealthComponent;
 UCLASS()
@@ -38,19 +39,20 @@ public:
 
 	//Weapon system;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* PrimaryWeapon;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* SecondaryWeapon;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* MeleeWeapon;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* CurrentlyEquippedWeapon;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	UFUNCTION()
 	void Move(const FInputActionInstance& Action);
 	UFUNCTION()
@@ -65,17 +67,30 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	//Called when the controller possesses this player (When network is ready for RPC calls)
+	virtual void OnPlayerPossessed(ADefaultPlayerController* PlayerController);
+
 	UFUNCTION(BlueprintCallable)
 	bool AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
+	UFUNCTION(Server,Reliable)
+	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
 	UFUNCTION(BlueprintCallable)
 	AWeaponBase* EquipWeapon(EWeaponSlot Slot);
+	UFUNCTION(Server, Reliable)
+	void Server_EquipWeapon(EWeaponSlot Slot);
 	UFUNCTION(BlueprintCallable)
 	void UnequipWeapon();
+	UFUNCTION(Server, Reliable)
+	void Server_UnequipWeapon();
 	UFUNCTION(BlueprintPure)
 	AWeaponBase* GetWeaponAtSlot(EWeaponSlot Slot);
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeaponBase> TestWpn2;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeaponBase> TestWpn3;
 	
 	
 };

@@ -13,11 +13,13 @@
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatPlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
 ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 {
+	
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -37,16 +39,23 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 }
 
 // Called when the game starts or when spawned
+
+
+
 void ADefaultPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if(TestWpn)
-	{
-		AssignWeapon(TestWpn);
-		EquipWeapon(EWeaponSlot::Primary);
-	}
 	
+}
+
+void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ADefaultPlayerCharacter, MeleeWeapon);
+	DOREPLIFETIME(ADefaultPlayerCharacter, PrimaryWeapon);
+	DOREPLIFETIME(ADefaultPlayerCharacter, SecondaryWeapon);
+	DOREPLIFETIME(ADefaultPlayerCharacter, CurrentlyEquippedWeapon);
 }
 
 void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
@@ -88,7 +97,8 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 			UnequipWeapon();
 		}else
 		{
-			EquipWeapon(EWeaponSlot::Primary);
+			int32 RandInt = FMath::RandRange(0,2);
+			EquipWeapon(RandInt==0 ? EWeaponSlot::Melee : RandInt==1 ? EWeaponSlot::Primary : EWeaponSlot::Secondary);
 		}
 		return;
 		FDamageRequest DamageRequest;
@@ -122,6 +132,26 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	
 }
 
+void ADefaultPlayerCharacter::OnPlayerPossessed(ADefaultPlayerController* PlayerController)
+{
+	if(PlayerController)
+	{
+		//Add wpn after possessing
+		if(TestWpn)
+		{
+			AssignWeapon(TestWpn);
+		}
+		if(TestWpn2)
+		{
+			AssignWeapon(TestWpn2);
+		}
+		if(TestWpn3)
+		{
+			AssignWeapon(TestWpn3);
+		}
+	}
+}
+
 bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 {
 	if(HasAuthority())
@@ -130,7 +160,8 @@ bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = this;
 		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, GetMesh()->GetSocketLocation(FName("hand_r")), FRotator::ZeroRotator, SpawnParameters);
-		Weapon->SetActorHiddenInGame(true);
+		Weapon->bIsEquipped = false;
+		Weapon->OnRep_Equipped();
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, FName("hand_r"));
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
@@ -144,8 +175,16 @@ bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 		default:;
 		}
 		return Weapon != nullptr;
+	}else
+	{
+		Server_AssignWeapon(WeaponClass);
 	}
 	return false;
+}
+
+void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
+{
+	AssignWeapon(WeaponClass);
 }
 
 AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
@@ -160,21 +199,39 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 			}
 			//EquipWeapon;
 			CurrentlyEquippedWeapon = GetWeaponAtSlot(Slot);
-			CurrentlyEquippedWeapon->SetActorHiddenInGame(false);
+			CurrentlyEquippedWeapon->bIsEquipped = true;
+			CurrentlyEquippedWeapon->OnRep_Equipped();
 		}
+	}else
+	{
+		Server_EquipWeapon(Slot);
 	}
 	
 	return CurrentlyEquippedWeapon;
+}
+
+void ADefaultPlayerCharacter::Server_EquipWeapon_Implementation(EWeaponSlot Slot)
+{
+	EquipWeapon(Slot);
 }
 
 void ADefaultPlayerCharacter::UnequipWeapon()
 {
 	if(HasAuthority())
 	{
-		CurrentlyEquippedWeapon->SetActorHiddenInGame(true);
+		CurrentlyEquippedWeapon->bIsEquipped = false;
+		CurrentlyEquippedWeapon->OnRep_Equipped();
 		CurrentlyEquippedWeapon = nullptr;
+	}else
+	{
+		Server_UnequipWeapon();
 	}
 	
+}
+
+void ADefaultPlayerCharacter::Server_UnequipWeapon_Implementation()
+{
+	UnequipWeapon();
 }
 
 AWeaponBase* ADefaultPlayerCharacter::GetWeaponAtSlot(EWeaponSlot Slot)

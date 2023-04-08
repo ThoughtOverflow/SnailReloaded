@@ -13,8 +13,9 @@ AWeaponBase::AWeaponBase()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
+	
 	bShotgunSpread = false;
-	ProjectileDamage = 10.f;
+	ConstantProjectileDamage = 10.f;
 	WeaponMode = EWeaponMode::Automatic;
 	WeaponSlot = EWeaponSlot::Primary;
 	CurrentClipAmmo = 10.f;
@@ -23,6 +24,7 @@ AWeaponBase::AWeaponBase()
 	MaxTotalAmmo = 100.f;
 	NumOfPellets = 1;
 	ProjectilePenetrationMultiplier = 0.3f;
+	bUseConstantDamage = false;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -39,19 +41,21 @@ void AWeaponBase::BeginPlay()
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+	
 	DOREPLIFETIME(AWeaponBase, bShotgunSpread);
-	DOREPLIFETIME(AWeaponBase, ProjectileDamage);
+	DOREPLIFETIME(AWeaponBase, ConstantProjectileDamage);
 	DOREPLIFETIME(AWeaponBase, WeaponMode);
 	DOREPLIFETIME(AWeaponBase, WeaponSlot);
 	DOREPLIFETIME(AWeaponBase, CurrentClipAmmo);
 	DOREPLIFETIME(AWeaponBase, CurrentTotalAmmo);
-	DOREPLIFETIME(AWeaponBase, DamageDropoffCurve);
+	DOREPLIFETIME(AWeaponBase, DamageCurve);
 	DOREPLIFETIME(AWeaponBase, MaxClipAmmo);
 	DOREPLIFETIME(AWeaponBase, MaxTotalAmmo);
 	DOREPLIFETIME(AWeaponBase, NumOfPellets);
 	DOREPLIFETIME(AWeaponBase, NumOfPellets);
 	DOREPLIFETIME(AWeaponBase, ProjectilePenetrationMultiplier);
+	DOREPLIFETIME(AWeaponBase, bIsEquipped);
+	DOREPLIFETIME(AWeaponBase, bUseConstantDamage);
 	
 }
 
@@ -68,5 +72,10 @@ void AWeaponBase::OnRep_TotalAmmo()
 
 void AWeaponBase::OnRep_ClipAmmo()
 {
+}
+
+void AWeaponBase::OnRep_Equipped()
+{
+	SetActorHiddenInGame(!bIsEquipped);
 }
 

@@ -33,6 +33,8 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
+	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
 	EWeaponMode WeaponMode;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
@@ -49,24 +51,27 @@ public:
 	bool bShotgunSpread;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = bShotgunSpread))
 	int32 NumOfPellets;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
-	float ProjectileDamage;
+	bool bUseConstantDamage;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "!bUseConstantDamage", EditConditionHides=true))
+	UCurveFloat* DamageCurve;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "bUseConstantDamage", EditConditionHides=true))
+	float ConstantProjectileDamage;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
 	float ProjectilePenetrationMultiplier;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
-	UCurveFloat* DamageDropoffCurve;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* WeaponMesh;
 
-	
+	UPROPERTY(ReplicatedUsing = OnRep_Equipped)
+	bool bIsEquipped;
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -75,5 +80,7 @@ public:
 	void OnRep_TotalAmmo();
 	UFUNCTION()
 	void OnRep_ClipAmmo();
+	UFUNCTION()
+	void OnRep_Equipped();
 
 };

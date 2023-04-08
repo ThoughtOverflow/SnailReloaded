@@ -13,5 +13,13 @@ UCLASS()
 class SNAILRELOADED_API ADefaultPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+
+	ADefaultPlayerController();
+
+protected:
+
+	virtual void OnPossess(APawn* InPawn) override;
 	
 };
