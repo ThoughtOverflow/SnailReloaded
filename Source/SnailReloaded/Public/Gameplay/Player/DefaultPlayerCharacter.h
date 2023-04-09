@@ -119,6 +119,8 @@ public:
 	bool CanWeaponFireInMode();
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_SpawnImpactParticles(FVector Loc);
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;

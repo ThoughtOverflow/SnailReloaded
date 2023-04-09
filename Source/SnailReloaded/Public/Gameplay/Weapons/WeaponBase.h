@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "NiagaraSystem.h"
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
@@ -65,6 +66,9 @@ public:
 	bool bShotgunSpread;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Shotugun Settings", Replicated, meta = (EditCondition = "bShotgunSpread && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	int32 NumOfPellets;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	UNiagaraSystem* ImpactParticleSystem;
 	
 	/**
 	 * @brief Maximum projectile deviation from barrel in degrees.

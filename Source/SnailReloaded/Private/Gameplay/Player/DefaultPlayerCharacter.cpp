@@ -362,15 +362,15 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 					
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
-						HitResult, TraceStartLoc, TraceEndLoc, ECC_GameTraceChannel1, QueryParams))
+						HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
 					{
 				
 						//Process hit results:
 						if(HitResult.GetActor())
 						{
-								
-							DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0,
-							              3);
+							Multi_SpawnImpactParticles(HitResult.ImpactPoint);
+							// DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0,
+							//               3);
 							if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 							{
 								FDamageRequest DamageRequest;
@@ -397,12 +397,13 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
-				                                                       ECC_GameTraceChannel1, QueryParams))
+				                                                       ECC_Visibility, QueryParams))
 				{
 					//Process hit results:
 					if(HitResult.GetActor())
 					{
-						DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0, 3);
+						Multi_SpawnImpactParticles(HitResult.ImpactPoint);
+						// DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0, 3);
 						if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 						{
 							FDamageRequest DamageRequest;
@@ -450,6 +451,14 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 		}
 	}
 	return false;
+}
+
+void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector Loc)
+{
+	if(CurrentlyEquippedWeapon && CurrentlyEquippedWeapon->ImpactParticleSystem)
+	{
+		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CurrentlyEquippedWeapon->ImpactParticleSystem, Loc, FRotator::ZeroRotator);	
+	}
 }
 
 void ADefaultPlayerCharacter::Multi_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
