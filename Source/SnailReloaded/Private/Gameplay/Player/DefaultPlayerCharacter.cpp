@@ -38,6 +38,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	MeleeWeapon = nullptr;
 	LineTraceMaxDistance = 20000.f;
 	FiredRoundsPerShootingEvent = 0;
+	LastFireTime = 0.f;
 	
 }
 
@@ -277,6 +278,7 @@ void ADefaultPlayerCharacter::BeginShooting()
 
 	if (CurrentlyEquippedWeapon)
 	{
+		
 		if (CurrentlyEquippedWeapon->WeaponSlot != EWeaponSlot::Melee)
 		{
 			//Shootus
@@ -423,11 +425,27 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 {
 	if(CurrentlyEquippedWeapon)
 	{
+		// bool bRequiredTimeElapsed = GetWorld()->TimeSince(LastFireTime) >= FMath::Max(CurrentlyEquippedWeapon->MinimumFireDelay, WeaponFireDelay);
+
+		
+
+		//If the weapon is triggered for the first time in a combo (First round after mouse press), only check the MinimumDelay requirement
+		bool bRequiredTimeElapsed = GetWorld()->TimeSince(LastFireTime) >= CurrentlyEquippedWeapon->MinimumFireDelay;
+		//Check if it is a melee weapon - the elapsed time check can be used as a time between melee attacks check as well.
+		if(CurrentlyEquippedWeapon->WeaponSlot == EWeaponSlot::Melee)
+		{
+			return GetWorld()->TimeSince(LastFireTime) >= CurrentlyEquippedWeapon->MinimumFireDelay;
+		}
+		//If the weapon has already been firing at least one round, check the actual fire rate for correction
+		float WeaponFireDelay = 60 / CurrentlyEquippedWeapon->FireRate;
+		if(FiredRoundsPerShootingEvent>=1) bRequiredTimeElapsed &= GetWorld()->TimeSince(LastFireTime) >= WeaponFireDelay;
+		
+		if(bRequiredTimeElapsed) LastFireTime = GetWorld()->TimeSeconds;
 		switch (CurrentlyEquippedWeapon->WeaponMode)
 		{
-		case EWeaponMode::Automatic: return true;
-		case EWeaponMode::SemiAutomatic: return FiredRoundsPerShootingEvent<1;
-		case EWeaponMode::Burst: return FiredRoundsPerShootingEvent<CurrentlyEquippedWeapon->BurstAmount;
+		case EWeaponMode::Automatic: return bRequiredTimeElapsed;
+		case EWeaponMode::SemiAutomatic: return FiredRoundsPerShootingEvent<1 && bRequiredTimeElapsed;
+		case EWeaponMode::Burst: return FiredRoundsPerShootingEvent<CurrentlyEquippedWeapon->BurstAmount && bRequiredTimeElapsed;
 		default: return false;
 		}
 	}

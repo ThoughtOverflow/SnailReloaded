@@ -73,6 +73,9 @@ protected:
 	UFUNCTION()
 	void HandleFireInput(const FInputActionInstance& Action);
 
+	UPROPERTY()
+	float LastFireTime;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

@@ -28,6 +28,8 @@ AWeaponBase::AWeaponBase()
 	bUseConstantDamage = false;
 	BarrelMaxDeviation = 10.f;
 	BarrelMinDeviation = 5.f;
+	FireRate = 100.f;
+	MinimumFireDelay = 0.05f;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -61,8 +63,26 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(AWeaponBase, BarrelMaxDeviation);
 	DOREPLIFETIME(AWeaponBase, BarrelMinDeviation);
 	DOREPLIFETIME(AWeaponBase, BurstAmount);
+	DOREPLIFETIME(AWeaponBase, FireRate);
 	
 }
+
+#if WITH_EDITOR
+
+void AWeaponBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+	if(PropertyName == GET_MEMBER_NAME_CHECKED(AWeaponBase, MinimumFireDelay))
+	{
+		if(WeaponSlot != EWeaponSlot::Melee && MinimumFireDelay>60.f / FireRate)
+		{
+			MinimumFireDelay = 60.f/FireRate;
+		}
+	}
+}
+
+#endif
 
 // Called every frame
 void AWeaponBase::Tick(float DeltaTime)

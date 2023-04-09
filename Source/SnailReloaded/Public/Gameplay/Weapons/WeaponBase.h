@@ -33,7 +33,8 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
-	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", meta = (ClampMin=0))
+	float MinimumFireDelay;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
 	EWeaponMode WeaponMode;
@@ -49,6 +50,8 @@ public:
 	int32 MaxTotalAmmo;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponMode == EWeaponMode::Burst && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	int32 BurstAmount;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponMode != EWeaponMode::SemiAutomatic && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
+	float FireRate;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
 	bool bUseConstantDamage;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "!bUseConstantDamage", EditConditionHides=true))
@@ -90,6 +93,13 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+#if WITH_EDITOR
+
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+
+#endif
+	
 	
 public:	
 	// Called every frame
