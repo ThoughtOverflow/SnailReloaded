@@ -73,6 +73,8 @@ public:
 	FObjectHealthChanged ObjectHealthChanged;
 	UPROPERTY(BlueprintAssignable)
 	FObjectKilled ObjectKilled;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	bool bIsDead;
 
 protected:
 	// Called when the game starts

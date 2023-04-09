@@ -32,6 +32,7 @@ UHealthComponent::UHealthComponent()
 	DefaultObjectHealth = 50.f;
 	SetObjectMaxHealth(100.f);
 	LatestDamage = FDamageResponse();
+	bIsDead = false;
 }
 
 
@@ -50,6 +51,7 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UHealthComponent, ObjectHealth);
 	DOREPLIFETIME(UHealthComponent, ObjectMaxHealth);
+	DOREPLIFETIME(UHealthComponent, bIsDead);
 }
 
 
@@ -81,13 +83,18 @@ FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, 
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
+		if(bIsDead) return FDamageResponse();
 		this->ObjectHealth = FMath::Floor(FMath::Clamp(newHealth, 0.f, ObjectMaxHealth));
 		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourceActor, DamageRequest.DeltaDamage, ObjectHealth);
 		ObjectHealthChanged.Broadcast(DamageResponse);
 		LatestDamage = DamageResponse;
 		if(FMath::IsNearlyZero(ObjectHealth))
 		{
-			ObjectKilled.Broadcast(DamageResponse);
+			if(!bIsDead)
+			{
+				ObjectKilled.Broadcast(DamageResponse);
+				bIsDead = true;
+			}
 		}
 		return DamageResponse;
 	}
