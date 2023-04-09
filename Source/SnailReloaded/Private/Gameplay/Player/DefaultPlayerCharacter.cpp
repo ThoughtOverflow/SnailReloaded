@@ -357,7 +357,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 
 					TraceEndLoc += EndDeviation;
 
-
+					Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+					
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
 						HitResult, TraceStartLoc, TraceEndLoc, ECC_GameTraceChannel1, QueryParams))
 					{
@@ -391,6 +392,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
+				
+				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_GameTraceChannel1, QueryParams))
 				{
@@ -429,6 +432,14 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 		}
 	}
 	return false;
+}
+
+void ADefaultPlayerCharacter::Multi_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
+{
+	if(NiagaraSystem)
+	{
+		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, StartLoc, UKismetMathLibrary::FindLookAtRotation(StartLoc, EndLoc));	
+	}
 }
 
 void ADefaultPlayerCharacter::Server_EndShooting_Implementation()

@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
 #include "DefaultPlayerCharacter.generated.h"
@@ -54,6 +56,8 @@ public:
 	float LineTraceMaxDistance;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	int32 FiredRoundsPerShootingEvent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
+	UNiagaraSystem* NiagaraSystem;
 
 protected:
 	// Called when the game starts or when spawned
@@ -110,6 +114,8 @@ public:
 	void FireEquippedWeapon();
 	UFUNCTION(BlueprintPure)
 	bool CanWeaponFireInMode();
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;
