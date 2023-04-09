@@ -73,7 +73,7 @@ public:
 	FObjectHealthChanged ObjectHealthChanged;
 	UPROPERTY(BlueprintAssignable)
 	FObjectKilled ObjectKilled;
-	UPROPERTY(BlueprintReadWrite, Replicated)
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Dead)
 	bool bIsDead;
 
 protected:
@@ -82,10 +82,15 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_ObjectHealth)
 	float ObjectHealth;
 	UPROPERTY(Replicated)
 	float ObjectMaxHealth;
+
+	UFUNCTION()
+	void OnRep_ObjectHealth();
+	UFUNCTION()
+	void OnRep_Dead();
 
 public:	
 	// Called every frame

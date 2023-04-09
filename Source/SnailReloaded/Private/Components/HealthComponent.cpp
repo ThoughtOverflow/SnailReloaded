@@ -55,6 +55,17 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 }
 
 
+void UHealthComponent::OnRep_ObjectHealth()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Asd"));
+	ObjectHealthChanged.Broadcast(LatestDamage);
+}
+
+void UHealthComponent::OnRep_Dead()
+{
+	ObjectKilled.Broadcast(LatestDamage);
+}
+
 // Called every frame
 void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -84,16 +95,16 @@ FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, 
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
 		if(bIsDead) return FDamageResponse();
-		this->ObjectHealth = FMath::Floor(FMath::Clamp(newHealth, 0.f, ObjectMaxHealth));
-		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourceActor, DamageRequest.DeltaDamage, ObjectHealth);
-		ObjectHealthChanged.Broadcast(DamageResponse);
+		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourceActor, DamageRequest.DeltaDamage, ObjectHealth + DamageRequest.DeltaDamage);
 		LatestDamage = DamageResponse;
+		this->ObjectHealth = FMath::Floor(FMath::Clamp(newHealth, 0.f, ObjectMaxHealth));
+		OnRep_ObjectHealth();
 		if(FMath::IsNearlyZero(ObjectHealth))
 		{
 			if(!bIsDead)
 			{
-				ObjectKilled.Broadcast(DamageResponse);
 				bIsDead = true;
+				OnRep_Dead();
 			}
 		}
 		return DamageResponse;

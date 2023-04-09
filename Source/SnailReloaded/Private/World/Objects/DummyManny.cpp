@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ADummyManny::ADummyManny()
@@ -45,6 +46,12 @@ void ADummyManny::BeginPlay()
 	
 }
 
+void ADummyManny::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+}
+
 void ADummyManny::OnKilled(FDamageResponse LatestDamage)
 {
 	TextRenderComponent->SetText(FText::FromString("Latest Damage: ded"));
@@ -55,6 +62,7 @@ void ADummyManny::OnKilled(FDamageResponse LatestDamage)
 
 void ADummyManny::OnHealthChanged(FDamageResponse LatestDamage)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Auth: %d"), HasAuthority());
 	TextRenderComponent->SetText(FText::FromString(FString::Printf(TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth)));
 }
 
