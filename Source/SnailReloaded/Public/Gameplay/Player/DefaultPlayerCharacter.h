@@ -120,7 +120,7 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_SpawnImpactParticles(FVector Loc);
+	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;

@@ -368,7 +368,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						//Process hit results:
 						if(HitResult.GetActor())
 						{
-							Multi_SpawnImpactParticles(HitResult.ImpactPoint);
+							Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
 							// DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0,
 							//               3);
 							if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
@@ -402,7 +402,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					//Process hit results:
 					if(HitResult.GetActor())
 					{
-						Multi_SpawnImpactParticles(HitResult.ImpactPoint);
+						Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
 						// DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0, 3);
 						if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 						{
@@ -453,11 +453,12 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 	return false;
 }
 
-void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector Loc)
+void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector Loc, FVector SurfaceNormal)
 {
 	if(CurrentlyEquippedWeapon && CurrentlyEquippedWeapon->ImpactParticleSystem)
 	{
-		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CurrentlyEquippedWeapon->ImpactParticleSystem, Loc, FRotator::ZeroRotator);	
+		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CurrentlyEquippedWeapon->ImpactParticleSystem, Loc + SurfaceNormal*0.01f, SurfaceNormal.Rotation());
+		NiagaraComponent->SetFloatParameter(FName("ImpactScale"), 0.3f);
 	}
 }
 
