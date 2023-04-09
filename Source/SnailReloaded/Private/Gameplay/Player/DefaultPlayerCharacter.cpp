@@ -128,6 +128,37 @@ void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action
 	}
 }
 
+void ADefaultPlayerCharacter::OnReloadComplete()
+{
+	if(HasAuthority() && CurrentlyEquippedWeapon)
+	{
+		//Set new ammo amount:
+		float NewAmmoAmountInClip = FMath::Min(CurrentlyEquippedWeapon->CurrentTotalAmmo, CurrentlyEquippedWeapon->MaxClipAmmo);
+		CurrentlyEquippedWeapon->CurrentClipAmmo = FMath::Clamp(NewAmmoAmountInClip, 0, CurrentlyEquippedWeapon->MaxClipAmmo);
+		CurrentlyEquippedWeapon->CurrentTotalAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentTotalAmmo - NewAmmoAmountInClip, 0, CurrentlyEquippedWeapon->MaxTotalAmmo);
+		CurrentlyEquippedWeapon->OnRep_ClipAmmo();
+		CurrentlyEquippedWeapon->OnRep_TotalAmmo();
+	}
+}
+
+void ADefaultPlayerCharacter::StartReload()
+{
+	if(HasAuthority() && CurrentlyEquippedWeapon)
+	{
+		CurrentlyEquippedWeapon->bIsReloading = true;
+		GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
+	}
+}
+
+void ADefaultPlayerCharacter::CancelReload()
+{
+	if(HasAuthority() && CurrentlyEquippedWeapon)
+	{
+		CurrentlyEquippedWeapon->bIsReloading = false;
+		GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -241,6 +272,10 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 {
 	if(HasAuthority())
 	{
+		if(CurrentlyEquippedWeapon->bIsReloading)
+		{
+			CancelReload();
+		}
 		CurrentlyEquippedWeapon->bIsEquipped = false;
 		CurrentlyEquippedWeapon->OnRep_Equipped();
 		CurrentlyEquippedWeapon = nullptr;

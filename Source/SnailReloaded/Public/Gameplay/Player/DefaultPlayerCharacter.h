@@ -73,8 +73,20 @@ protected:
 	UFUNCTION()
 	void HandleFireInput(const FInputActionInstance& Action);
 
+	//Shooting
+	
 	UPROPERTY()
 	float LastFireTime;
+	UPROPERTY()
+	FTimerHandle ReloadTimerHandle;
+
+	UFUNCTION()
+	void OnReloadComplete();
+	UFUNCTION()
+	void StartReload();
+	UFUNCTION()
+	void CancelReload();
+	
 
 public:	
 	// Called every frame

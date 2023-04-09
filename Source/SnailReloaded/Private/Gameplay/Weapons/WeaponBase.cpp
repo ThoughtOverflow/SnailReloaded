@@ -30,6 +30,8 @@ AWeaponBase::AWeaponBase()
 	BarrelMinDeviation = 5.f;
 	FireRate = 100.f;
 	MinimumFireDelay = 0.05f;
+	ReloadTime = 3.f;
+	bIsReloading = false;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -64,6 +66,8 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(AWeaponBase, BarrelMinDeviation);
 	DOREPLIFETIME(AWeaponBase, BurstAmount);
 	DOREPLIFETIME(AWeaponBase, FireRate);
+	DOREPLIFETIME(AWeaponBase, ReloadTime);
+	DOREPLIFETIME(AWeaponBase, bIsReloading);
 	
 }
 
