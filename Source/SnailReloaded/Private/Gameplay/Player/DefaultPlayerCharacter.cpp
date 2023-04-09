@@ -39,6 +39,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	LineTraceMaxDistance = 20000.f;
 	FiredRoundsPerShootingEvent = 0;
 	LastFireTime = 0.f;
+	bAllowAutoReload = true;
 	
 }
 
@@ -62,6 +63,7 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, CurrentlyEquippedWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, LineTraceMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
 }
 
 void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
@@ -128,26 +130,50 @@ void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action
 	}
 }
 
+void ADefaultPlayerCharacter::HandleReloadInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		// Do other input checks maybe?
+		StartReload();
+	}
+}
+
 void ADefaultPlayerCharacter::OnReloadComplete()
 {
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
 		//Set new ammo amount:
-		float NewAmmoAmountInClip = FMath::Min(CurrentlyEquippedWeapon->CurrentTotalAmmo, CurrentlyEquippedWeapon->MaxClipAmmo);
-		CurrentlyEquippedWeapon->CurrentClipAmmo = FMath::Clamp(NewAmmoAmountInClip, 0, CurrentlyEquippedWeapon->MaxClipAmmo);
-		CurrentlyEquippedWeapon->CurrentTotalAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentTotalAmmo - NewAmmoAmountInClip, 0, CurrentlyEquippedWeapon->MaxTotalAmmo);
+		float ClipAddAmount = FMath::Min(CurrentlyEquippedWeapon->MaxClipAmmo - CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+		CurrentlyEquippedWeapon->CurrentClipAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentClipAmmo + ClipAddAmount, 0, CurrentlyEquippedWeapon->MaxClipAmmo);
+		CurrentlyEquippedWeapon->CurrentTotalAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentTotalAmmo - ClipAddAmount, 0, CurrentlyEquippedWeapon->MaxTotalAmmo);
 		CurrentlyEquippedWeapon->OnRep_ClipAmmo();
 		CurrentlyEquippedWeapon->OnRep_TotalAmmo();
+		CurrentlyEquippedWeapon->bIsReloading = false;
+		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
 	}
 }
 
 void ADefaultPlayerCharacter::StartReload()
 {
+	if(!HasAuthority())
+	{
+		Server_StartReload();
+	}
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
+		if(CurrentlyEquippedWeapon->CurrentTotalAmmo == 0) return;
+		//Resets the burst combo count:
+		EndShooting();
+		//---
 		CurrentlyEquippedWeapon->bIsReloading = true;
 		GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 	}
+}
+
+void ADefaultPlayerCharacter::Server_StartReload_Implementation()
+{
+	StartReload();
 }
 
 void ADefaultPlayerCharacter::CancelReload()
@@ -182,6 +208,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(HP_Test, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HealthChange);
 	EnhancedInputComponent->BindAction(FireInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleFireInput);
 	EnhancedInputComponent->BindAction(FireInput, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleFireInput);
+	EnhancedInputComponent->BindAction(ReloadInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleReloadInput);
 	
 }
 
@@ -363,14 +390,24 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		FVector TraceEndLoc;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this);
+
+		//Auto reload:
+		if(!CurrentlyEquippedWeapon->bIsReloading && CurrentlyEquippedWeapon->CurrentClipAmmo == 0 && CurrentlyEquippedWeapon->CurrentTotalAmmo != 0 && bAllowAutoReload)
+		{
+			StartReload();
+			return;
+		}
+		
 		if (CurrentlyEquippedWeapon->bShotgunSpread)
 		{
 			QueryParams.AddIgnoredActor(this);
 			//Can Shoot:
-			if (CanWeaponFireInMode())
+			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->bIsReloading)
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
+				CurrentlyEquippedWeapon->CurrentClipAmmo--;
+				
 				float MaxEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
 				float MinEndDeviation = FMath::Tan(
@@ -425,11 +462,11 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
 			//Can Shoot:
-			if (CanWeaponFireInMode())
+			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->bIsReloading)
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
-				
+				CurrentlyEquippedWeapon->CurrentClipAmmo--;
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
@@ -488,6 +525,11 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 	return false;
 }
 
+bool ADefaultPlayerCharacter::WeaponHasAmmo()
+{
+	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->CurrentClipAmmo > 0 : false;
+}
+
 void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector Loc, FVector SurfaceNormal)
 {
 	if(CurrentlyEquippedWeapon && CurrentlyEquippedWeapon->ImpactParticleSystem)
@@ -508,5 +550,5 @@ void ADefaultPlayerCharacter::Multi_SpawnBulletParticles_Implementation(FVector 
 void ADefaultPlayerCharacter::Server_EndShooting_Implementation()
 {
 	EndShooting();
+	
 }
-

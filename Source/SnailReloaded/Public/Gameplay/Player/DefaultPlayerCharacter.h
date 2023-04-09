@@ -36,6 +36,8 @@ public:
 	UInputAction* HP_Test;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* FireInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* ReloadInput;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -56,6 +58,8 @@ public:
 	float LineTraceMaxDistance;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	int32 FiredRoundsPerShootingEvent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
+	bool bAllowAutoReload;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
 	UNiagaraSystem* NiagaraSystem;
 
@@ -72,6 +76,8 @@ protected:
 	void HealthChange(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleFireInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleReloadInput(const FInputActionInstance& Action);
 
 	//Shooting
 	
@@ -84,6 +90,8 @@ protected:
 	void OnReloadComplete();
 	UFUNCTION()
 	void StartReload();
+	UFUNCTION(Server, Reliable)
+	void Server_StartReload();
 	UFUNCTION()
 	void CancelReload();
 	
@@ -129,9 +137,11 @@ public:
 	void FireEquippedWeapon();
 	UFUNCTION(BlueprintPure)
 	bool CanWeaponFireInMode();
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(BlueprintPure)
+	bool WeaponHasAmmo();
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
 	
 	UPROPERTY(EditAnywhere)
