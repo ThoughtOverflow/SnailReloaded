@@ -66,7 +66,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health")
 	float DefaultObjectHealth;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	FDamageResponse LatestDamage;
 
 	UPROPERTY(BlueprintAssignable)

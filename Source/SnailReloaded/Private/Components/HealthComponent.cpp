@@ -28,7 +28,7 @@ UHealthComponent::UHealthComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
+	SetIsReplicatedByDefault(true);
 	DefaultObjectHealth = 50.f;
 	SetObjectMaxHealth(100.f);
 	LatestDamage = FDamageResponse();
@@ -52,13 +52,14 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UHealthComponent, ObjectHealth);
 	DOREPLIFETIME(UHealthComponent, ObjectMaxHealth);
 	DOREPLIFETIME(UHealthComponent, bIsDead);
+	DOREPLIFETIME(UHealthComponent, LatestDamage);
 }
 
 
 void UHealthComponent::OnRep_ObjectHealth()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Asd"));
-	ObjectHealthChanged.Broadcast(LatestDamage);
+	UE_LOG(LogTemp, Warning, TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth);
+	if(!bIsDead) ObjectHealthChanged.Broadcast(LatestDamage);
 }
 
 void UHealthComponent::OnRep_Dead()
