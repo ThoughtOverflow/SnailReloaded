@@ -54,6 +54,7 @@ void ADummyManny::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 
 void ADummyManny::OnKilled(FDamageResponse LatestDamage)
 {
+	// SetActorHiddenInGame(true);
 	TextRenderComponent->SetText(FText::FromString("Latest Damage: ded"));
 	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SkeletalMeshComponent->SetSimulatePhysics(true);
@@ -62,7 +63,6 @@ void ADummyManny::OnKilled(FDamageResponse LatestDamage)
 
 void ADummyManny::OnHealthChanged(FDamageResponse LatestDamage)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Auth: %d"), HasAuthority());
 	TextRenderComponent->SetText(FText::FromString(FString::Printf(TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth)));
 }
 
