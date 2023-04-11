@@ -175,13 +175,16 @@ void ADefaultPlayerCharacter::StartReload()
 	{
 		Server_StartReload();
 	}
-	if(HasAuthority() && CurrentlyEquippedWeapon)
+	if(CurrentlyEquippedWeapon)
 	{
 		if(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() == 0) return;
-		//Resets the burst combo count:
-		EndShooting();
-		//---
-		CurrentlyEquippedWeapon->SetIsReloading(true);
+		if(HasAuthority())
+		{
+			//Resets the burst combo count:
+			EndShooting();
+			//---
+			CurrentlyEquippedWeapon->SetIsReloading(true);
+		}
 		GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 	}
 }
@@ -677,7 +680,10 @@ void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector 
 	if(CurrentlyEquippedWeapon && CurrentlyEquippedWeapon->ImpactParticleSystem)
 	{
 		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CurrentlyEquippedWeapon->ImpactParticleSystem, Loc + SurfaceNormal*0.01f, SurfaceNormal.Rotation());
-		NiagaraComponent->SetFloatParameter(FName("ImpactScale"), 0.3f);
+		if(NiagaraComponent)
+		{
+			NiagaraComponent->SetFloatParameter(FName("ImpactScale"), 0.3f);	
+		}
 	}
 }
 
