@@ -25,6 +25,8 @@ enum class EWeaponMode : uint8
 	Burst = 2
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAmmoUpdated);
+
 UCLASS()
 class SNAILRELOADED_API AWeaponBase : public AActor
 {
@@ -34,10 +36,12 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	FText WeaponName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", meta = (ClampMin=0))
 	float MinimumFireDelay;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	EWeaponMode WeaponMode;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
 	EWeaponSlot WeaponSlot;
@@ -51,7 +55,7 @@ public:
 	int32 MaxTotalAmmo;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	float ReloadTime;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
+	UPROPERTY(BlueprintReadWrite, Replicated)
 	bool bIsReloading;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponMode == EWeaponMode::Burst && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	int32 BurstAmount;
@@ -96,6 +100,9 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Equipped)
 	bool bIsEquipped;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAmmoUpdated OnAmmoUpdated;
 	
 protected:
 	// Called when the game starts or when spawned

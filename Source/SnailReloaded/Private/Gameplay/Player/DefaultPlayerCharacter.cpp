@@ -32,6 +32,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 
 	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
+	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
 
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
@@ -44,9 +45,6 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 }
 
 // Called when the game starts or when spawned
-
-
-
 void ADefaultPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -78,7 +76,7 @@ void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
 	
 	if(MoveVector.Y != 0.f)
 	{
-		AddMovementInput(GetActorRightVector(), MoveVector.Y);	
+		AddMovementInput(GetActorRightVector(), MoveVector.Y);
 	}
 }
 
@@ -185,6 +183,51 @@ void ADefaultPlayerCharacter::CancelReload()
 	}
 }
 
+void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
+{
+
+	if(CurrentlyEquippedWeapon)
+	{
+		CurrentlyEquippedWeapon->OnAmmoUpdated.Clear();
+		CurrentlyEquippedWeapon->OnAmmoUpdated.AddDynamic(this, &ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged);
+	}
+	
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled())
+		{
+			if(CurrentlyEquippedWeapon)
+			{
+				PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);	
+			}else {
+				PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), FText::FromString(""), 0.f, 0.f);
+			}
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
+		{
+			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
+		{
+			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+		}
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -212,7 +255,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	
 }
 
-void ADefaultPlayerCharacter::OnPlayerPossessed(ADefaultPlayerController* PlayerController)
+void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerController)
 {
 	if(PlayerController)
 	{
@@ -228,6 +271,11 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ADefaultPlayerController* Player
 		if(TestWpn3)
 		{
 			AssignWeapon(TestWpn3);
+		}
+
+		if(IsLocallyControlled())
+		{
+			if(CurrentlyEquippedWeapon) PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
 		}
 	}
 }
@@ -279,6 +327,7 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 			}
 			//EquipWeapon;
 			CurrentlyEquippedWeapon = GetWeaponAtSlot(Slot);
+			OnRep_CurrentWeapon();
 			CurrentlyEquippedWeapon->bIsEquipped = true;
 			CurrentlyEquippedWeapon->OnRep_Equipped();
 		}
@@ -306,6 +355,7 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 		CurrentlyEquippedWeapon->bIsEquipped = false;
 		CurrentlyEquippedWeapon->OnRep_Equipped();
 		CurrentlyEquippedWeapon = nullptr;
+		OnRep_CurrentWeapon();
 	}else
 	{
 		Server_UnequipWeapon();
@@ -407,6 +457,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->CurrentClipAmmo--;
+				CurrentlyEquippedWeapon->OnRep_ClipAmmo();
 				
 				float MaxEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
@@ -467,6 +518,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->CurrentClipAmmo--;
+				CurrentlyEquippedWeapon->OnRep_ClipAmmo();
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))

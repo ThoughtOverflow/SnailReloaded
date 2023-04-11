@@ -13,6 +13,8 @@
 #include "DefaultPlayerCharacter.generated.h"
 
 
+struct FDamageResponse;
+class ACombatPlayerController;
 class ADefaultPlayerController;
 class UArmoredHealthComponent;
 class UHealthComponent;
@@ -52,7 +54,7 @@ public:
 	AWeaponBase* SecondaryWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* MeleeWeapon;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	float LineTraceMaxDistance;
@@ -94,6 +96,12 @@ protected:
 	void Server_StartReload();
 	UFUNCTION()
 	void CancelReload();
+	UFUNCTION()
+	void OnRep_CurrentWeapon();
+	UFUNCTION()
+	void OnHealthChanged(FDamageResponse DamageResponse);
+	UFUNCTION()
+	void OnCurrentWeaponAmmoChanged();
 	
 
 public:	
@@ -104,7 +112,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//Called when the controller possesses this player (When network is ready for RPC calls)
-	virtual void OnPlayerPossessed(ADefaultPlayerController* PlayerController);
+	virtual void OnPlayerPossessed(ACombatPlayerController* PlayerController);
 
 	UFUNCTION(BlueprintCallable)
 	bool AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);

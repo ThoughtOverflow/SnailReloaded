@@ -5,6 +5,8 @@
 
 #include "Net/UnrealNetwork.h"
 
+
+
 // Sets default values
 AWeaponBase::AWeaponBase()
 {
@@ -97,14 +99,15 @@ void AWeaponBase::Tick(float DeltaTime)
 
 void AWeaponBase::OnRep_TotalAmmo()
 {
+	OnAmmoUpdated.Broadcast();
 }
 
 void AWeaponBase::OnRep_ClipAmmo()
 {
+	OnAmmoUpdated.Broadcast();
 }
 
 void AWeaponBase::OnRep_Equipped()
 {
 	SetActorHiddenInGame(!bIsEquipped);
 }
-
