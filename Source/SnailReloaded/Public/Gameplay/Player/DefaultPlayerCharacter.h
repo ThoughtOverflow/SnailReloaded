@@ -54,8 +54,6 @@ public:
 	AWeaponBase* SecondaryWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* MeleeWeapon;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
-	AWeaponBase* CurrentlyEquippedWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	float LineTraceMaxDistance;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
@@ -102,6 +100,9 @@ protected:
 	void OnHealthChanged(FDamageResponse DamageResponse);
 	UFUNCTION()
 	void OnCurrentWeaponAmmoChanged();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
+	AWeaponBase* CurrentlyEquippedWeapon;
 	
 
 public:	
@@ -151,6 +152,11 @@ public:
 	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
+
+	UFUNCTION(BlueprintPure)
+	AWeaponBase* GetCurrentlyEquippedWeapon();
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon);
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;

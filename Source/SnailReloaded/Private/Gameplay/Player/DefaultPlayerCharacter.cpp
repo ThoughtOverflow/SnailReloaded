@@ -142,13 +142,11 @@ void ADefaultPlayerCharacter::OnReloadComplete()
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
 		//Set new ammo amount:
-		float ClipAddAmount = FMath::Min(CurrentlyEquippedWeapon->MaxClipAmmo - CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
-		CurrentlyEquippedWeapon->CurrentClipAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentClipAmmo + ClipAddAmount, 0, CurrentlyEquippedWeapon->MaxClipAmmo);
-		CurrentlyEquippedWeapon->CurrentTotalAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentTotalAmmo - ClipAddAmount, 0, CurrentlyEquippedWeapon->MaxTotalAmmo);
-		CurrentlyEquippedWeapon->OnRep_ClipAmmo();
-		CurrentlyEquippedWeapon->OnRep_TotalAmmo();
+		float ClipAddAmount = FMath::Min(CurrentlyEquippedWeapon->GetMaxClipAmmo() - CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
+		CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() + ClipAddAmount);
+		CurrentlyEquippedWeapon->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() - ClipAddAmount);
 		CurrentlyEquippedWeapon->bIsReloading = false;
-		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 	}
 }
 
@@ -160,7 +158,7 @@ void ADefaultPlayerCharacter::StartReload()
 	}
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
-		if(CurrentlyEquippedWeapon->CurrentTotalAmmo == 0) return;
+		if(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() == 0) return;
 		//Resets the burst combo count:
 		EndShooting();
 		//---
@@ -198,7 +196,7 @@ void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
 		{
 			if(CurrentlyEquippedWeapon)
 			{
-				PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);	
+				PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());	
 			}else {
 				PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), FText::FromString(""), 0.f, 0.f);
 			}
@@ -212,7 +210,7 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 	{
 		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
 		{
-			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 		}
 	}
 }
@@ -223,7 +221,7 @@ void ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged()
 	{
 		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
 		{
-			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 		}
 	}
 }
@@ -275,7 +273,7 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 
 		if(IsLocallyControlled())
 		{
-			if(CurrentlyEquippedWeapon) PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+			if(CurrentlyEquippedWeapon) PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 		}
 	}
 }
@@ -288,8 +286,7 @@ bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = this;
 		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, GetMesh()->GetSocketLocation(FName("hand_r")), FRotator::ZeroRotator, SpawnParameters);
-		Weapon->bIsEquipped = false;
-		Weapon->OnRep_Equipped();
+		Weapon->SetIsEquipped(false);
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, FName("hand_r"));
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
@@ -326,10 +323,8 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 				UnequipWeapon();
 			}
 			//EquipWeapon;
-			CurrentlyEquippedWeapon = GetWeaponAtSlot(Slot);
-			OnRep_CurrentWeapon();
-			CurrentlyEquippedWeapon->bIsEquipped = true;
-			CurrentlyEquippedWeapon->OnRep_Equipped();
+			SetCurrentlyEqippedWeapon(GetWeaponAtSlot(Slot));
+			CurrentlyEquippedWeapon->SetIsEquipped(true);
 		}
 	}else
 	{
@@ -352,10 +347,8 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 		{
 			CancelReload();
 		}
-		CurrentlyEquippedWeapon->bIsEquipped = false;
-		CurrentlyEquippedWeapon->OnRep_Equipped();
-		CurrentlyEquippedWeapon = nullptr;
-		OnRep_CurrentWeapon();
+		CurrentlyEquippedWeapon->SetIsEquipped(false);
+		SetCurrentlyEqippedWeapon(nullptr);
 	}else
 	{
 		Server_UnequipWeapon();
@@ -442,7 +435,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		QueryParams.AddIgnoredActor(this);
 
 		//Auto reload:
-		if(!CurrentlyEquippedWeapon->bIsReloading && CurrentlyEquippedWeapon->CurrentClipAmmo == 0 && CurrentlyEquippedWeapon->CurrentTotalAmmo != 0 && bAllowAutoReload)
+		if(!CurrentlyEquippedWeapon->bIsReloading && CurrentlyEquippedWeapon->GetCurrentClipAmmo() == 0 && CurrentlyEquippedWeapon->GetCurrentTotalAmmo() != 0 && bAllowAutoReload)
 		{
 			StartReload();
 			return;
@@ -456,8 +449,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
-				CurrentlyEquippedWeapon->CurrentClipAmmo--;
-				CurrentlyEquippedWeapon->OnRep_ClipAmmo();
+				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo()-1);
 				
 				float MaxEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
@@ -517,8 +509,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
-				CurrentlyEquippedWeapon->CurrentClipAmmo--;
-				CurrentlyEquippedWeapon->OnRep_ClipAmmo();
+				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
@@ -579,7 +570,21 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 
 bool ADefaultPlayerCharacter::WeaponHasAmmo()
 {
-	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->CurrentClipAmmo > 0 : false;
+	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
+}
+
+AWeaponBase* ADefaultPlayerCharacter::GetCurrentlyEquippedWeapon()
+{
+	return CurrentlyEquippedWeapon;
+}
+
+void ADefaultPlayerCharacter::SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon)
+{
+	if(HasAuthority())
+	{
+		CurrentlyEquippedWeapon = NewWeapon;
+		OnRep_CurrentWeapon();
+	}
 }
 
 void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector Loc, FVector SurfaceNormal)

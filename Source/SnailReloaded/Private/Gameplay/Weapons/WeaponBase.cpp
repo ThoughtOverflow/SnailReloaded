@@ -109,5 +109,67 @@ void AWeaponBase::OnRep_ClipAmmo()
 
 void AWeaponBase::OnRep_Equipped()
 {
-	SetActorHiddenInGame(!bIsEquipped);
+	SetActorHiddenInGame(!GetIsEquipped());
+}
+
+void AWeaponBase::SetCurrentClipAmmo(int32 NewAmmo)
+{
+	if(HasAuthority())
+	{
+		CurrentClipAmmo = FMath::Clamp(NewAmmo, 0, MaxClipAmmo);
+		OnRep_ClipAmmo();
+	}
+}
+
+void AWeaponBase::SetCurrentTotalAmmo(int32 NewAmmo)
+{
+	if(HasAuthority())
+	{
+		CurrentTotalAmmo = FMath::Clamp(NewAmmo, 0, MaxTotalAmmo);
+		OnRep_TotalAmmo();
+	}
+}
+
+int32 AWeaponBase::GetCurrentClipAmmo()
+{
+	return CurrentClipAmmo;
+}
+
+int32 AWeaponBase::GetCurrentTotalAmmo()
+{
+	return CurrentTotalAmmo;
+}
+
+void AWeaponBase::SetMaxClipAmmo(int32 NewAmmo)
+{
+	MaxClipAmmo = FMath::Max(0, NewAmmo);
+}
+
+void AWeaponBase::SetMaxTotalAmmo(int32 NewAmmo)
+{
+	MaxTotalAmmo = FMath::Max(0, NewAmmo);
+}
+
+int32 AWeaponBase::GetMaxClipAmmo()
+{
+	return MaxClipAmmo;
+}
+
+int32 AWeaponBase::GetMaxTotalAmmo()
+{
+	return MaxTotalAmmo;
+}
+
+bool AWeaponBase::GetIsEquipped()
+{
+	return bIsEquipped;
+}
+
+void AWeaponBase::SetIsEquipped(bool bEquipped)
+{
+	if(HasAuthority())
+	{
+		bIsEquipped = bEquipped;
+		OnRep_Equipped();
+	}
 }

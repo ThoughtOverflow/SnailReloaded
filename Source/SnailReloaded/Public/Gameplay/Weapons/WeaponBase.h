@@ -45,14 +45,6 @@ public:
 	EWeaponMode WeaponMode;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
 	EWeaponSlot WeaponSlot;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", ReplicatedUsing = OnRep_ClipAmmo, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
-	int32 CurrentClipAmmo;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", ReplicatedUsing = OnRep_TotalAmmo, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
-	int32 CurrentTotalAmmo;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
-	int32 MaxClipAmmo;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
-	int32 MaxTotalAmmo;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	float ReloadTime;
 	UPROPERTY(BlueprintReadWrite, Replicated)
@@ -97,10 +89,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* WeaponMesh;
-
-	UPROPERTY(ReplicatedUsing = OnRep_Equipped)
-	bool bIsEquipped;
-
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnAmmoUpdated OnAmmoUpdated;
 	
@@ -108,6 +97,24 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Ammo Settings", ReplicatedUsing = OnRep_ClipAmmo, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
+	int32 CurrentClipAmmo;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Ammo Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
+	int32 MaxClipAmmo;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Ammo Settings", ReplicatedUsing = OnRep_TotalAmmo, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
+	int32 CurrentTotalAmmo;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Ammo Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
+	int32 MaxTotalAmmo;
+	UPROPERTY(ReplicatedUsing = OnRep_Equipped)
+	bool bIsEquipped;
+	
+	UFUNCTION()
+	void OnRep_TotalAmmo();
+	UFUNCTION()
+	void OnRep_ClipAmmo();
+	UFUNCTION()
+	void OnRep_Equipped();
 
 #if WITH_EDITOR
 
@@ -120,11 +127,27 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION()
-	void OnRep_TotalAmmo();
-	UFUNCTION()
-	void OnRep_ClipAmmo();
-	UFUNCTION()
-	void OnRep_Equipped();
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentClipAmmo(int32 NewAmmo);
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentTotalAmmo(int32 NewAmmo);
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentClipAmmo();
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentTotalAmmo();
 
+	UFUNCTION(BlueprintCallable)
+	void SetMaxClipAmmo(int32 NewAmmo);
+	UFUNCTION(BlueprintCallable)
+	void SetMaxTotalAmmo(int32 NewAmmo);
+	UFUNCTION(BlueprintPure)
+	int32 GetMaxClipAmmo();
+	UFUNCTION(BlueprintPure)
+	int32 GetMaxTotalAmmo();
+
+	UFUNCTION(BlueprintPure)
+	bool GetIsEquipped();
+	UFUNCTION(BlueprintCallable)
+	void SetIsEquipped(bool bEquipped);
+	
 };
