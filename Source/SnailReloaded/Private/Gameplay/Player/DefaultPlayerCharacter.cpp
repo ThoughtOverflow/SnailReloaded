@@ -13,6 +13,7 @@
 #include "Framework/DefaultPlayerController.h"
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -32,6 +33,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 
 	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
+	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
 
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
@@ -44,9 +46,6 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 }
 
 // Called when the game starts or when spawned
-
-
-
 void ADefaultPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -78,7 +77,7 @@ void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
 	
 	if(MoveVector.Y != 0.f)
 	{
-		AddMovementInput(GetActorRightVector(), MoveVector.Y);	
+		AddMovementInput(GetActorRightVector(), MoveVector.Y);
 	}
 }
 
@@ -100,20 +99,14 @@ void ADefaultPlayerCharacter::Look(const FInputActionInstance& Action)
 
 void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 {
-		if(CurrentlyEquippedWeapon)
+		if(Action.GetValue().Get<bool>())
 		{
-			UnequipWeapon();
-		}else
-		{
-			int32 RandInt = FMath::RandRange(0,2);
-			EquipWeapon(RandInt==0 ? EWeaponSlot::Melee : RandInt==1 ? EWeaponSlot::Primary : EWeaponSlot::Secondary);
+			FDamageRequest DamageRequest;
+			DamageRequest.SourceActor = this;
+			DamageRequest.DeltaDamage = 15.f;
+			DamageRequest.TargetActor = this;
+			Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);	
 		}
-		return;
-		FDamageRequest DamageRequest;
-		DamageRequest.SourceActor = Cast<ACombatPlayerController>(GetController());
-		DamageRequest.DeltaDamage = -15.f;
-		DamageRequest.TargetActor = this;
-		Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
 }
 
 void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action)
@@ -139,18 +132,40 @@ void ADefaultPlayerCharacter::HandleReloadInput(const FInputActionInstance& Acti
 	}
 }
 
+void ADefaultPlayerCharacter::HandleSelectPrimaryInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		EquipWeapon(EWeaponSlot::Primary);
+	}
+}
+
+void ADefaultPlayerCharacter::HandleSelectSecondaryInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		EquipWeapon(EWeaponSlot::Secondary);
+	}
+}
+
+void ADefaultPlayerCharacter::HandleSelectMeleeInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		EquipWeapon(EWeaponSlot::Melee);	
+	}
+}
+
 void ADefaultPlayerCharacter::OnReloadComplete()
 {
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
 		//Set new ammo amount:
-		float ClipAddAmount = FMath::Min(CurrentlyEquippedWeapon->MaxClipAmmo - CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
-		CurrentlyEquippedWeapon->CurrentClipAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentClipAmmo + ClipAddAmount, 0, CurrentlyEquippedWeapon->MaxClipAmmo);
-		CurrentlyEquippedWeapon->CurrentTotalAmmo = FMath::Clamp(CurrentlyEquippedWeapon->CurrentTotalAmmo - ClipAddAmount, 0, CurrentlyEquippedWeapon->MaxTotalAmmo);
-		CurrentlyEquippedWeapon->OnRep_ClipAmmo();
-		CurrentlyEquippedWeapon->OnRep_TotalAmmo();
-		CurrentlyEquippedWeapon->bIsReloading = false;
-		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->CurrentClipAmmo, CurrentlyEquippedWeapon->CurrentTotalAmmo);
+		float ClipAddAmount = FMath::Min(CurrentlyEquippedWeapon->GetMaxClipAmmo() - CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
+		CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() + ClipAddAmount);
+		CurrentlyEquippedWeapon->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() - ClipAddAmount);
+		CurrentlyEquippedWeapon->SetIsReloading(false);
+		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 	}
 }
 
@@ -162,11 +177,11 @@ void ADefaultPlayerCharacter::StartReload()
 	}
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
-		if(CurrentlyEquippedWeapon->CurrentTotalAmmo == 0) return;
+		if(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() == 0) return;
 		//Resets the burst combo count:
 		EndShooting();
 		//---
-		CurrentlyEquippedWeapon->bIsReloading = true;
+		CurrentlyEquippedWeapon->SetIsReloading(true);
 		GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 	}
 }
@@ -176,12 +191,84 @@ void ADefaultPlayerCharacter::Server_StartReload_Implementation()
 	StartReload();
 }
 
+void ADefaultPlayerCharacter::Client_StartReload_Implementation()
+{
+	StartReload();
+}
+
 void ADefaultPlayerCharacter::CancelReload()
 {
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
-		CurrentlyEquippedWeapon->bIsReloading = false;
+		CurrentlyEquippedWeapon->SetIsReloading(false);
 		GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
+	}
+}
+
+void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
+{
+
+	if(CurrentlyEquippedWeapon)
+	{
+		CurrentlyEquippedWeapon->OnAmmoUpdated.Clear();
+		CurrentlyEquippedWeapon->OnAmmoUpdated.AddDynamic(this, &ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged);
+		CurrentlyEquippedWeapon->OnReload.Clear();
+		CurrentlyEquippedWeapon->OnReload.AddDynamic(this, &ADefaultPlayerCharacter::OnCurrentWeaponReloading);
+	}
+	
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled())
+		{
+			UHudData* HudData = PlayerController->GetHudData();
+			if(CurrentlyEquippedWeapon)
+			{
+				HudData->SetCurrentWeaponName(CurrentlyEquippedWeapon->WeaponName)->
+				SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->
+				SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
+					
+			}else {
+				HudData->SetCurrentWeaponName(FText::FromString(""))->
+				SetCurrentClipAmmo(0)->
+				SetCurrentTotalAmmo(0);
+			}
+			HudData->Submit();
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled())
+		{
+			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->Submit();
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
+		{
+			PlayerController->GetHudData()->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->
+			SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo())->
+			Submit();
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnCurrentWeaponReloading()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
+		{
+			PlayerController->GetHudData()->SetReloading(CurrentlyEquippedWeapon->GetIsReloading())->Submit();
+		}
 	}
 }
 
@@ -209,10 +296,13 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(FireInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleFireInput);
 	EnhancedInputComponent->BindAction(FireInput, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleFireInput);
 	EnhancedInputComponent->BindAction(ReloadInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleReloadInput);
+	EnhancedInputComponent->BindAction(SelectPrimaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectPrimaryInput);
+	EnhancedInputComponent->BindAction(SelectSecondaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectSecondaryInput);
+	EnhancedInputComponent->BindAction(SelectMeleeInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectMeleeInput);
 	
 }
 
-void ADefaultPlayerCharacter::OnPlayerPossessed(ADefaultPlayerController* PlayerController)
+void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerController)
 {
 	if(PlayerController)
 	{
@@ -229,8 +319,13 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ADefaultPlayerController* Player
 		{
 			AssignWeapon(TestWpn3);
 		}
+
+		//Load Default hud for player UI
+		Client_LoadDefaultHudData();
+		
 	}
 }
+
 
 bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 {
@@ -240,8 +335,7 @@ bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = this;
 		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, GetMesh()->GetSocketLocation(FName("hand_r")), FRotator::ZeroRotator, SpawnParameters);
-		Weapon->bIsEquipped = false;
-		Weapon->OnRep_Equipped();
+		Weapon->SetIsEquipped(false);
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, FName("hand_r"));
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
@@ -278,9 +372,8 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 				UnequipWeapon();
 			}
 			//EquipWeapon;
-			CurrentlyEquippedWeapon = GetWeaponAtSlot(Slot);
-			CurrentlyEquippedWeapon->bIsEquipped = true;
-			CurrentlyEquippedWeapon->OnRep_Equipped();
+			SetCurrentlyEqippedWeapon(GetWeaponAtSlot(Slot));
+			CurrentlyEquippedWeapon->SetIsEquipped(true);
 		}
 	}else
 	{
@@ -299,13 +392,12 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 {
 	if(HasAuthority())
 	{
-		if(CurrentlyEquippedWeapon->bIsReloading)
+		if(CurrentlyEquippedWeapon->GetIsReloading())
 		{
 			CancelReload();
 		}
-		CurrentlyEquippedWeapon->bIsEquipped = false;
-		CurrentlyEquippedWeapon->OnRep_Equipped();
-		CurrentlyEquippedWeapon = nullptr;
+		CurrentlyEquippedWeapon->SetIsEquipped(false);
+		SetCurrentlyEqippedWeapon(nullptr);
 	}else
 	{
 		Server_UnequipWeapon();
@@ -392,9 +484,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		QueryParams.AddIgnoredActor(this);
 
 		//Auto reload:
-		if(!CurrentlyEquippedWeapon->bIsReloading && CurrentlyEquippedWeapon->CurrentClipAmmo == 0 && CurrentlyEquippedWeapon->CurrentTotalAmmo != 0 && bAllowAutoReload)
+		if(!CurrentlyEquippedWeapon->GetIsReloading() && CurrentlyEquippedWeapon->GetCurrentClipAmmo() == 0 && CurrentlyEquippedWeapon->GetCurrentTotalAmmo() != 0 && bAllowAutoReload)
 		{
-			StartReload();
+			Client_StartReload();
 			return;
 		}
 		
@@ -402,11 +494,11 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			QueryParams.AddIgnoredActor(this);
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->bIsReloading)
+			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
-				CurrentlyEquippedWeapon->CurrentClipAmmo--;
+				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo()-1);
 				
 				float MaxEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
@@ -445,13 +537,18 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							//               3);
 							if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 							{
-								FDamageRequest DamageRequest;
-								DamageRequest.SourceActor = this;
-								DamageRequest.TargetActor = HitResult.GetActor();
-								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
-									                            -CurrentlyEquippedWeapon->ConstantDamage : - FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size()/100.f));
-				
-								Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+								if(!HealthComponent->bIsDead)
+								{
+									FDamageRequest DamageRequest;
+									DamageRequest.SourceActor = this;
+									DamageRequest.TargetActor = HitResult.GetActor();
+									DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
+																	-CurrentlyEquippedWeapon->ConstantDamage :
+																	- FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size()/100.f));
+								
+									Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+								}
+								
 							}
 						}
 					}
@@ -462,11 +559,11 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->bIsReloading)
+			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
-				CurrentlyEquippedWeapon->CurrentClipAmmo--;
+				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
@@ -478,13 +575,18 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						// DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0, 3);
 						if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 						{
-							FDamageRequest DamageRequest;
-							DamageRequest.SourceActor = this;
-							DamageRequest.TargetActor = HitResult.GetActor();
-							DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
-								                            -CurrentlyEquippedWeapon->ConstantDamage : - FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size() / 100.f));
+							if(!HealthComponent->bIsDead)
+							{
+								FDamageRequest DamageRequest;
+								DamageRequest.SourceActor = this;
+								DamageRequest.TargetActor = HitResult.GetActor();
+								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
+																-CurrentlyEquippedWeapon->ConstantDamage :
+																- FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size() / 100.f));
 				
-							Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+								Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+							}
+							
 						}
 					}
 					
@@ -527,7 +629,47 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 
 bool ADefaultPlayerCharacter::WeaponHasAmmo()
 {
-	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->CurrentClipAmmo > 0 : false;
+	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
+}
+
+AWeaponBase* ADefaultPlayerCharacter::GetCurrentlyEquippedWeapon()
+{
+	return CurrentlyEquippedWeapon;
+}
+
+void ADefaultPlayerCharacter::SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon)
+{
+	if(HasAuthority())
+	{
+		CurrentlyEquippedWeapon = NewWeapon;
+		OnRep_CurrentWeapon();
+	}
+}
+
+float ADefaultPlayerCharacter::GetReloadProgress()
+{
+	if(CurrentlyEquippedWeapon && CurrentlyEquippedWeapon->GetIsReloading())
+	{
+		return GetWorldTimerManager().GetTimerElapsed(ReloadTimerHandle) / CurrentlyEquippedWeapon->ReloadTime;	
+	}
+	return 0.f;
+}
+
+void ADefaultPlayerCharacter::Client_LoadDefaultHudData_Implementation()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(PlayerController->PlayerHud)
+		{
+			UHudData* HudData = PlayerController->GetHudData();
+			HudData->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth());
+			if(CurrentlyEquippedWeapon)
+			{
+				HudData->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo())->SetCurrentWeaponName(CurrentlyEquippedWeapon->WeaponName);
+			}
+			HudData->Submit();
+		}
+	}
 }
 
 void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector Loc, FVector SurfaceNormal)

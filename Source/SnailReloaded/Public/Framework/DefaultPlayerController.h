@@ -17,9 +17,5 @@ class SNAILRELOADED_API ADefaultPlayerController : public APlayerController
 public:
 
 	ADefaultPlayerController();
-
-protected:
-
-	virtual void OnPossess(APawn* InPawn) override;
 	
 };

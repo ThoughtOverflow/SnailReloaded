@@ -13,6 +13,8 @@
 #include "DefaultPlayerCharacter.generated.h"
 
 
+struct FDamageResponse;
+class ACombatPlayerController;
 class ADefaultPlayerController;
 class UArmoredHealthComponent;
 class UHealthComponent;
@@ -38,6 +40,12 @@ public:
 	UInputAction* FireInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* ReloadInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* SelectPrimaryInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* SelectSecondaryInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* SelectMeleeInput;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -52,8 +60,6 @@ public:
 	AWeaponBase* SecondaryWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* MeleeWeapon;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
-	AWeaponBase* CurrentlyEquippedWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	float LineTraceMaxDistance;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
@@ -78,6 +84,12 @@ protected:
 	void HandleFireInput(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleReloadInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleSelectPrimaryInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleSelectSecondaryInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleSelectMeleeInput(const FInputActionInstance& Action);
 
 	//Shooting
 	
@@ -92,8 +104,21 @@ protected:
 	void StartReload();
 	UFUNCTION(Server, Reliable)
 	void Server_StartReload();
+	UFUNCTION(Client, Reliable)
+	void Client_StartReload();
 	UFUNCTION()
 	void CancelReload();
+	UFUNCTION()
+	void OnRep_CurrentWeapon();
+	UFUNCTION()
+	void OnHealthChanged(FDamageResponse DamageResponse);
+	UFUNCTION()
+	void OnCurrentWeaponAmmoChanged();
+	UFUNCTION()
+	void OnCurrentWeaponReloading();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
+	AWeaponBase* CurrentlyEquippedWeapon;
 	
 
 public:	
@@ -104,7 +129,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//Called when the controller possesses this player (When network is ready for RPC calls)
-	virtual void OnPlayerPossessed(ADefaultPlayerController* PlayerController);
+	virtual void OnPlayerPossessed(ACombatPlayerController* PlayerController);
 
 	UFUNCTION(BlueprintCallable)
 	bool AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
@@ -143,6 +168,19 @@ public:
 	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
+
+	UFUNCTION(BlueprintPure)
+	AWeaponBase* GetCurrentlyEquippedWeapon();
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon);
+
+	//HUD:
+
+	UFUNCTION(Client, Reliable)
+	void Client_LoadDefaultHudData();
+
+	UFUNCTION(BlueprintPure)
+	float GetReloadProgress();
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;

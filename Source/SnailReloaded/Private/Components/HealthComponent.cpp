@@ -31,6 +31,7 @@ UHealthComponent::UHealthComponent()
 	SetIsReplicatedByDefault(true);
 	DefaultObjectHealth = 50.f;
 	SetObjectMaxHealth(100.f);
+	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
 	LatestDamage = FDamageResponse();
 	bIsDead = false;
 }
@@ -40,8 +41,7 @@ UHealthComponent::UHealthComponent()
 void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
+	
 	
 }
 
@@ -59,7 +59,11 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UHealthComponent::OnRep_ObjectHealth()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth);
-	if(!bIsDead) ObjectHealthChanged.Broadcast(LatestDamage);
+	ObjectHealthChanged.Broadcast(LatestDamage);
+	if(bIsDead)
+	{
+		ObjectKilled.Broadcast(LatestDamage);
+	}
 }
 
 void UHealthComponent::OnRep_Dead()
