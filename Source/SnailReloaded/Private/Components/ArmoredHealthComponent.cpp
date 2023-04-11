@@ -25,5 +25,5 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest Damag
 		}
 		
 	}
-	return FDamageResponse();
+	return Super::ChangeObjectHealth(DamageRequest);
 }

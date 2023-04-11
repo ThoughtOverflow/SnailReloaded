@@ -99,20 +99,14 @@ void ADefaultPlayerCharacter::Look(const FInputActionInstance& Action)
 
 void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 {
-		if(CurrentlyEquippedWeapon)
+		if(Action.GetValue().Get<bool>())
 		{
-			UnequipWeapon();
-		}else
-		{
-			int32 RandInt = FMath::RandRange(0,2);
-			EquipWeapon(RandInt==0 ? EWeaponSlot::Melee : RandInt==1 ? EWeaponSlot::Primary : EWeaponSlot::Secondary);
+			FDamageRequest DamageRequest;
+			DamageRequest.SourceActor = this;
+			DamageRequest.DeltaDamage = 15.f;
+			DamageRequest.TargetActor = this;
+			Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);	
 		}
-		return;
-		FDamageRequest DamageRequest;
-		DamageRequest.SourceActor = Cast<ACombatPlayerController>(GetController());
-		DamageRequest.DeltaDamage = -15.f;
-		DamageRequest.TargetActor = this;
-		Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
 }
 
 void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action)
@@ -135,6 +129,30 @@ void ADefaultPlayerCharacter::HandleReloadInput(const FInputActionInstance& Acti
 	{
 		// Do other input checks maybe?
 		StartReload();
+	}
+}
+
+void ADefaultPlayerCharacter::HandleSelectPrimaryInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		EquipWeapon(EWeaponSlot::Primary);
+	}
+}
+
+void ADefaultPlayerCharacter::HandleSelectSecondaryInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		EquipWeapon(EWeaponSlot::Secondary);
+	}
+}
+
+void ADefaultPlayerCharacter::HandleSelectMeleeInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		EquipWeapon(EWeaponSlot::Melee);	
 	}
 }
 
@@ -216,7 +234,7 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 {
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
 	{
-		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
+		if(IsLocallyControlled())
 		{
 			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->Submit();
 		}
@@ -260,6 +278,9 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(FireInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleFireInput);
 	EnhancedInputComponent->BindAction(FireInput, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleFireInput);
 	EnhancedInputComponent->BindAction(ReloadInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleReloadInput);
+	EnhancedInputComponent->BindAction(SelectPrimaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectPrimaryInput);
+	EnhancedInputComponent->BindAction(SelectSecondaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectSecondaryInput);
+	EnhancedInputComponent->BindAction(SelectMeleeInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectMeleeInput);
 	
 }
 
@@ -498,13 +519,18 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							//               3);
 							if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 							{
-								FDamageRequest DamageRequest;
-								DamageRequest.SourceActor = this;
-								DamageRequest.TargetActor = HitResult.GetActor();
-								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
-									                            -CurrentlyEquippedWeapon->ConstantDamage : - FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size()/100.f));
-				
-								Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+								if(!HealthComponent->bIsDead)
+								{
+									FDamageRequest DamageRequest;
+									DamageRequest.SourceActor = this;
+									DamageRequest.TargetActor = HitResult.GetActor();
+									DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
+																	-CurrentlyEquippedWeapon->ConstantDamage :
+																	- FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size()/100.f));
+								
+									Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+								}
+								
 							}
 						}
 					}
@@ -531,13 +557,18 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						// DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0, 3);
 						if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 						{
-							FDamageRequest DamageRequest;
-							DamageRequest.SourceActor = this;
-							DamageRequest.TargetActor = HitResult.GetActor();
-							DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
-								                            -CurrentlyEquippedWeapon->ConstantDamage : - FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size() / 100.f));
+							if(!HealthComponent->bIsDead)
+							{
+								FDamageRequest DamageRequest;
+								DamageRequest.SourceActor = this;
+								DamageRequest.TargetActor = HitResult.GetActor();
+								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
+																-CurrentlyEquippedWeapon->ConstantDamage :
+																- FMath::RoundToFloat(CurrentlyEquippedWeapon->DamageCurve->GetFloatValue((HitResult.ImpactPoint - TraceStartLoc).Size() / 100.f));
 				
-							Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+								Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+							}
+							
 						}
 					}
 					

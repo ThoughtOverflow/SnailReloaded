@@ -40,6 +40,12 @@ public:
 	UInputAction* FireInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* ReloadInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* SelectPrimaryInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* SelectSecondaryInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* SelectMeleeInput;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -78,6 +84,12 @@ protected:
 	void HandleFireInput(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleReloadInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleSelectPrimaryInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleSelectSecondaryInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleSelectMeleeInput(const FInputActionInstance& Action);
 
 	//Shooting
 	
