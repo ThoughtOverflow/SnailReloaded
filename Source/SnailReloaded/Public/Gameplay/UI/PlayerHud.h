@@ -27,4 +27,6 @@ public:
 	int32 CurrentClipAmmo;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
 	int32 CurrentTotalAmmo;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+	bool bIsReloading;
 };

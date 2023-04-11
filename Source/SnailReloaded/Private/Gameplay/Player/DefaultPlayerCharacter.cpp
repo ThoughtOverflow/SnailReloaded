@@ -164,7 +164,7 @@ void ADefaultPlayerCharacter::OnReloadComplete()
 		float ClipAddAmount = FMath::Min(CurrentlyEquippedWeapon->GetMaxClipAmmo() - CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 		CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() + ClipAddAmount);
 		CurrentlyEquippedWeapon->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() - ClipAddAmount);
-		CurrentlyEquippedWeapon->bIsReloading = false;
+		CurrentlyEquippedWeapon->SetIsReloading(false);
 		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 	}
 }
@@ -181,7 +181,7 @@ void ADefaultPlayerCharacter::StartReload()
 		//Resets the burst combo count:
 		EndShooting();
 		//---
-		CurrentlyEquippedWeapon->bIsReloading = true;
+		CurrentlyEquippedWeapon->SetIsReloading(true);
 		GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 	}
 }
@@ -191,11 +191,16 @@ void ADefaultPlayerCharacter::Server_StartReload_Implementation()
 	StartReload();
 }
 
+void ADefaultPlayerCharacter::Client_StartReload_Implementation()
+{
+	StartReload();
+}
+
 void ADefaultPlayerCharacter::CancelReload()
 {
 	if(HasAuthority() && CurrentlyEquippedWeapon)
 	{
-		CurrentlyEquippedWeapon->bIsReloading = false;
+		CurrentlyEquippedWeapon->SetIsReloading(false);
 		GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
 	}
 }
@@ -207,6 +212,8 @@ void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
 	{
 		CurrentlyEquippedWeapon->OnAmmoUpdated.Clear();
 		CurrentlyEquippedWeapon->OnAmmoUpdated.AddDynamic(this, &ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged);
+		CurrentlyEquippedWeapon->OnReload.Clear();
+		CurrentlyEquippedWeapon->OnReload.AddDynamic(this, &ADefaultPlayerCharacter::OnCurrentWeaponReloading);
 	}
 	
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
@@ -250,6 +257,17 @@ void ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged()
 			PlayerController->GetHudData()->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->
 			SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo())->
 			Submit();
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnCurrentWeaponReloading()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
+		{
+			PlayerController->GetHudData()->SetReloading(CurrentlyEquippedWeapon->GetIsReloading())->Submit();
 		}
 	}
 }
@@ -374,7 +392,7 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 {
 	if(HasAuthority())
 	{
-		if(CurrentlyEquippedWeapon->bIsReloading)
+		if(CurrentlyEquippedWeapon->GetIsReloading())
 		{
 			CancelReload();
 		}
@@ -466,9 +484,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		QueryParams.AddIgnoredActor(this);
 
 		//Auto reload:
-		if(!CurrentlyEquippedWeapon->bIsReloading && CurrentlyEquippedWeapon->GetCurrentClipAmmo() == 0 && CurrentlyEquippedWeapon->GetCurrentTotalAmmo() != 0 && bAllowAutoReload)
+		if(!CurrentlyEquippedWeapon->GetIsReloading() && CurrentlyEquippedWeapon->GetCurrentClipAmmo() == 0 && CurrentlyEquippedWeapon->GetCurrentTotalAmmo() != 0 && bAllowAutoReload)
 		{
-			StartReload();
+			Client_StartReload();
 			return;
 		}
 		
@@ -476,7 +494,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			QueryParams.AddIgnoredActor(this);
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->bIsReloading)
+			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
@@ -541,7 +559,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->bIsReloading)
+			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
 			{
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
@@ -626,6 +644,15 @@ void ADefaultPlayerCharacter::SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon)
 		CurrentlyEquippedWeapon = NewWeapon;
 		OnRep_CurrentWeapon();
 	}
+}
+
+float ADefaultPlayerCharacter::GetReloadProgress()
+{
+	if(CurrentlyEquippedWeapon && CurrentlyEquippedWeapon->GetIsReloading())
+	{
+		return GetWorldTimerManager().GetTimerElapsed(ReloadTimerHandle) / CurrentlyEquippedWeapon->ReloadTime;	
+	}
+	return 0.f;
 }
 
 void ADefaultPlayerCharacter::Client_LoadDefaultHudData_Implementation()

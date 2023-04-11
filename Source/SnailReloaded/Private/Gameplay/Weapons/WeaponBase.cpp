@@ -97,6 +97,8 @@ void AWeaponBase::Tick(float DeltaTime)
 
 }
 
+
+
 void AWeaponBase::OnRep_TotalAmmo()
 {
 	OnAmmoUpdated.Broadcast();
@@ -110,6 +112,11 @@ void AWeaponBase::OnRep_ClipAmmo()
 void AWeaponBase::OnRep_Equipped()
 {
 	SetActorHiddenInGame(!GetIsEquipped());
+}
+
+void AWeaponBase::OnRep_Reloading()
+{
+	OnReload.Broadcast();
 }
 
 void AWeaponBase::SetCurrentClipAmmo(int32 NewAmmo)
@@ -171,5 +178,19 @@ void AWeaponBase::SetIsEquipped(bool bEquipped)
 	{
 		bIsEquipped = bEquipped;
 		OnRep_Equipped();
+	}
+}
+
+bool AWeaponBase::GetIsReloading() const
+{
+	return bIsReloading;
+}
+
+void AWeaponBase::SetIsReloading(bool bReloading)
+{
+	if(HasAuthority())
+	{
+		this->bIsReloading = bReloading;
+		OnRep_Reloading();
 	}
 }

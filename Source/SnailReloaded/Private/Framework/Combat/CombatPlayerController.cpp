@@ -3,6 +3,7 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/UI/HudData.h"
@@ -54,6 +55,7 @@ void ACombatPlayerController::UpdatePlayerHud(UHudData* HudData)
 		PlayerHud->CurrentClipAmmo = HudData->GetCurrentClipAmmo();
 		PlayerHud->CurrentTotalAmmo = HudData->GetCurrentTotalAmmo();
 		PlayerHud->CurrentWeaponName = HudData->GetCurrentWeaponName();
+		PlayerHud->bIsReloading = HudData->GetIsReloading();
 	}
 }
 
@@ -65,7 +67,8 @@ UHudData* ACombatPlayerController::GetHudData()
 		HudData->SetCurrentClipAmmo(PlayerHud->CurrentClipAmmo)->
 		SetCurrentTotalAmmo(PlayerHud->CurrentTotalAmmo)->
 		SetCurrentWeaponName(PlayerHud->CurrentWeaponName)->
-		SetPlayerHealthPercentage(PlayerHud->PlayerHealthPercentage);
+		SetPlayerHealthPercentage(PlayerHud->PlayerHealthPercentage)->
+		SetReloading(PlayerHud->bIsReloading);
 	}
 	return HudData;
 }

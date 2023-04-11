@@ -104,6 +104,8 @@ protected:
 	void StartReload();
 	UFUNCTION(Server, Reliable)
 	void Server_StartReload();
+	UFUNCTION(Client, Reliable)
+	void Client_StartReload();
 	UFUNCTION()
 	void CancelReload();
 	UFUNCTION()
@@ -112,6 +114,8 @@ protected:
 	void OnHealthChanged(FDamageResponse DamageResponse);
 	UFUNCTION()
 	void OnCurrentWeaponAmmoChanged();
+	UFUNCTION()
+	void OnCurrentWeaponReloading();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
@@ -174,6 +178,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_LoadDefaultHudData();
+
+	UFUNCTION(BlueprintPure)
+	float GetReloadProgress();
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;

@@ -13,6 +13,7 @@ UHudData::UHudData()
 	CurrentTotalAmmo = 0;
 	CurrentWeaponName = FText::FromString("");
 	PlayerHealthPercentage = -1.f;
+	bIsReloading = false;
 	WidgetOwner = nullptr;
 	
 }
@@ -53,6 +54,12 @@ UHudData* UHudData::SetCurrentTotalAmmo(int32 NewAmmo)
 	return this;
 }
 
+UHudData* UHudData::SetReloading(bool bReloading)
+{
+	bIsReloading = bReloading;
+	return this;
+}
+
 void UHudData::Submit()
 {
 	if(WidgetOwner && WidgetOwner->IsLocalController())
@@ -79,4 +86,9 @@ int32 UHudData::GetCurrentClipAmmo() const
 int32 UHudData::GetCurrentTotalAmmo() const
 {
 	return CurrentTotalAmmo;
+}
+
+bool UHudData::GetIsReloading() const
+{
+	return bIsReloading;
 }

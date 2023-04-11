@@ -26,6 +26,7 @@ enum class EWeaponMode : uint8
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAmmoUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReload);
 
 UCLASS()
 class SNAILRELOADED_API AWeaponBase : public AActor
@@ -47,8 +48,6 @@ public:
 	EWeaponSlot WeaponSlot;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	float ReloadTime;
-	UPROPERTY(BlueprintReadWrite, Replicated)
-	bool bIsReloading;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponMode == EWeaponMode::Burst && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	int32 BurstAmount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponMode != EWeaponMode::SemiAutomatic && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
@@ -92,6 +91,8 @@ public:
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnAmmoUpdated OnAmmoUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FOnReload OnReload;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -108,13 +109,21 @@ protected:
 	int32 MaxTotalAmmo;
 	UPROPERTY(ReplicatedUsing = OnRep_Equipped)
 	bool bIsEquipped;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Reloading)
+	bool bIsReloading;
+
+public:
 	
+
+protected:
 	UFUNCTION()
 	void OnRep_TotalAmmo();
 	UFUNCTION()
 	void OnRep_ClipAmmo();
 	UFUNCTION()
 	void OnRep_Equipped();
+	UFUNCTION()
+	void OnRep_Reloading();
 
 #if WITH_EDITOR
 
@@ -149,5 +158,9 @@ public:
 	bool GetIsEquipped();
 	UFUNCTION(BlueprintCallable)
 	void SetIsEquipped(bool bEquipped);
+	UFUNCTION(BlueprintPure)
+	bool GetIsReloading() const;
+	UFUNCTION(BlueprintCallable)
+	void SetIsReloading(bool bReloading);
 	
 };
