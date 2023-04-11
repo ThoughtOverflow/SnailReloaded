@@ -157,6 +157,11 @@ public:
 	AWeaponBase* GetCurrentlyEquippedWeapon();
 	UFUNCTION(BlueprintCallable)
 	void SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon);
+
+	//HUD:
+
+	UFUNCTION(Client, Reliable)
+	void Client_LoadDefaultHudData();
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;

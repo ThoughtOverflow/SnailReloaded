@@ -9,6 +9,9 @@
 /**
  * 
  */
+
+class ACombatPlayerController;
+
 UCLASS()
 class SNAILRELOADED_API UPlayerHud : public UUserWidget
 {

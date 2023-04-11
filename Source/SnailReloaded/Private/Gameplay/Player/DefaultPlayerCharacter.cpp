@@ -13,6 +13,7 @@
 #include "Framework/DefaultPlayerController.h"
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -194,12 +195,19 @@ void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
 	{
 		if(IsLocallyControlled())
 		{
+			UHudData* HudData = PlayerController->GetHudData();
 			if(CurrentlyEquippedWeapon)
 			{
-				PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());	
+				HudData->SetCurrentWeaponName(CurrentlyEquippedWeapon->WeaponName)->
+				SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->
+				SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
+					
 			}else {
-				PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), FText::FromString(""), 0.f, 0.f);
+				HudData->SetCurrentWeaponName(FText::FromString(""))->
+				SetCurrentClipAmmo(0)->
+				SetCurrentTotalAmmo(0);
 			}
+			HudData->Submit();
 		}
 	}
 }
@@ -210,7 +218,7 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 	{
 		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
 		{
-			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
+			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->Submit();
 		}
 	}
 }
@@ -221,7 +229,9 @@ void ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged()
 	{
 		if(IsLocallyControlled() && CurrentlyEquippedWeapon)
 		{
-			PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
+			PlayerController->GetHudData()->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->
+			SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo())->
+			Submit();
 		}
 	}
 }
@@ -271,12 +281,12 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 			AssignWeapon(TestWpn3);
 		}
 
-		if(IsLocallyControlled())
-		{
-			if(CurrentlyEquippedWeapon) PlayerController->UpdatePlayerHud(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth(), CurrentlyEquippedWeapon->WeaponName, CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
-		}
+		//Load Default hud for player UI
+		Client_LoadDefaultHudData();
+		
 	}
 }
+
 
 bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 {
@@ -584,6 +594,23 @@ void ADefaultPlayerCharacter::SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon)
 	{
 		CurrentlyEquippedWeapon = NewWeapon;
 		OnRep_CurrentWeapon();
+	}
+}
+
+void ADefaultPlayerCharacter::Client_LoadDefaultHudData_Implementation()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(PlayerController->PlayerHud)
+		{
+			UHudData* HudData = PlayerController->GetHudData();
+			HudData->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth());
+			if(CurrentlyEquippedWeapon)
+			{
+				HudData->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo())->SetCurrentWeaponName(CurrentlyEquippedWeapon->WeaponName);
+			}
+			HudData->Submit();
+		}
 	}
 }
 

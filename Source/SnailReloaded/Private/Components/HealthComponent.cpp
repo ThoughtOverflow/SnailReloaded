@@ -31,6 +31,7 @@ UHealthComponent::UHealthComponent()
 	SetIsReplicatedByDefault(true);
 	DefaultObjectHealth = 50.f;
 	SetObjectMaxHealth(100.f);
+	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
 	LatestDamage = FDamageResponse();
 	bIsDead = false;
 }
@@ -40,8 +41,7 @@ UHealthComponent::UHealthComponent()
 void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
+	
 	
 }
 

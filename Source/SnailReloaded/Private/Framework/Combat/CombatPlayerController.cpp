@@ -3,7 +3,9 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
+#include "Components/ArmoredHealthComponent.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Gameplay/UI/HudData.h"
 #include "Gameplay/UI/PlayerHud.h"
 
 
@@ -18,7 +20,6 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 	//If player character is possessed, callback to initialize
 	if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(InPawn))
 	{
-		PlayerCharacter->OnPlayerPossessed(this);
 		if(IsLocalController())
 		{
 			CreatePlayerHud();
@@ -26,6 +27,8 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 		{
 			Client_CreatePlayerHud();
 		}
+		PlayerCharacter->OnPlayerPossessed(this);
+		
 	}
 }
 
@@ -43,14 +46,26 @@ void ACombatPlayerController::Client_CreatePlayerHud_Implementation()
 	CreatePlayerHud();
 }
 
-void ACombatPlayerController::UpdatePlayerHud(float PlayerHealthPercentage, const FText& WeaponName, int32 CurrentClip, int32 CurrentTotal)
+void ACombatPlayerController::UpdatePlayerHud(UHudData* HudData)
 {
-	//Temporary;
 	if(IsLocalController() && PlayerHud)
 	{
-		PlayerHud->PlayerHealthPercentage = PlayerHealthPercentage;
-		PlayerHud->CurrentClipAmmo = CurrentClip;
-		PlayerHud->CurrentTotalAmmo = CurrentTotal;
-		PlayerHud->CurrentWeaponName = WeaponName;
+		PlayerHud->PlayerHealthPercentage = HudData->GetPlayerHealthPercentage();
+		PlayerHud->CurrentClipAmmo = HudData->GetCurrentClipAmmo();
+		PlayerHud->CurrentTotalAmmo = HudData->GetCurrentTotalAmmo();
+		PlayerHud->CurrentWeaponName = HudData->GetCurrentWeaponName();
 	}
+}
+
+UHudData* ACombatPlayerController::GetHudData()
+{
+	UHudData* HudData = UHudData::CreatePlayerHudWrapper(this);
+	if(IsLocalController() && PlayerHud)
+	{
+		HudData->SetCurrentClipAmmo(PlayerHud->CurrentClipAmmo)->
+		SetCurrentTotalAmmo(PlayerHud->CurrentTotalAmmo)->
+		SetCurrentWeaponName(PlayerHud->CurrentWeaponName)->
+		SetPlayerHealthPercentage(PlayerHud->PlayerHealthPercentage);
+	}
+	return HudData;
 }

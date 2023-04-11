@@ -6,6 +6,7 @@
 #include "Framework/DefaultPlayerController.h"
 #include "CombatPlayerController.generated.h"
 
+class UHudData;
 class UPlayerHud;
 /**
  * 
@@ -37,6 +38,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_CreatePlayerHud();
 	UFUNCTION(BlueprintCallable)
-	void UpdatePlayerHud(float PlayerHealthPercentage, const FText& WeaponName, int32 CurrentClip, int32 CurrentTotal);
+	void UpdatePlayerHud(UHudData* HudData);
+	UFUNCTION(BlueprintPure)
+	UHudData* GetHudData();
 	
 };
