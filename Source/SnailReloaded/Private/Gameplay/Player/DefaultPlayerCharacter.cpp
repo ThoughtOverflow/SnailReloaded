@@ -636,24 +636,29 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 		
 
 		//If the weapon is triggered for the first time in a combo (First round after mouse press), only check the MinimumDelay requirement
-		bool bRequiredTimeElapsed = GetWorld()->TimeSince(LastFireTime) >= CurrentlyEquippedWeapon->MinimumFireDelay;
+		bool bRequiredTimeElapsed = GetWorld()->TimeSince(LastFireTime) >= CurrentlyEquippedWeapon->MinimumFireDelay || LastFireTime == 0.f;
+
 		//Check if it is a melee weapon - the elapsed time check can be used as a time between melee attacks check as well.
 		if(CurrentlyEquippedWeapon->WeaponSlot == EWeaponSlot::Melee)
 		{
-			return GetWorld()->TimeSince(LastFireTime) >= CurrentlyEquippedWeapon->MinimumFireDelay && FiredRoundsPerShootingEvent<1;
-		}
-		//If the weapon has already been firing at least one round, check the actual fire rate for correction
-		float WeaponFireDelay = 60 / CurrentlyEquippedWeapon->FireRate;
-		if(FiredRoundsPerShootingEvent>=1) bRequiredTimeElapsed &= GetWorld()->TimeSince(LastFireTime) >= WeaponFireDelay;
-		
-		if(bRequiredTimeElapsed) LastFireTime = GetWorld()->TimeSeconds;
-		switch (CurrentlyEquippedWeapon->WeaponMode)
+			bRequiredTimeElapsed &= FiredRoundsPerShootingEvent<1;
+		}else
 		{
-		case EWeaponMode::Automatic: return bRequiredTimeElapsed;
-		case EWeaponMode::SemiAutomatic: return FiredRoundsPerShootingEvent<1 && bRequiredTimeElapsed;
-		case EWeaponMode::Burst: return FiredRoundsPerShootingEvent<CurrentlyEquippedWeapon->BurstAmount && bRequiredTimeElapsed;
-		default: return false;
+			//If the weapon has already been firing at least one round, check the actual fire rate for correction
+			float WeaponFireDelay = 60 / CurrentlyEquippedWeapon->FireRate;
+			if(FiredRoundsPerShootingEvent>=1) bRequiredTimeElapsed &= GetWorld()->TimeSince(LastFireTime) >= WeaponFireDelay;
+		
+			if(bRequiredTimeElapsed) LastFireTime = GetWorld()->TimeSeconds;
+			switch (CurrentlyEquippedWeapon->WeaponMode)
+			{
+			case EWeaponMode::Automatic: break;
+			case EWeaponMode::SemiAutomatic: bRequiredTimeElapsed &= FiredRoundsPerShootingEvent<1; break;
+			case EWeaponMode::Burst: bRequiredTimeElapsed &= FiredRoundsPerShootingEvent<CurrentlyEquippedWeapon->BurstAmount; break;
+			default: bRequiredTimeElapsed = false;
+			}
 		}
+		if(bRequiredTimeElapsed) LastFireTime = GetWorld()->TimeSeconds;
+		return bRequiredTimeElapsed;
 	}
 	return false;
 }
