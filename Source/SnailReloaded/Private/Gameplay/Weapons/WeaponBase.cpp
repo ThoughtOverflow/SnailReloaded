@@ -7,6 +7,7 @@
 
 
 
+
 // Sets default values
 AWeaponBase::AWeaponBase()
 {
@@ -15,7 +16,7 @@ AWeaponBase::AWeaponBase()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
-	
+	ItemIdentifier = EItemIdentifier::None;
 	bShotgunSpread = false;
 	ConstantDamage = 10.f;
 	WeaponMode = EWeaponMode::Automatic;

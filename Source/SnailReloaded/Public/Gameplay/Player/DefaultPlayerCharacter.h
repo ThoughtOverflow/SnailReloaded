@@ -132,7 +132,7 @@ public:
 	virtual void OnPlayerPossessed(ACombatPlayerController* PlayerController);
 
 	UFUNCTION(BlueprintCallable)
-	bool AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
+	AWeaponBase* AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
 	UFUNCTION(Server,Reliable)
 	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
 	UFUNCTION(BlueprintCallable)
@@ -184,10 +184,17 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeaponBase> TestWpn2;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeaponBase> TestWpn3;
+
+	//Buy system
+
+	UFUNCTION(BlueprintCallable)
+	AWeaponBase* EquipStrongestWeapon();
+	UFUNCTION(BlueprintCallable)
+	void TryPurchaseItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION(Server, Reliable)
+	void Server_TryPurchaseItem(EItemIdentifier ItemIdentifier);
+
+	
 	
 	
 };

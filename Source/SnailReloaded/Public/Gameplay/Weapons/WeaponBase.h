@@ -7,6 +7,17 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+UENUM()
+enum class EItemIdentifier
+{
+	None,
+	LightShield,
+	HeavyShield,
+	DefaultMelee,
+	DefaultAR,
+	DefaultShotgun,
+};
+
 UENUM(BlueprintType)
 enum class EWeaponSlot : uint8
 {
@@ -37,6 +48,8 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	EItemIdentifier ItemIdentifier;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	FText WeaponName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", meta = (ClampMin=0))

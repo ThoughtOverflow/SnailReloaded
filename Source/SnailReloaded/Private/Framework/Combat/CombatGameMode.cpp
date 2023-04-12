@@ -4,6 +4,8 @@
 #include "Framework/Combat/CombatGameMode.h"
 
 #include "Components/HealthComponent.h"
+#include "Framework/Combat/CombatPlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
 
 ACombatGameMode::ACombatGameMode()
 {
@@ -21,4 +23,39 @@ FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest DamageRequest
 		}
 	}
 	return FDamageResponse();
+}
+
+bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier)
+{
+	if(ItemPriceList.Contains(ItemIdentifier))
+	{
+		int32 ItemPrice = *ItemPriceList.Find(ItemIdentifier);
+		if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerCharacter->GetPlayerState()))
+		{
+			if(CombatPlayerState->GetPlayerMoney() >= ItemPrice)
+			{
+
+				if(ItemIdentifier == EItemIdentifier::LightShield || ItemIdentifier == EItemIdentifier::HeavyShield)
+				{
+
+					//Shield Purchase:
+					
+					
+				}else
+				{
+					//Weapon purchase:
+					if(TSubclassOf<AWeaponBase> WeaponClass = *WeaponIdTable.Find(ItemIdentifier))
+					{
+						if(AWeaponBase* Weapon = PlayerCharacter->AssignWeapon(WeaponClass))
+						{
+							PlayerCharacter->EquipStrongestWeapon();
+							return true;
+						}
+					}
+				}
+				
+			}
+		}
+	}
+	return false;
 }

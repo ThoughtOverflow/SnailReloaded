@@ -3,3 +3,7 @@
 
 #include "Framework/Combat/CombatGameState.h"
 
+ACombatGameState::ACombatGameState()
+{
+	InitialPlayerMoney = 5000;
+}

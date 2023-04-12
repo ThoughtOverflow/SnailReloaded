@@ -5,6 +5,7 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/UI/HudData.h"
 #include "Gameplay/UI/PlayerHud.h"
@@ -72,3 +73,4 @@ UHudData* ACombatPlayerController::GetHudData()
 	}
 	return HudData;
 }
+

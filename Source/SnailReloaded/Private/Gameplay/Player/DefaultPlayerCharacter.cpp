@@ -314,14 +314,6 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 		{
 			AssignWeapon(TestWpn);
 		}
-		if(TestWpn2)
-		{
-			AssignWeapon(TestWpn2);
-		}
-		if(TestWpn3)
-		{
-			AssignWeapon(TestWpn3);
-		}
 
 		//Load Default hud for player UI
 		Client_LoadDefaultHudData();
@@ -330,7 +322,7 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 }
 
 
-bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
+AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 {
 	if(HasAuthority())
 	{
@@ -351,12 +343,12 @@ bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 		case EWeaponSlot::Melee: MeleeWeapon=Weapon; break;
 		default:;
 		}
-		return Weapon != nullptr;
+		return Weapon;
 	}else
 	{
 		Server_AssignWeapon(WeaponClass);
 	}
-	return false;
+	return nullptr;
 }
 
 void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
@@ -368,7 +360,7 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 {
 	if(HasAuthority())
 	{
-		if(GetWeaponAtSlot(Slot) != CurrentlyEquippedWeapon)
+		if(GetWeaponAtSlot(Slot) != CurrentlyEquippedWeapon && GetWeaponAtSlot(Slot))
 		{
 			if(CurrentlyEquippedWeapon)
 			{
@@ -689,6 +681,42 @@ float ADefaultPlayerCharacter::GetReloadProgress()
 		return GetWorldTimerManager().GetTimerElapsed(ReloadTimerHandle) / CurrentlyEquippedWeapon->ReloadTime;	
 	}
 	return 0.f;
+}
+
+AWeaponBase* ADefaultPlayerCharacter::EquipStrongestWeapon()
+{
+	AWeaponBase* StrongestWeapon = nullptr;
+	if(PrimaryWeapon)
+	{
+		StrongestWeapon = PrimaryWeapon;
+	}else if(SecondaryWeapon)
+	{
+		StrongestWeapon = SecondaryWeapon;
+	}else if(MeleeWeapon)
+	{
+		StrongestWeapon = MeleeWeapon;
+	}
+	EquipWeapon(StrongestWeapon->WeaponSlot);
+	return StrongestWeapon;
+}
+
+void ADefaultPlayerCharacter::TryPurchaseItem(EItemIdentifier ItemIdentifier)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->PurchaseItem(this, ItemIdentifier);
+		}
+	}else
+	{
+		Server_TryPurchaseItem(ItemIdentifier);
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryPurchaseItem_Implementation(EItemIdentifier ItemIdentifier)
+{
+	TryPurchaseItem(ItemIdentifier);
 }
 
 void ADefaultPlayerCharacter::Client_LoadDefaultHudData_Implementation()

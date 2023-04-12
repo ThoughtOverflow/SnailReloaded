@@ -6,6 +6,9 @@
 #include "Framework/DefaultGameMode.h"
 #include "CombatGameMode.generated.h"
 
+class AWeaponBase;
+class ADefaultPlayerCharacter;
+enum class EItemIdentifier;
 struct FDamageRequest;
 struct FDamageResponse;
 /**
@@ -24,12 +27,18 @@ public:
 
 protected:
 
-	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
+	TMap<EItemIdentifier, int32> ItemPriceList;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
+	TMap<EItemIdentifier, TSubclassOf<AWeaponBase>> WeaponIdTable;
 	
 public:
 
 
 	UFUNCTION(BlueprintCallable)
 	FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest);
+
+	UFUNCTION(BlueprintCallable)
+	bool PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
 	
 };

@@ -41,5 +41,6 @@ public:
 	void UpdatePlayerHud(UHudData* HudData);
 	UFUNCTION(BlueprintPure)
 	UHudData* GetHudData();
+
 	
 };
