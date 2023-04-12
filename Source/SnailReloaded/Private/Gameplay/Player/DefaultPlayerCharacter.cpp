@@ -473,7 +473,35 @@ void ADefaultPlayerCharacter::EndShooting()
 
 void ADefaultPlayerCharacter::UseMeleeWeapon()
 {
-	
+	if (HasAuthority() && GetController() && !IsPendingKillPending())
+	{
+		FHitResult HitResult;
+		FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+		FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * 100.f;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+		if(CanWeaponFireInMode())
+		{
+			FiredRoundsPerShootingEvent++;
+			
+			if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
+			{
+				Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
+				if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
+				{
+					if(!HealthComponent->bIsDead)
+					{
+						FDamageRequest DamageRequest;
+						DamageRequest.SourceActor = this;
+						DamageRequest.TargetActor = HitResult.GetActor();
+						DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
+
+						Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+					}
+				}
+			}
+		}
+	}
 }
 
 void ADefaultPlayerCharacter::FireEquippedWeapon()
@@ -612,7 +640,7 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 		//Check if it is a melee weapon - the elapsed time check can be used as a time between melee attacks check as well.
 		if(CurrentlyEquippedWeapon->WeaponSlot == EWeaponSlot::Melee)
 		{
-			return GetWorld()->TimeSince(LastFireTime) >= CurrentlyEquippedWeapon->MinimumFireDelay;
+			return GetWorld()->TimeSince(LastFireTime) >= CurrentlyEquippedWeapon->MinimumFireDelay && FiredRoundsPerShootingEvent<1;
 		}
 		//If the weapon has already been firing at least one round, check the actual fire rate for correction
 		float WeaponFireDelay = 60 / CurrentlyEquippedWeapon->FireRate;
