@@ -9,4 +9,5 @@ ATestMelee::ATestMelee()
 	WeaponSlot = EWeaponSlot::Melee;
 	bUseConstantDamage = true;
 	ConstantDamage = 50.f;
+	MinimumFireDelay = 2.f;
 }
