@@ -46,6 +46,8 @@ public:
 	UInputAction* SelectSecondaryInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* SelectMeleeInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* ToggleBuyMenu;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -73,6 +75,11 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	//Helpers:
+
+	UFUNCTION(BlueprintCallable)
+	ACombatPlayerController* GetCombatPlayerController();
 	
 	UFUNCTION()
 	void Move(const FInputActionInstance& Action);
@@ -90,7 +97,9 @@ protected:
 	void HandleSelectSecondaryInput(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleSelectMeleeInput(const FInputActionInstance& Action);
-
+	UFUNCTION()
+	void HandleToggleBuyMenu(const FInputActionInstance& Action);
+	
 	//Shooting
 	
 	UPROPERTY()

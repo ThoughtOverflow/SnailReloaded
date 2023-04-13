@@ -65,10 +65,27 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
 }
 
+ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()
+{
+	if(GetController())
+	{
+		if(ACombatPlayerController* CombatController = Cast<ACombatPlayerController>(GetController()))
+		{
+			return CombatController;
+		}
+	}
+	return nullptr;
+}
+
 void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
 {
 	FInputActionValue InputActionValue = Action.GetValue();
 	FVector2d MoveVector = InputActionValue.Get<FVector2d>();
+
+	if(GetCombatPlayerController())
+	{
+		if(GetCombatPlayerController()->IsAnyMenuOpen()) return;
+	}
 	
 	if(MoveVector.X != 0.f)
 	{
@@ -111,7 +128,14 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 
 void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action)
 {
+	
 	bool ShootingInput = Action.GetValue().Get<bool>();
+
+	if(GetCombatPlayerController())
+	{
+		if(GetCombatPlayerController()->IsAnyMenuOpen()) return;
+	}
+	
 	if(ShootingInput)
 	{
 		//Begin Shooting
@@ -125,6 +149,12 @@ void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action
 
 void ADefaultPlayerCharacter::HandleReloadInput(const FInputActionInstance& Action)
 {
+
+	if(GetCombatPlayerController())
+	{
+		if(GetCombatPlayerController()->IsAnyMenuOpen()) return;
+	}
+	
 	if(Action.GetValue().Get<bool>())
 	{
 		// Do other input checks maybe?
@@ -153,6 +183,17 @@ void ADefaultPlayerCharacter::HandleSelectMeleeInput(const FInputActionInstance&
 	if(Action.GetValue().Get<bool>())
 	{
 		EquipWeapon(EWeaponSlot::Melee);	
+	}
+}
+
+void ADefaultPlayerCharacter::HandleToggleBuyMenu(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		if(IsLocallyControlled() && GetCombatPlayerController())
+		{
+			GetCombatPlayerController()->ToggleBuyMenu(true);
+		}
 	}
 }
 
@@ -290,7 +331,6 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 
 	ADefaultPlayerController* PC = Cast<ADefaultPlayerController>(GetController());
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-	EnhancedInputSubsystem->ClearAllMappings();
 	EnhancedInputSubsystem->AddMappingContext(PlayerMappingContext, 0);
 	
 	EnhancedInputComponent->BindAction(MoveInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::Move);
@@ -302,6 +342,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(SelectPrimaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectPrimaryInput);
 	EnhancedInputComponent->BindAction(SelectSecondaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectSecondaryInput);
 	EnhancedInputComponent->BindAction(SelectMeleeInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectMeleeInput);
+	EnhancedInputComponent->BindAction(ToggleBuyMenu, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleToggleBuyMenu);
 	
 }
 

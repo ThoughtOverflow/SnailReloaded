@@ -3,10 +3,13 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Gameplay/UI/BuyMenu.h"
 #include "Gameplay/UI/HudData.h"
 #include "Gameplay/UI/PlayerHud.h"
 
@@ -32,6 +35,14 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 		PlayerCharacter->OnPlayerPossessed(this);
 		
 	}
+}
+
+
+
+
+void ACombatPlayerController::CloseCurrentlyOpenMenus(const FInputActionInstance& InputActionInstance)
+{
+	
 }
 
 void ACombatPlayerController::CreatePlayerHud()
@@ -72,5 +83,41 @@ UHudData* ACombatPlayerController::GetHudData()
 		SetReloading(PlayerHud->bIsReloading);
 	}
 	return HudData;
+}
+
+void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
+{
+	if(IsLocalController())
+	{
+		if(!BuyMenu && BuyMenuClass)
+		{
+			BuyMenu = CreateWidget<UBuyMenu>(this, BuyMenuClass);
+			MenuWidgetsRef.Add(BuyMenu);
+		}
+		if(BuyMenu)
+		{
+			if(bOpen)
+			{
+				BuyMenu->AddToViewport();
+				SetShowMouseCursor(true);
+				SetInputMode(FInputModeUIOnly());
+				
+			}else
+			{
+				if(BuyMenu->IsInViewport()) BuyMenu->RemoveFromParent();
+				SetShowMouseCursor(false);
+				SetInputMode(FInputModeGameOnly());
+			}
+		}
+	}
+}
+
+bool ACombatPlayerController::IsAnyMenuOpen()
+{
+	for(auto& Widget : MenuWidgetsRef)
+	{
+		return Widget->IsInViewport();
+	}
+	return false;
 }
 
