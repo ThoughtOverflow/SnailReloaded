@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Overlay.h"
 #include "ItemBuyCard.generated.h"
 
 enum class EItemIdentifier;
@@ -17,11 +18,11 @@ class SNAILRELOADED_API UItemBuyCard : public UUserWidget
 
 public:
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EItemIdentifier ItemIdentifier;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText ItemDisplayName;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 ItemDisplayPrice;
 
 	UFUNCTION(BlueprintCallable)
