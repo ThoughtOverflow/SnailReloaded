@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/ArmoredHealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "CombatGameMode.generated.h"
 
@@ -31,6 +32,8 @@ protected:
 	TMap<EItemIdentifier, int32> ItemPriceList;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
 	TMap<EItemIdentifier, TSubclassOf<AWeaponBase>> WeaponIdTable;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
+	TMap<EItemIdentifier, FShieldProperties> ShieldDataTable;
 	
 public:
 
@@ -40,5 +43,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
+	UFUNCTION(BlueprintCallable)
+	bool SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
 	
 };

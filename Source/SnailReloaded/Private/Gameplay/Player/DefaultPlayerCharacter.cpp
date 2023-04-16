@@ -755,6 +755,34 @@ void ADefaultPlayerCharacter::TryPurchaseItem(EItemIdentifier ItemIdentifier)
 	}
 }
 
+void ADefaultPlayerCharacter::TrySellItem(EItemIdentifier ItemIdentifier)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->SellItem(this, ItemIdentifier);
+		}
+	}else
+	{
+		Server_TrySellItem(ItemIdentifier);
+	}
+}
+
+void ADefaultPlayerCharacter::UpdateShieldProperties(FShieldProperties ShieldProperties)
+{
+	if(HasAuthority())
+	{
+		PlayerHealthComponent->SetShieldHealth(ShieldProperties.ShieldHealth);
+		PlayerHealthComponent->SetShieldDamageReduction(ShieldProperties.ShieldDamageReduction);
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TrySellItem_Implementation(EItemIdentifier ItemIdentifier)
+{
+	TrySellItem(ItemIdentifier);
+}
+
 void ADefaultPlayerCharacter::Server_TryPurchaseItem_Implementation(EItemIdentifier ItemIdentifier)
 {
 	TryPurchaseItem(ItemIdentifier);

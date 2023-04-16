@@ -3,6 +3,17 @@
 
 #include "Components/ArmoredHealthComponent.h"
 
+#include "Net/UnrealNetwork.h"
+
+
+FShieldProperties::FShieldProperties(): ShieldHealth(0), ShieldDamageReduction(0)
+{
+}
+
+FShieldProperties::FShieldProperties(float ShieldHealth, float ShieldDamageReduction): ShieldHealth(ShieldHealth),
+                                                                                       ShieldDamageReduction(ShieldDamageReduction)
+{
+}
 
 UArmoredHealthComponent::UArmoredHealthComponent()
 {
@@ -26,4 +37,45 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest Damag
 		
 	}
 	return Super::ChangeObjectHealth(DamageRequest);
+}
+
+void UArmoredHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UArmoredHealthComponent, ShieldHealth);
+	DOREPLIFETIME(UArmoredHealthComponent, ShieldDamageReduction);
+}
+
+void UArmoredHealthComponent::OnRep_ShieldHealth()
+{
+	//UI BIND
+}
+
+void UArmoredHealthComponent::SetShieldHealth(float NewHealth)
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		ShieldHealth = NewHealth;
+		OnRep_ShieldHealth();
+	}
+}
+
+float UArmoredHealthComponent::GetShieldHealth()
+{
+	return ShieldHealth;
+}
+
+void UArmoredHealthComponent::SetShieldDamageReduction(float NewReduction)
+{
+	
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		ShieldDamageReduction = NewReduction;
+	}
+}
+
+float UArmoredHealthComponent::GetShieldDamageReduction()
+{
+	return ShieldDamageReduction;
 }

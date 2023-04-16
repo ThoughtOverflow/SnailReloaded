@@ -13,6 +13,7 @@
 #include "DefaultPlayerCharacter.generated.h"
 
 
+struct FShieldProperties;
 struct FDamageResponse;
 class ACombatPlayerController;
 class ADefaultPlayerController;
@@ -202,6 +203,12 @@ public:
 	void TryPurchaseItem(EItemIdentifier ItemIdentifier);
 	UFUNCTION(Server, Reliable)
 	void Server_TryPurchaseItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION(BlueprintCallable)
+	void TrySellItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION(Server, Reliable)
+	void Server_TrySellItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION()
+	void UpdateShieldProperties(FShieldProperties ShieldProperties);
 
 	
 	

@@ -15,3 +15,14 @@ void UItemBuyCard::OnPurchase()
 		}
 	}
 }
+
+void UItemBuyCard::OnSell()
+{
+	if(GetOwningPlayer() && GetOwningPlayer()->GetPawn())
+	{
+		if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(GetOwningPlayer()->GetPawn()))
+		{
+			PlayerCharacter->TrySellItem(ItemIdentifier);
+		}
+	}
+}

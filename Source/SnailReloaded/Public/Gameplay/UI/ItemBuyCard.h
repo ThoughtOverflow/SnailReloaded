@@ -27,5 +27,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void OnPurchase();
+	UFUNCTION(BlueprintCallable)
+	void OnSell();
 	
 };

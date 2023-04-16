@@ -6,6 +6,22 @@
 #include "Components/HealthComponent.h"
 #include "ArmoredHealthComponent.generated.h"
 
+USTRUCT(BlueprintType)
+struct FShieldProperties
+{
+	GENERATED_BODY()
+
+public:
+
+	FShieldProperties();
+	FShieldProperties(float ShieldHealth, float ShieldDamageReduction);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ShieldHealth;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ShieldDamageReduction;
+	
+};
 
 /**
  * 
@@ -19,16 +35,30 @@ public:
 
 	UArmoredHealthComponent();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties")
-	float ShieldHealth;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties")
-	float ShieldDamageReduction;
 	
 protected:
 
 	virtual FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest) override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", ReplicatedUsing = OnRep_ShieldHealth)
+	float ShieldHealth;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
+	float ShieldDamageReduction;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	UFUNCTION()
+	void OnRep_ShieldHealth();
 	
 public:
 	
+	UFUNCTION(BlueprintCallable)
+	void SetShieldHealth(float NewHealth);
+	UFUNCTION(BlueprintPure)
+	float GetShieldHealth();
+	UFUNCTION(BlueprintCallable)
+	void SetShieldDamageReduction(float NewReduction);
+	UFUNCTION(BlueprintPure)
+	float GetShieldDamageReduction();
 	
 };
