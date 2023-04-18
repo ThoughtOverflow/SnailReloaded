@@ -148,6 +148,10 @@ public:
 	UFUNCTION(Server,Reliable)
 	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
 	UFUNCTION(BlueprintCallable)
+	bool RemoveWeapon(EWeaponSlot Slot);
+	UFUNCTION(Server,Reliable)
+	void Server_RemoveWeapon(EWeaponSlot Slot);
+	UFUNCTION(BlueprintCallable)
 	AWeaponBase* EquipWeapon(EWeaponSlot Slot);
 	UFUNCTION(Server, Reliable)
 	void Server_EquipWeapon(EWeaponSlot Slot);
@@ -218,6 +222,8 @@ public:
 	void UpdateShieldProperties(FShieldProperties ShieldProperties);
 	UFUNCTION(BlueprintPure)
 	TArray<EItemIdentifier> GetAllItems();
+	UFUNCTION(BlueprintPure)
+	EWeaponSlot GetWeaponSlotByIdentifier(EItemIdentifier Identifier);
 
 	
 	

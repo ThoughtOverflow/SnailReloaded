@@ -419,6 +419,40 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 	return nullptr;
 }
 
+bool ADefaultPlayerCharacter::RemoveWeapon(EWeaponSlot Slot)
+{
+	if(HasAuthority())
+	{
+
+		if(AWeaponBase* WeaponBase = GetWeaponAtSlot(Slot))
+		{
+			if(GetCurrentlyEquippedWeapon() == WeaponBase)
+			{
+				UnequipWeapon();
+			}
+			WeaponBase->Destroy();
+			switch (Slot) { case EWeaponSlot::None: break;
+			case EWeaponSlot::Primary: PrimaryWeapon = nullptr; break;
+			case EWeaponSlot::Secondary: SecondaryWeapon = nullptr; break;
+			case EWeaponSlot::Melee: MeleeWeapon = nullptr; break;
+			default: ; }
+			EquipStrongestWeapon();
+			return true;
+		}
+		
+	}else
+	{
+		Server_RemoveWeapon(Slot);
+	}
+	return false;
+}
+
+void ADefaultPlayerCharacter::Server_RemoveWeapon_Implementation(EWeaponSlot Slot)
+{
+	RemoveWeapon(Slot);
+}
+
+
 void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
 {
 	AssignWeapon(WeaponClass);
@@ -814,6 +848,14 @@ TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllItems()
 	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
 	if(PlayerHealthComponent->GetShieldIdentifier() != EItemIdentifier::NullShield) Identifiers.Add(PlayerHealthComponent->GetShieldIdentifier());
 	return Identifiers;
+}
+
+EWeaponSlot ADefaultPlayerCharacter::GetWeaponSlotByIdentifier(EItemIdentifier Identifier)
+{
+	if(PrimaryWeapon && PrimaryWeapon->ItemIdentifier == Identifier) return PrimaryWeapon->WeaponSlot;
+	if(SecondaryWeapon && SecondaryWeapon->ItemIdentifier == Identifier) return SecondaryWeapon->WeaponSlot;
+	if(MeleeWeapon && MeleeWeapon->ItemIdentifier == Identifier) return MeleeWeapon->WeaponSlot;
+	return EWeaponSlot::None;
 }
 
 void ADefaultPlayerCharacter::Server_TrySellItem_Implementation(EItemIdentifier ItemIdentifier)
