@@ -3,8 +3,6 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/Combat/CombatPlayerState.h"
@@ -37,13 +35,32 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 	}
 }
 
-
-
-
-void ACombatPlayerController::CloseCurrentlyOpenMenus(const FInputActionInstance& InputActionInstance)
+void ACombatPlayerController::CloseLastOpenMenu()
 {
+	//Last menu with cursor enabled
+	if(MenuWidgetsRef.Num() == 1)
+	{
+		SetShowMouseCursor(false);
+		SetInputMode(FInputModeGameOnly());
+		ActivateUIInputHander(false);
+	}
+	Super::CloseLastOpenMenu();
+}
+
+void ACombatPlayerController::ActivateUIInputHander(bool bActivate)
+{
+	Super::ActivateUIInputHander(bActivate);
+	//Add player character input blocks as well.
+	if(bActivate)
+	{
+		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(true);
+	}else
+	{
+		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(false);
+	}
 	
 }
+
 
 void ACombatPlayerController::CreatePlayerHud()
 {
@@ -100,24 +117,19 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 			{
 				BuyMenu->AddToViewport();
 				SetShowMouseCursor(true);
-				SetInputMode(FInputModeUIOnly());
+				SetInputMode(FInputModeGameAndUI());
+				ActivateUIInputHander(true);
 				
 			}else
 			{
 				if(BuyMenu->IsInViewport()) BuyMenu->RemoveFromParent();
 				SetShowMouseCursor(false);
 				SetInputMode(FInputModeGameOnly());
+				ActivateUIInputHander(false);
 			}
 		}
 	}
 }
 
-bool ACombatPlayerController::IsAnyMenuOpen()
-{
-	for(auto& Widget : MenuWidgetsRef)
-	{
-		return Widget->IsInViewport();
-	}
-	return false;
-}
+
 

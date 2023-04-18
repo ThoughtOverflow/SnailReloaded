@@ -24,6 +24,8 @@ public:
 
 	ACombatPlayerController();
 
+	
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
 	TSubclassOf<UPlayerHud> PlayerHudClass;
 	UPROPERTY(BlueprintReadWrite)
@@ -33,18 +35,18 @@ public:
 	TSubclassOf<UBuyMenu> BuyMenuClass;
 	UPROPERTY(BlueprintReadWrite)
 	UBuyMenu* BuyMenu;
-	UPROPERTY(BlueprintReadWrite)
-	TArray<UUserWidget*> MenuWidgetsRef;
 
 protected:
 
 	virtual void OnPossess(APawn* InPawn) override;
 
+	
+	virtual void CloseLastOpenMenu() override;
+
 
 public:
 
-	UFUNCTION()
-	void CloseCurrentlyOpenMenus(const FInputActionInstance& InputActionInstance);
+	virtual void ActivateUIInputHander(bool bActivate) override;
 	
 	//Player HUD
 	
@@ -62,8 +64,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ToggleBuyMenu(bool bOpen);
 
-	UFUNCTION(BlueprintPure)
-	bool IsAnyMenuOpen();
+	
 
 	
 };

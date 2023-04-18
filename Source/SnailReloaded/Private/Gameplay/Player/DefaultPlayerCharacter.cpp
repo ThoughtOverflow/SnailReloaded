@@ -77,6 +77,33 @@ ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()
 	return nullptr;
 }
 
+void ADefaultPlayerCharacter::BlockPlayerInputs(bool bBlock)
+{
+	if(!HasAuthority())
+	{
+		Server_BlockPlayerInputs(bBlock);
+	}
+
+	ADefaultPlayerController* PC = Cast<ADefaultPlayerController>(GetController());
+	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if(EnhancedInputSubsystem)
+	{
+		if(bBlock)
+		{
+			EnhancedInputSubsystem->RemoveMappingContext(PlayerMappingContext);
+		}else
+		{
+			EnhancedInputSubsystem->AddMappingContext(PlayerMappingContext, 0);
+		}
+	}
+	
+}
+
+void ADefaultPlayerCharacter::Server_BlockPlayerInputs_Implementation(bool bBlock)
+{
+	BlockPlayerInputs(bBlock);
+}
+
 void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
 {
 	FInputActionValue InputActionValue = Action.GetValue();

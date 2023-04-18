@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputAction.h"
-#include "InputMappingContext.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
@@ -82,6 +81,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	ACombatPlayerController* GetCombatPlayerController();
 	
+	UFUNCTION(Server, Reliable)
+	void Server_BlockPlayerInputs(bool bBlock);
+	
 	UFUNCTION()
 	void Move(const FInputActionInstance& Action);
 	UFUNCTION()
@@ -155,6 +157,11 @@ public:
 	void Server_UnequipWeapon();
 	UFUNCTION(BlueprintPure)
 	AWeaponBase* GetWeaponAtSlot(EWeaponSlot Slot);
+
+	//Input:
+	
+	UFUNCTION(BlueprintCallable)
+	void BlockPlayerInputs(bool bBlock);
 
 	//Shooting
 

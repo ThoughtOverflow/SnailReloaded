@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "BuyMenu.generated.h"
 
+class UInputAction;
 /**
  * 
  */
@@ -15,5 +16,9 @@ class SNAILRELOADED_API UBuyMenu : public UUserWidget
 	GENERATED_BODY()
 
 	virtual void NativeConstruct() override;
+
+public:
+
+	
 	
 };

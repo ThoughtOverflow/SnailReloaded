@@ -124,6 +124,8 @@ protected:
 	bool bIsEquipped;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Reloading)
 	bool bIsReloading;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_CanSell)
+	bool bCanSell;
 
 public:
 	
@@ -137,6 +139,8 @@ protected:
 	void OnRep_Equipped();
 	UFUNCTION()
 	void OnRep_Reloading();
+	UFUNCTION()
+	void OnRep_CanSell();
 
 #if WITH_EDITOR
 
@@ -175,5 +179,9 @@ public:
 	bool GetIsReloading() const;
 	UFUNCTION(BlueprintCallable)
 	void SetIsReloading(bool bReloading);
+	UFUNCTION(BlueprintPure)
+	bool CanSell() const;
+	UFUNCTION(BlueprintCallable)
+	void SetCanSell(bool bSell);
 	
 };
