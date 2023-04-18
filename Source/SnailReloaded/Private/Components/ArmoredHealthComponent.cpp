@@ -3,6 +3,7 @@
 
 #include "Components/ArmoredHealthComponent.h"
 
+#include "Gameplay/Weapons/WeaponBase.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -17,8 +18,9 @@ FShieldProperties::FShieldProperties(float ShieldHealth, float ShieldDamageReduc
 
 UArmoredHealthComponent::UArmoredHealthComponent()
 {
-	ShieldHealth = 50.f;
-	ShieldDamageReduction = 0.5f;
+	ShieldHealth = 0.f;
+	ShieldDamageReduction = 0.0f;
+	ShieldIdentifier = EItemIdentifier::NullShield;
 }
 
 FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
@@ -45,11 +47,17 @@ void UArmoredHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldHealth);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldDamageReduction);
+	DOREPLIFETIME(UArmoredHealthComponent, ShieldIdentifier);
 }
 
 void UArmoredHealthComponent::OnRep_ShieldHealth()
 {
 	//UI BIND
+}
+
+void UArmoredHealthComponent::OnRep_ShieldType()
+{
+	
 }
 
 void UArmoredHealthComponent::SetShieldHealth(float NewHealth)
@@ -78,4 +86,18 @@ void UArmoredHealthComponent::SetShieldDamageReduction(float NewReduction)
 float UArmoredHealthComponent::GetShieldDamageReduction()
 {
 	return ShieldDamageReduction;
+}
+
+void UArmoredHealthComponent::SetShieldIdentifier(EItemIdentifier NewIdentifier)
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		ShieldIdentifier = NewIdentifier;
+		OnRep_ShieldType();
+	}
+}
+
+EItemIdentifier UArmoredHealthComponent::GetShieldIdentifier()
+{
+	return ShieldIdentifier;
 }

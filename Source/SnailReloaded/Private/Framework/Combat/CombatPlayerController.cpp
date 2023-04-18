@@ -109,7 +109,6 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 		if(!BuyMenu && BuyMenuClass)
 		{
 			BuyMenu = CreateWidget<UBuyMenu>(this, BuyMenuClass);
-			MenuWidgetsRef.Add(BuyMenu);
 		}
 		if(BuyMenu)
 		{
@@ -119,6 +118,7 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 				SetShowMouseCursor(true);
 				SetInputMode(FInputModeGameAndUI());
 				ActivateUIInputHander(true);
+				MenuWidgetsRef.Add(BuyMenu);
 				
 			}else
 			{
@@ -126,6 +126,7 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 				SetShowMouseCursor(false);
 				SetInputMode(FInputModeGameOnly());
 				ActivateUIInputHander(false);
+				if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
 			}
 		}
 	}

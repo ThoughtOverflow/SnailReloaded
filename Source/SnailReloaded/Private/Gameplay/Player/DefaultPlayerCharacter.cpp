@@ -802,7 +802,18 @@ void ADefaultPlayerCharacter::UpdateShieldProperties(FShieldProperties ShieldPro
 	{
 		PlayerHealthComponent->SetShieldHealth(ShieldProperties.ShieldHealth);
 		PlayerHealthComponent->SetShieldDamageReduction(ShieldProperties.ShieldDamageReduction);
+		PlayerHealthComponent->SetShieldIdentifier(ShieldProperties.ShieldIdentifier);
 	}
+}
+
+TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllItems()
+{
+	TArray<EItemIdentifier> Identifiers;
+	if(PrimaryWeapon) Identifiers.Add(PrimaryWeapon->ItemIdentifier);
+	if(SecondaryWeapon) Identifiers.Add(SecondaryWeapon->ItemIdentifier);
+	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
+	if(PlayerHealthComponent->GetShieldIdentifier() != EItemIdentifier::NullShield) Identifiers.Add(PlayerHealthComponent->GetShieldIdentifier());
+	return Identifiers;
 }
 
 void ADefaultPlayerCharacter::Server_TrySellItem_Implementation(EItemIdentifier ItemIdentifier)

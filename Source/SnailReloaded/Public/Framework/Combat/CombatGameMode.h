@@ -9,7 +9,6 @@
 
 class AWeaponBase;
 class ADefaultPlayerCharacter;
-enum class EItemIdentifier;
 struct FDamageRequest;
 struct FDamageResponse;
 /**

@@ -5,9 +5,9 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/Overlay.h"
+#include "Gameplay/Weapons/WeaponBase.h"
 #include "ItemBuyCard.generated.h"
 
-enum class EItemIdentifier;
 /**
  * 
  */
@@ -24,6 +24,13 @@ public:
 	FText ItemDisplayName;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 ItemDisplayPrice;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FLinearColor DefaultColor;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FLinearColor HoveredColor;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FLinearColor OwningColor;
 
 	UFUNCTION(BlueprintCallable)
 	void OnPurchase();

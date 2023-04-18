@@ -6,6 +6,7 @@
 #include "Components/HealthComponent.h"
 #include "ArmoredHealthComponent.generated.h"
 
+enum class EItemIdentifier : uint8;
 USTRUCT(BlueprintType)
 struct FShieldProperties
 {
@@ -20,6 +21,8 @@ public:
 	float ShieldHealth;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ShieldDamageReduction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EItemIdentifier ShieldIdentifier;
 	
 };
 
@@ -44,11 +47,15 @@ protected:
 	float ShieldHealth;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
 	float ShieldDamageReduction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", ReplicatedUsing = OnRep_ShieldType)
+	EItemIdentifier ShieldIdentifier;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UFUNCTION()
 	void OnRep_ShieldHealth();
+	UFUNCTION()
+	void OnRep_ShieldType();
 	
 public:
 	
@@ -60,5 +67,9 @@ public:
 	void SetShieldDamageReduction(float NewReduction);
 	UFUNCTION(BlueprintPure)
 	float GetShieldDamageReduction();
+	UFUNCTION(BlueprintCallable)
+	void SetShieldIdentifier(EItemIdentifier NewIdentifier);
+	UFUNCTION(BlueprintPure)
+	EItemIdentifier GetShieldIdentifier();
 	
 };

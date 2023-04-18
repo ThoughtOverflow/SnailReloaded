@@ -7,15 +7,16 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
-UENUM()
-enum class EItemIdentifier
+UENUM(BlueprintType)
+enum class EItemIdentifier : uint8
 {
-	None,
-	LightShield,
-	HeavyShield,
-	DefaultMelee,
-	DefaultAR,
-	DefaultShotgun,
+	None = 0,
+	LightShield = 1,
+	HeavyShield = 2,
+	DefaultMelee = 3,
+	DefaultAR = 4,
+	DefaultShotgun = 5,
+	NullShield = 6
 };
 
 UENUM(BlueprintType)

@@ -216,6 +216,8 @@ public:
 	void Server_TrySellItem(EItemIdentifier ItemIdentifier);
 	UFUNCTION()
 	void UpdateShieldProperties(FShieldProperties ShieldProperties);
+	UFUNCTION(BlueprintPure)
+	TArray<EItemIdentifier> GetAllItems();
 
 	
 	
