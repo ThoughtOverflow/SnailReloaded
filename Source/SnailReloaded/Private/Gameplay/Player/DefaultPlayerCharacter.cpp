@@ -636,6 +636,10 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo()-1);
+				if(CurrentlyEquippedWeapon->CanSell())
+				{
+					CurrentlyEquippedWeapon->SetCanSell(false);
+				}
 				
 				float MaxEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
@@ -701,6 +705,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
+				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))

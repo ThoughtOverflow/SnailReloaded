@@ -212,7 +212,7 @@ void AWeaponBase::SetCanSell(bool bSell)
 {
 	if(HasAuthority())
 	{
-		this->bCanSell = bCanSell;
+		this->bCanSell = bSell;
 		OnRep_CanSell();
 	}
 }

@@ -134,7 +134,7 @@ bool ACombatGameMode::SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemId
 
 			if(ItemIdentifier == EItemIdentifier::LightShield || ItemIdentifier == EItemIdentifier::HeavyShield)
 			{
-				if(PlayerCharacter->CanSellCurrentShield())
+				if(PlayerCharacter->CanSellCurrentShield() && PlayerCharacter->GetCurrentShieldType() == ItemIdentifier)
 				{
 					//Sell it:
 					CombatPlayerState->ChangePlayerMoney(ItemPrice);
@@ -149,9 +149,16 @@ bool ACombatGameMode::SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemId
 			EWeaponSlot CurrentSlot = PlayerCharacter->GetWeaponSlotByIdentifier(ItemIdentifier);
 			if(CurrentSlot != EWeaponSlot::None)
 			{
-				PlayerCharacter->RemoveWeapon(CurrentSlot);
-				CombatPlayerState->ChangePlayerMoney(ItemPrice);
-				return true;
+				if(AWeaponBase* Weapon = PlayerCharacter->GetWeaponAtSlot(CurrentSlot))
+				{
+					if(Weapon->CanSell())
+					{
+						PlayerCharacter->RemoveWeapon(CurrentSlot);
+						CombatPlayerState->ChangePlayerMoney(ItemPrice);
+						return true;
+					}
+				}
+				
 			}
 		}
 	}
