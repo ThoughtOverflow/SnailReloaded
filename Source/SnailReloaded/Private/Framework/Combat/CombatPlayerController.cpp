@@ -84,6 +84,7 @@ void ACombatPlayerController::UpdatePlayerHud(UHudData* HudData)
 		PlayerHud->CurrentClipAmmo = HudData->GetCurrentClipAmmo();
 		PlayerHud->CurrentTotalAmmo = HudData->GetCurrentTotalAmmo();
 		PlayerHud->CurrentWeaponName = HudData->GetCurrentWeaponName();
+		PlayerHud->PlayerShieldHealth = HudData->GetPlayerShieldHealth();
 		PlayerHud->bIsReloading = HudData->GetIsReloading();
 	}
 }
@@ -97,6 +98,7 @@ UHudData* ACombatPlayerController::GetHudData()
 		SetCurrentTotalAmmo(PlayerHud->CurrentTotalAmmo)->
 		SetCurrentWeaponName(PlayerHud->CurrentWeaponName)->
 		SetPlayerHealthPercentage(PlayerHud->PlayerHealthPercentage)->
+		SetPlayerShieldHealth(PlayerHud->PlayerShieldHealth)->
 		SetReloading(PlayerHud->bIsReloading);
 	}
 	return HudData;

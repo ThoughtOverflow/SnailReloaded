@@ -46,14 +46,32 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 			{
 				if(ItemIdentifier == EItemIdentifier::LightShield || ItemIdentifier == EItemIdentifier::HeavyShield)
 				{
-
-					//Shield Purchase:
-					if(FShieldProperties* ShieldData = FindShieldDataByType(ItemIdentifier))
+					EItemIdentifier CurrentShield = PlayerCharacter->GetCurrentShieldType();
+					if(CurrentShield == ItemIdentifier) return false;
+					if(CurrentShield == EItemIdentifier::NullShield)
 					{
-						//Remove monkey:
-						CombatPlayerState->ChangePlayerMoney(-ItemPrice);
-						PlayerCharacter->UpdateShieldProperties(*ShieldData);
+						//Shield Purchase:
+						if(FShieldProperties* ShieldData = FindShieldDataByType(ItemIdentifier))
+						{
+							//Remove monkey:
+							CombatPlayerState->ChangePlayerMoney(-ItemPrice);
+							PlayerCharacter->UpdateShieldProperties(*ShieldData);
+						}
+					}else
+					{
+						//Sell, then buy it
+						if(FShieldProperties* ShieldData = FindShieldDataByType(ItemIdentifier))
+						{
+							if(ItemPriceList.Contains(CurrentShield))
+							{
+								//Remove monkey:
+								int32 ReturnMoney = PlayerCharacter->CanSellCurrentShield() ? *ItemPriceList.Find(CurrentShield) : 0;
+								CombatPlayerState->ChangePlayerMoney(-ItemPrice + ReturnMoney);
+								PlayerCharacter->UpdateShieldProperties(*ShieldData);
+							}
+						}
 					}
+					
 					
 					
 				}else
@@ -112,6 +130,22 @@ bool ACombatGameMode::SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemId
 		int32 ItemPrice = *ItemPriceList.Find(ItemIdentifier);
 		if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerCharacter->GetPlayerState()))
 		{
+			//Check for shield:
+
+			if(ItemIdentifier == EItemIdentifier::LightShield || ItemIdentifier == EItemIdentifier::HeavyShield)
+			{
+				if(PlayerCharacter->CanSellCurrentShield())
+				{
+					//Sell it:
+					CombatPlayerState->ChangePlayerMoney(ItemPrice);
+					//set null shield.
+					PlayerCharacter->UpdateShieldProperties(FShieldProperties());
+					return true;
+				}
+				return false;	
+			}
+			
+			
 			EWeaponSlot CurrentSlot = PlayerCharacter->GetWeaponSlotByIdentifier(ItemIdentifier);
 			if(CurrentSlot != EWeaponSlot::None)
 			{

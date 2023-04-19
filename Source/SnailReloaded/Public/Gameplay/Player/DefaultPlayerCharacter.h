@@ -8,6 +8,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
+#include "Components/ArmoredHealthComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
 #include "DefaultPlayerCharacter.generated.h"
 
@@ -125,6 +126,8 @@ protected:
 	UFUNCTION()
 	void OnHealthChanged(FDamageResponse DamageResponse);
 	UFUNCTION()
+	void OnShieldHealthChanged();
+	UFUNCTION()
 	void OnCurrentWeaponAmmoChanged();
 	UFUNCTION()
 	void OnCurrentWeaponReloading();
@@ -224,6 +227,10 @@ public:
 	TArray<EItemIdentifier> GetAllItems();
 	UFUNCTION(BlueprintPure)
 	EWeaponSlot GetWeaponSlotByIdentifier(EItemIdentifier Identifier);
+	UFUNCTION(BlueprintPure)
+	EItemIdentifier GetCurrentShieldType();
+	UFUNCTION(BlueprintPure)
+	bool CanSellCurrentShield();
 
 	
 	

@@ -7,12 +7,13 @@
 #include "Net/UnrealNetwork.h"
 
 
-FShieldProperties::FShieldProperties(): ShieldHealth(0), ShieldDamageReduction(0)
+FShieldProperties::FShieldProperties(): ShieldHealth(0), ShieldDamageReduction(0), ShieldIdentifier(EItemIdentifier::NullShield)
 {
 }
 
-FShieldProperties::FShieldProperties(float ShieldHealth, float ShieldDamageReduction): ShieldHealth(ShieldHealth),
-                                                                                       ShieldDamageReduction(ShieldDamageReduction)
+FShieldProperties::FShieldProperties(float ShieldHealth, float ShieldDamageReduction, EItemIdentifier ShieldIdentifier):
+	ShieldHealth(ShieldHealth),
+	ShieldDamageReduction(ShieldDamageReduction), ShieldIdentifier(ShieldIdentifier)
 {
 }
 
@@ -21,6 +22,8 @@ UArmoredHealthComponent::UArmoredHealthComponent()
 	ShieldHealth = 0.f;
 	ShieldDamageReduction = 0.0f;
 	ShieldIdentifier = EItemIdentifier::NullShield;
+	PreviousShieldType = EItemIdentifier::NullShield;
+	bCanSell = true;
 }
 
 FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
@@ -33,7 +36,12 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest Damag
 			float DeltaObjectHealth = FMath::CeilToFloat(DamageRequest.DeltaDamage - DeltaShieldHealth);
 			UE_LOG(LogTemp, Warning, TEXT("Total damage: %f - Shield take: %f - Body take: %f"), DamageRequest.DeltaDamage, DeltaShieldHealth, DeltaObjectHealth);
 			SetObjectHealth(DamageRequest, GetObjectHealth() + DeltaObjectHealth);
-			ShieldHealth = FMath::Max(DeltaShieldHealth + ShieldHealth, 0);
+			SetShieldHealth(FMath::Max(DeltaShieldHealth + ShieldHealth, 0));
+			if(GetShieldHealth() == 0.f)
+			{
+				//Set nullShield as current shield:
+				UpdateShieldProperties(FShieldProperties());
+			}
 			UE_LOG(LogTemp, Warning, TEXT("Shield hp: %f - Body hp: %f"), ShieldHealth, GetObjectHealth());
 		}
 		
@@ -48,11 +56,13 @@ void UArmoredHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldHealth);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldDamageReduction);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldIdentifier);
+	DOREPLIFETIME(UArmoredHealthComponent, PreviousShieldType);
+	DOREPLIFETIME(UArmoredHealthComponent, bCanSell);
 }
 
 void UArmoredHealthComponent::OnRep_ShieldHealth()
 {
-	//UI BIND
+	OnShieldHealthChanged.Broadcast();
 }
 
 void UArmoredHealthComponent::OnRep_ShieldType()
@@ -100,4 +110,41 @@ void UArmoredHealthComponent::SetShieldIdentifier(EItemIdentifier NewIdentifier)
 EItemIdentifier UArmoredHealthComponent::GetShieldIdentifier()
 {
 	return ShieldIdentifier;
+}
+
+EItemIdentifier UArmoredHealthComponent::GetPreviousShieldType()
+{
+	return PreviousShieldType;
+}
+
+void UArmoredHealthComponent::RevertToPreviousType()
+{
+	
+}
+
+void UArmoredHealthComponent::UpdateShieldProperties(FShieldProperties Properties)
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+
+		//Save prev type:
+		PreviousShieldType = ShieldIdentifier;
+		
+		SetShieldHealth(Properties.ShieldHealth);
+		SetShieldDamageReduction(Properties.ShieldDamageReduction);
+		SetShieldIdentifier(Properties.ShieldIdentifier);
+	}
+}
+
+void UArmoredHealthComponent::SetCanSell(bool bSell)
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		bCanSell = bSell;
+	}
+}
+
+bool UArmoredHealthComponent::CanSell()
+{
+	return bCanSell;
 }

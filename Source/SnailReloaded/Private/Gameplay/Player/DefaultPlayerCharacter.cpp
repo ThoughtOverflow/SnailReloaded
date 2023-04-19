@@ -34,6 +34,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
+	PlayerHealthComponent->OnShieldHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnShieldHealthChanged);
 
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
@@ -315,6 +316,17 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 		if(IsLocallyControlled())
 		{
 			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->Submit();
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnShieldHealthChanged()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled())
+		{
+			PlayerController->GetHudData()->SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth())->Submit();
 		}
 	}
 }
@@ -834,9 +846,7 @@ void ADefaultPlayerCharacter::UpdateShieldProperties(FShieldProperties ShieldPro
 {
 	if(HasAuthority())
 	{
-		PlayerHealthComponent->SetShieldHealth(ShieldProperties.ShieldHealth);
-		PlayerHealthComponent->SetShieldDamageReduction(ShieldProperties.ShieldDamageReduction);
-		PlayerHealthComponent->SetShieldIdentifier(ShieldProperties.ShieldIdentifier);
+		PlayerHealthComponent->UpdateShieldProperties(ShieldProperties);
 	}
 }
 
@@ -856,6 +866,24 @@ EWeaponSlot ADefaultPlayerCharacter::GetWeaponSlotByIdentifier(EItemIdentifier I
 	if(SecondaryWeapon && SecondaryWeapon->ItemIdentifier == Identifier) return SecondaryWeapon->WeaponSlot;
 	if(MeleeWeapon && MeleeWeapon->ItemIdentifier == Identifier) return MeleeWeapon->WeaponSlot;
 	return EWeaponSlot::None;
+}
+
+EItemIdentifier ADefaultPlayerCharacter::GetCurrentShieldType()
+{
+	if(PlayerHealthComponent)
+	{
+		return PlayerHealthComponent->GetShieldIdentifier();
+	}
+	return EItemIdentifier::None;
+}
+
+bool ADefaultPlayerCharacter::CanSellCurrentShield()
+{
+	if(PlayerHealthComponent)
+	{
+		return PlayerHealthComponent->CanSell();
+	}
+	return false;
 }
 
 void ADefaultPlayerCharacter::Server_TrySellItem_Implementation(EItemIdentifier ItemIdentifier)

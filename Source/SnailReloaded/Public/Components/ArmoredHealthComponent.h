@@ -15,7 +15,7 @@ struct FShieldProperties
 public:
 
 	FShieldProperties();
-	FShieldProperties(float ShieldHealth, float ShieldDamageReduction);
+	FShieldProperties(float ShieldHealth, float ShieldDamageReduction, EItemIdentifier ShieldIdentifier);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ShieldHealth;
@@ -29,6 +29,9 @@ public:
 /**
  * 
  */
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnShieldHealthChanged);
+
 UCLASS( ClassGroup=(HealthSystem), meta=(BlueprintSpawnableComponent) )
 class SNAILRELOADED_API UArmoredHealthComponent : public UHealthComponent
 {
@@ -37,6 +40,9 @@ class SNAILRELOADED_API UArmoredHealthComponent : public UHealthComponent
 public:
 
 	UArmoredHealthComponent();
+
+	UPROPERTY(BlueprintAssignable);
+	FOnShieldHealthChanged OnShieldHealthChanged;
 
 	
 protected:
@@ -49,6 +55,10 @@ protected:
 	float ShieldHealth;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
 	float ShieldDamageReduction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
+	EItemIdentifier PreviousShieldType;
+	UPROPERTY(Replicated)
+	bool bCanSell;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -71,5 +81,15 @@ public:
 	void SetShieldIdentifier(EItemIdentifier NewIdentifier);
 	UFUNCTION(BlueprintPure)
 	EItemIdentifier GetShieldIdentifier();
+	UFUNCTION(BlueprintPure)
+	EItemIdentifier GetPreviousShieldType();
+	UFUNCTION(BlueprintCallable)
+	void RevertToPreviousType();
+	UFUNCTION(BlueprintCallable)
+	void UpdateShieldProperties(FShieldProperties Properties);
+	UFUNCTION(BlueprintCallable)
+	void SetCanSell(bool bSell);
+	UFUNCTION(BlueprintPure)
+	bool CanSell();
 	
 };
