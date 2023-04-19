@@ -32,7 +32,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
 	TMap<EItemIdentifier, TSubclassOf<AWeaponBase>> WeaponIdTable;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
-	TMap<EItemIdentifier, FShieldProperties> ShieldDataTable;
+	TArray<FShieldProperties> ShieldDataTable;
+
+	FShieldProperties* FindShieldDataByType(EItemIdentifier ShieldIdentifier);
 	
 public:
 

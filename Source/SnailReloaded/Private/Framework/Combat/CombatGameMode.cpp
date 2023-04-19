@@ -13,6 +13,15 @@ ACombatGameMode::ACombatGameMode()
 	
 }
 
+FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldIdentifier)
+{
+	for(auto& Shield : ShieldDataTable)
+	{
+		if(Shield.ShieldIdentifier == ShieldIdentifier) return &Shield;
+	}
+	return nullptr;
+}
+
 FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest DamageRequest)
 {
 	if(DamageRequest.SourceActor)
@@ -39,7 +48,7 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 				{
 
 					//Shield Purchase:
-					if(FShieldProperties* ShieldData = ShieldDataTable.Find(ItemIdentifier))
+					if(FShieldProperties* ShieldData = FindShieldDataByType(ItemIdentifier))
 					{
 						//Remove monkey:
 						CombatPlayerState->ChangePlayerMoney(-ItemPrice);
