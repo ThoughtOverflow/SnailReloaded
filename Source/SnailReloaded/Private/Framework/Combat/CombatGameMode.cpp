@@ -138,8 +138,14 @@ bool ACombatGameMode::SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemId
 				{
 					//Sell it:
 					CombatPlayerState->ChangePlayerMoney(ItemPrice);
-					//set null shield.
-					PlayerCharacter->UpdateShieldProperties(FShieldProperties());
+					//revert to prev shield or null shield.
+					if(PlayerCharacter->CanSellPreviousShield())
+					{
+						PlayerCharacter->UpdateShieldProperties(FShieldProperties());
+					}else
+					{
+						PlayerCharacter->RevertToPreviousShield();
+					}
 					return true;
 				}
 				return false;	

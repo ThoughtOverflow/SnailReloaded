@@ -229,8 +229,12 @@ public:
 	EWeaponSlot GetWeaponSlotByIdentifier(EItemIdentifier Identifier);
 	UFUNCTION(BlueprintPure)
 	EItemIdentifier GetCurrentShieldType();
+	UFUNCTION(BlueprintCallable)
+	void RevertToPreviousShield();
 	UFUNCTION(BlueprintPure)
 	bool CanSellCurrentShield();
+	UFUNCTION(BlueprintPure)
+	bool CanSellPreviousShield();
 
 	
 	

@@ -56,9 +56,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
 	float ShieldDamageReduction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
-	EItemIdentifier PreviousShieldType;
+	FShieldProperties PreviousShieldProperties;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
+	FShieldProperties CurrentShieldProperties;
 	UPROPERTY(Replicated)
 	bool bCanSell;
+	UPROPERTY(Replicated)
+	bool bCanSellPrevious;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -81,15 +85,15 @@ public:
 	void SetShieldIdentifier(EItemIdentifier NewIdentifier);
 	UFUNCTION(BlueprintPure)
 	EItemIdentifier GetShieldIdentifier();
-	UFUNCTION(BlueprintPure)
-	EItemIdentifier GetPreviousShieldType();
 	UFUNCTION(BlueprintCallable)
-	void RevertToPreviousType();
+	void RevertToPreviousState();
 	UFUNCTION(BlueprintCallable)
 	void UpdateShieldProperties(FShieldProperties Properties);
 	UFUNCTION(BlueprintCallable)
 	void SetCanSell(bool bSell);
 	UFUNCTION(BlueprintPure)
 	bool CanSell();
+	UFUNCTION(BlueprintPure)
+	bool CanSellPrevious();
 	
 };

@@ -879,14 +879,32 @@ EItemIdentifier ADefaultPlayerCharacter::GetCurrentShieldType()
 	{
 		return PlayerHealthComponent->GetShieldIdentifier();
 	}
-	return EItemIdentifier::None;
+	return EItemIdentifier::NullShield;
 }
+
+void ADefaultPlayerCharacter::RevertToPreviousShield()
+{
+	if(PlayerHealthComponent && HasAuthority())
+	{
+		PlayerHealthComponent->RevertToPreviousState();
+	}
+}
+
 
 bool ADefaultPlayerCharacter::CanSellCurrentShield()
 {
 	if(PlayerHealthComponent)
 	{
 		return PlayerHealthComponent->CanSell();
+	}
+	return false;
+}
+
+bool ADefaultPlayerCharacter::CanSellPreviousShield()
+{
+	if(PlayerHealthComponent)
+	{
+		return PlayerHealthComponent->CanSellPrevious();
 	}
 	return false;
 }

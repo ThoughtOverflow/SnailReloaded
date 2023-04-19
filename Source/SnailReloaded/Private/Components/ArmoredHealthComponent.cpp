@@ -22,8 +22,10 @@ UArmoredHealthComponent::UArmoredHealthComponent()
 	ShieldHealth = 0.f;
 	ShieldDamageReduction = 0.0f;
 	ShieldIdentifier = EItemIdentifier::NullShield;
-	PreviousShieldType = EItemIdentifier::NullShield;
+	PreviousShieldProperties = FShieldProperties();
+	CurrentShieldProperties = FShieldProperties();
 	bCanSell = true;
+	bCanSellPrevious = true;
 }
 
 FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
@@ -32,6 +34,7 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest Damag
 	{
 		if(DamageRequest.DeltaDamage < 0.f)
 		{
+			SetCanSell(false);
 			float DeltaShieldHealth = FMath::Max(FMath::Floor(DamageRequest.DeltaDamage * ShieldDamageReduction), -ShieldHealth);
 			float DeltaObjectHealth = FMath::CeilToFloat(DamageRequest.DeltaDamage - DeltaShieldHealth);
 			UE_LOG(LogTemp, Warning, TEXT("Total damage: %f - Shield take: %f - Body take: %f"), DamageRequest.DeltaDamage, DeltaShieldHealth, DeltaObjectHealth);
@@ -56,8 +59,10 @@ void UArmoredHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldHealth);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldDamageReduction);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldIdentifier);
-	DOREPLIFETIME(UArmoredHealthComponent, PreviousShieldType);
+	DOREPLIFETIME(UArmoredHealthComponent, PreviousShieldProperties);
 	DOREPLIFETIME(UArmoredHealthComponent, bCanSell);
+	DOREPLIFETIME(UArmoredHealthComponent, bCanSellPrevious);
+	DOREPLIFETIME(UArmoredHealthComponent, CurrentShieldProperties);
 }
 
 void UArmoredHealthComponent::OnRep_ShieldHealth()
@@ -112,27 +117,39 @@ EItemIdentifier UArmoredHealthComponent::GetShieldIdentifier()
 	return ShieldIdentifier;
 }
 
-EItemIdentifier UArmoredHealthComponent::GetPreviousShieldType()
+void UArmoredHealthComponent::RevertToPreviousState()
 {
-	return PreviousShieldType;
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		UpdateShieldProperties(PreviousShieldProperties);
+	}
 }
 
-void UArmoredHealthComponent::RevertToPreviousType()
-{
-	
-}
 
 void UArmoredHealthComponent::UpdateShieldProperties(FShieldProperties Properties)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
 
+
+		if(Properties.ShieldIdentifier != EItemIdentifier::NullShield && PreviousShieldProperties.ShieldIdentifier != Properties.ShieldIdentifier)
+		{
+			SetCanSell(true);
+		}else
+		{
+			SetCanSell(false);
+		}
+		
 		//Save prev type:
-		PreviousShieldType = ShieldIdentifier;
+		PreviousShieldProperties = FShieldProperties(GetShieldHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
+		bCanSellPrevious = bCanSell;
 		
 		SetShieldHealth(Properties.ShieldHealth);
 		SetShieldDamageReduction(Properties.ShieldDamageReduction);
 		SetShieldIdentifier(Properties.ShieldIdentifier);
+
+
+		CurrentShieldProperties = FShieldProperties(GetShieldHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
 	}
 }
 
@@ -147,4 +164,9 @@ void UArmoredHealthComponent::SetCanSell(bool bSell)
 bool UArmoredHealthComponent::CanSell()
 {
 	return bCanSell;
+}
+
+bool UArmoredHealthComponent::CanSellPrevious()
+{
+	return bCanSellPrevious;
 }
