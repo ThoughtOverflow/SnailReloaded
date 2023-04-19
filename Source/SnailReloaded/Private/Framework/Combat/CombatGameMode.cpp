@@ -47,27 +47,37 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 				if(ItemIdentifier == EItemIdentifier::LightShield || ItemIdentifier == EItemIdentifier::HeavyShield)
 				{
 					EItemIdentifier CurrentShield = PlayerCharacter->GetCurrentShieldType();
-					if(CurrentShield == ItemIdentifier) return false;
 					if(CurrentShield == EItemIdentifier::NullShield)
 					{
 						//Shield Purchase:
 						if(FShieldProperties* ShieldData = FindShieldDataByType(ItemIdentifier))
 						{
-							//Remove monkey:
+							//Raw buy
 							CombatPlayerState->ChangePlayerMoney(-ItemPrice);
 							PlayerCharacter->UpdateShieldProperties(*ShieldData);
+							PlayerCharacter->SetCanSellCurrentShield(true);
 						}
 					}else
 					{
-						//Sell, then buy it
+						//Sell, then buy
 						if(FShieldProperties* ShieldData = FindShieldDataByType(ItemIdentifier))
 						{
 							if(ItemPriceList.Contains(CurrentShield))
 							{
+								
 								//Remove monkey:
-								int32 ReturnMoney = PlayerCharacter->CanSellCurrentShield() ? *ItemPriceList.Find(CurrentShield) : 0;
+								int32 ReturnMoney = 0;
+								if(PlayerCharacter->CanSellCurrentShield())
+								{
+									ReturnMoney = *ItemPriceList.Find(CurrentShield);
+									
+								}else
+								{
+									PlayerCharacter->StoreCurrentShieldData();
+								}
 								CombatPlayerState->ChangePlayerMoney(-ItemPrice + ReturnMoney);
 								PlayerCharacter->UpdateShieldProperties(*ShieldData);
+								PlayerCharacter->SetCanSellCurrentShield(true);
 							}
 						}
 					}
@@ -138,15 +148,14 @@ bool ACombatGameMode::SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemId
 				{
 					//Sell it:
 					CombatPlayerState->ChangePlayerMoney(ItemPrice);
-					//revert to prev shield or null shield.
-					if(PlayerCharacter->CanSellPreviousShield())
-					{
-						PlayerCharacter->UpdateShieldProperties(FShieldProperties());
-					}else
+					//Check for restore shield:
+					if(PlayerCharacter->HasStoredShield())
 					{
 						PlayerCharacter->RevertToPreviousShield();
+					}else
+					{
+						PlayerCharacter->UpdateShieldProperties(FShieldProperties());
 					}
-					return true;
 				}
 				return false;	
 			}

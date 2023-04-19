@@ -223,6 +223,10 @@ public:
 	void Server_TrySellItem(EItemIdentifier ItemIdentifier);
 	UFUNCTION()
 	void UpdateShieldProperties(FShieldProperties ShieldProperties);
+	UFUNCTION()
+	void StoreCurrentShieldData();
+	UFUNCTION(BlueprintGetter)
+	bool HasStoredShield();
 	UFUNCTION(BlueprintPure)
 	TArray<EItemIdentifier> GetAllItems();
 	UFUNCTION(BlueprintPure)
@@ -233,8 +237,8 @@ public:
 	void RevertToPreviousShield();
 	UFUNCTION(BlueprintPure)
 	bool CanSellCurrentShield();
-	UFUNCTION(BlueprintPure)
-	bool CanSellPreviousShield();
+	UFUNCTION(BlueprintCallable)
+	void SetCanSellCurrentShield(bool bSell);
 
 	
 	

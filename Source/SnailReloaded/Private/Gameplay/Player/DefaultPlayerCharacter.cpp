@@ -855,6 +855,23 @@ void ADefaultPlayerCharacter::UpdateShieldProperties(FShieldProperties ShieldPro
 	}
 }
 
+void ADefaultPlayerCharacter::StoreCurrentShieldData()
+{
+	if(HasAuthority() && PlayerHealthComponent)
+	{
+		PlayerHealthComponent->StoreCurrentShieldData();
+	}
+}
+
+bool ADefaultPlayerCharacter::HasStoredShield()
+{
+	if(HasAuthority() && PlayerHealthComponent)
+	{
+		return PlayerHealthComponent->GetStoredShieldData().ShieldIdentifier != EItemIdentifier::NullShield;
+	}
+	return false;
+}
+
 TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllItems()
 {
 	TArray<EItemIdentifier> Identifiers;
@@ -900,13 +917,12 @@ bool ADefaultPlayerCharacter::CanSellCurrentShield()
 	return false;
 }
 
-bool ADefaultPlayerCharacter::CanSellPreviousShield()
+void ADefaultPlayerCharacter::SetCanSellCurrentShield(bool bSell)
 {
-	if(PlayerHealthComponent)
+	if(HasAuthority() && PlayerHealthComponent)
 	{
-		return PlayerHealthComponent->CanSellPrevious();
+		PlayerHealthComponent->SetCanSell(bSell);
 	}
-	return false;
 }
 
 void ADefaultPlayerCharacter::Server_TrySellItem_Implementation(EItemIdentifier ItemIdentifier)

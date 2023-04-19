@@ -22,10 +22,9 @@ UArmoredHealthComponent::UArmoredHealthComponent()
 	ShieldHealth = 0.f;
 	ShieldDamageReduction = 0.0f;
 	ShieldIdentifier = EItemIdentifier::NullShield;
-	PreviousShieldProperties = FShieldProperties();
+	StoredShield = FShieldProperties();
 	CurrentShieldProperties = FShieldProperties();
 	bCanSell = true;
-	bCanSellPrevious = true;
 }
 
 FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
@@ -59,9 +58,8 @@ void UArmoredHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldHealth);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldDamageReduction);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldIdentifier);
-	DOREPLIFETIME(UArmoredHealthComponent, PreviousShieldProperties);
+	DOREPLIFETIME(UArmoredHealthComponent, StoredShield);
 	DOREPLIFETIME(UArmoredHealthComponent, bCanSell);
-	DOREPLIFETIME(UArmoredHealthComponent, bCanSellPrevious);
 	DOREPLIFETIME(UArmoredHealthComponent, CurrentShieldProperties);
 }
 
@@ -121,7 +119,8 @@ void UArmoredHealthComponent::RevertToPreviousState()
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-		UpdateShieldProperties(PreviousShieldProperties);
+		UpdateShieldProperties(StoredShield);
+		SetCanSell(false);
 	}
 }
 
@@ -130,27 +129,26 @@ void UArmoredHealthComponent::UpdateShieldProperties(FShieldProperties Propertie
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-
-
-		if(Properties.ShieldIdentifier != EItemIdentifier::NullShield && PreviousShieldProperties.ShieldIdentifier != Properties.ShieldIdentifier)
-		{
-			SetCanSell(true);
-		}else
-		{
-			SetCanSell(false);
-		}
-		
-		//Save prev type:
-		PreviousShieldProperties = FShieldProperties(GetShieldHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
-		bCanSellPrevious = bCanSell;
 		
 		SetShieldHealth(Properties.ShieldHealth);
 		SetShieldDamageReduction(Properties.ShieldDamageReduction);
 		SetShieldIdentifier(Properties.ShieldIdentifier);
 
-
 		CurrentShieldProperties = FShieldProperties(GetShieldHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
 	}
+}
+
+void UArmoredHealthComponent::StoreCurrentShieldData()
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		StoredShield = FShieldProperties(GetShieldHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
+	}
+}
+
+FShieldProperties UArmoredHealthComponent::GetStoredShieldData()
+{
+	return StoredShield;
 }
 
 void UArmoredHealthComponent::SetCanSell(bool bSell)
@@ -166,7 +164,3 @@ bool UArmoredHealthComponent::CanSell()
 	return bCanSell;
 }
 
-bool UArmoredHealthComponent::CanSellPrevious()
-{
-	return bCanSellPrevious;
-}
