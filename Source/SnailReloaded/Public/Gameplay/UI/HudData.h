@@ -33,6 +33,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 CurrentTotalAmmo;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PlayerShieldHealth;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsReloading;
 	UPROPERTY(BlueprintReadWrite)
 	ACombatPlayerController* WidgetOwner;
@@ -43,6 +45,7 @@ public:
 	UHudData* SetCurrentWeaponName(const FText& NewName);
 	UHudData* SetCurrentClipAmmo(int32 NewAmmo);
 	UHudData* SetCurrentTotalAmmo(int32 NewAmmo);
+	UHudData* SetPlayerShieldHealth(float NewHealth);
 	UHudData* SetReloading(bool bReloading);
 	void Submit();
 	
@@ -50,6 +53,7 @@ public:
 	const FText& GetCurrentWeaponName() const;
 	int32 GetCurrentClipAmmo() const;
 	int32 GetCurrentTotalAmmo() const;
+	float GetPlayerShieldHealth() const;
 	bool GetIsReloading() const;
 	
 

@@ -5,14 +5,15 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputAction.h"
-#include "InputMappingContext.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
+#include "Components/ArmoredHealthComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
 #include "DefaultPlayerCharacter.generated.h"
 
 
+struct FShieldProperties;
 struct FDamageResponse;
 class ACombatPlayerController;
 class ADefaultPlayerController;
@@ -46,6 +47,8 @@ public:
 	UInputAction* SelectSecondaryInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* SelectMeleeInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* ToggleBuyMenu;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -73,6 +76,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	//Helpers:
+
+	UFUNCTION(BlueprintCallable)
+	ACombatPlayerController* GetCombatPlayerController();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_BlockPlayerInputs(bool bBlock);
 	
 	UFUNCTION()
 	void Move(const FInputActionInstance& Action);
@@ -90,7 +101,9 @@ protected:
 	void HandleSelectSecondaryInput(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleSelectMeleeInput(const FInputActionInstance& Action);
-
+	UFUNCTION()
+	void HandleToggleBuyMenu(const FInputActionInstance& Action);
+	
 	//Shooting
 	
 	UPROPERTY()
@@ -113,6 +126,8 @@ protected:
 	UFUNCTION()
 	void OnHealthChanged(FDamageResponse DamageResponse);
 	UFUNCTION()
+	void OnShieldHealthChanged();
+	UFUNCTION()
 	void OnCurrentWeaponAmmoChanged();
 	UFUNCTION()
 	void OnCurrentWeaponReloading();
@@ -132,9 +147,13 @@ public:
 	virtual void OnPlayerPossessed(ACombatPlayerController* PlayerController);
 
 	UFUNCTION(BlueprintCallable)
-	bool AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
+	AWeaponBase* AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
 	UFUNCTION(Server,Reliable)
 	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
+	UFUNCTION(BlueprintCallable)
+	bool RemoveWeapon(EWeaponSlot Slot);
+	UFUNCTION(Server,Reliable)
+	void Server_RemoveWeapon(EWeaponSlot Slot);
 	UFUNCTION(BlueprintCallable)
 	AWeaponBase* EquipWeapon(EWeaponSlot Slot);
 	UFUNCTION(Server, Reliable)
@@ -145,6 +164,11 @@ public:
 	void Server_UnequipWeapon();
 	UFUNCTION(BlueprintPure)
 	AWeaponBase* GetWeaponAtSlot(EWeaponSlot Slot);
+
+	//Input:
+	
+	UFUNCTION(BlueprintCallable)
+	void BlockPlayerInputs(bool bBlock);
 
 	//Shooting
 
@@ -184,10 +208,39 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> TestWpn;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeaponBase> TestWpn2;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeaponBase> TestWpn3;
+
+	//Buy system
+
+	UFUNCTION(BlueprintCallable)
+	AWeaponBase* EquipStrongestWeapon();
+	UFUNCTION(BlueprintCallable)
+	void TryPurchaseItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION(Server, Reliable)
+	void Server_TryPurchaseItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION(BlueprintCallable)
+	void TrySellItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION(Server, Reliable)
+	void Server_TrySellItem(EItemIdentifier ItemIdentifier);
+	UFUNCTION()
+	void UpdateShieldProperties(FShieldProperties ShieldProperties);
+	UFUNCTION()
+	void StoreCurrentShieldData();
+	UFUNCTION(BlueprintGetter)
+	bool HasStoredShield();
+	UFUNCTION(BlueprintPure)
+	TArray<EItemIdentifier> GetAllItems();
+	UFUNCTION(BlueprintPure)
+	EWeaponSlot GetWeaponSlotByIdentifier(EItemIdentifier Identifier);
+	UFUNCTION(BlueprintPure)
+	EItemIdentifier GetCurrentShieldType();
+	UFUNCTION(BlueprintCallable)
+	void RevertToPreviousShield();
+	UFUNCTION(BlueprintPure)
+	bool CanSellCurrentShield();
+	UFUNCTION(BlueprintCallable)
+	void SetCanSellCurrentShield(bool bSell);
+
+	
 	
 	
 };

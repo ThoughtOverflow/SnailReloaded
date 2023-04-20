@@ -3,9 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/ArmoredHealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "CombatGameMode.generated.h"
 
+class AWeaponBase;
+class ADefaultPlayerCharacter;
 struct FDamageRequest;
 struct FDamageResponse;
 /**
@@ -24,12 +27,24 @@ public:
 
 protected:
 
-	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
+	TMap<EItemIdentifier, int32> ItemPriceList;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
+	TMap<EItemIdentifier, TSubclassOf<AWeaponBase>> WeaponIdTable;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
+	TArray<FShieldProperties> ShieldDataTable;
+
+	FShieldProperties* FindShieldDataByType(EItemIdentifier ShieldIdentifier);
 	
 public:
 
 
 	UFUNCTION(BlueprintCallable)
 	FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest);
+
+	UFUNCTION(BlueprintCallable)
+	bool PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
+	UFUNCTION(BlueprintCallable)
+	bool SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
 	
 };

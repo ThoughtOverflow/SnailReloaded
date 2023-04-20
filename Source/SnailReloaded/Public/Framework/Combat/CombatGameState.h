@@ -9,9 +9,19 @@
 /**
  * 
  */
+
+
 UCLASS()
 class SNAILRELOADED_API ACombatGameState : public ADefaultGameState
 {
 	GENERATED_BODY()
+
+public:
+
+	ACombatGameState();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Match Settings")
+	int32 InitialPlayerMoney;
+	
 	
 };

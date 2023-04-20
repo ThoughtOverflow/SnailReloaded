@@ -7,6 +7,7 @@
 
 
 
+
 // Sets default values
 AWeaponBase::AWeaponBase()
 {
@@ -15,7 +16,7 @@ AWeaponBase::AWeaponBase()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
-	
+	ItemIdentifier = EItemIdentifier::None;
 	bShotgunSpread = false;
 	ConstantDamage = 10.f;
 	WeaponMode = EWeaponMode::Automatic;
@@ -34,6 +35,7 @@ AWeaponBase::AWeaponBase()
 	MinimumFireDelay = 0.05f;
 	ReloadTime = 3.f;
 	bIsReloading = false;
+	bCanSell = true;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -70,6 +72,7 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(AWeaponBase, FireRate);
 	DOREPLIFETIME(AWeaponBase, ReloadTime);
 	DOREPLIFETIME(AWeaponBase, bIsReloading);
+	DOREPLIFETIME(AWeaponBase, bCanSell);
 	
 }
 
@@ -117,6 +120,11 @@ void AWeaponBase::OnRep_Equipped()
 void AWeaponBase::OnRep_Reloading()
 {
 	OnReload.Broadcast();
+}
+
+void AWeaponBase::OnRep_CanSell()
+{
+	
 }
 
 void AWeaponBase::SetCurrentClipAmmo(int32 NewAmmo)
@@ -192,5 +200,19 @@ void AWeaponBase::SetIsReloading(bool bReloading)
 	{
 		this->bIsReloading = bReloading;
 		OnRep_Reloading();
+	}
+}
+
+bool AWeaponBase::CanSell() const
+{
+	return bCanSell;
+}
+
+void AWeaponBase::SetCanSell(bool bSell)
+{
+	if(HasAuthority())
+	{
+		this->bCanSell = bSell;
+		OnRep_CanSell();
 	}
 }

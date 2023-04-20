@@ -8,9 +8,21 @@
 #include "WeaponBase.generated.h"
 
 UENUM(BlueprintType)
+enum class EItemIdentifier : uint8
+{
+	None = 0,
+	LightShield = 1,
+	HeavyShield = 2,
+	DefaultMelee = 3,
+	DefaultAR = 4,
+	DefaultShotgun = 5,
+	NullShield = 6
+};
+
+UENUM(BlueprintType)
 enum class EWeaponSlot : uint8
 {
-
+	None = 3,
 	Primary = 2,
 	Secondary = 1,
 	Melee = 0
@@ -37,6 +49,8 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	EItemIdentifier ItemIdentifier;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	FText WeaponName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", meta = (ClampMin=0))
@@ -111,6 +125,8 @@ protected:
 	bool bIsEquipped;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Reloading)
 	bool bIsReloading;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_CanSell)
+	bool bCanSell;
 
 public:
 	
@@ -124,6 +140,8 @@ protected:
 	void OnRep_Equipped();
 	UFUNCTION()
 	void OnRep_Reloading();
+	UFUNCTION()
+	void OnRep_CanSell();
 
 #if WITH_EDITOR
 
@@ -162,5 +180,9 @@ public:
 	bool GetIsReloading() const;
 	UFUNCTION(BlueprintCallable)
 	void SetIsReloading(bool bReloading);
+	UFUNCTION(BlueprintPure)
+	bool CanSell() const;
+	UFUNCTION(BlueprintCallable)
+	void SetCanSell(bool bSell);
 	
 };

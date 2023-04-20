@@ -5,7 +5,9 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Gameplay/UI/BuyMenu.h"
 #include "Gameplay/UI/HudData.h"
 #include "Gameplay/UI/PlayerHud.h"
 
@@ -33,6 +35,33 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 	}
 }
 
+void ACombatPlayerController::CloseLastOpenMenu()
+{
+	//Last menu with cursor enabled
+	if(MenuWidgetsRef.Num() == 1)
+	{
+		SetShowMouseCursor(false);
+		SetInputMode(FInputModeGameOnly());
+		ActivateUIInputHander(false);
+	}
+	Super::CloseLastOpenMenu();
+}
+
+void ACombatPlayerController::ActivateUIInputHander(bool bActivate)
+{
+	Super::ActivateUIInputHander(bActivate);
+	//Add player character input blocks as well.
+	if(bActivate)
+	{
+		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(true);
+	}else
+	{
+		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(false);
+	}
+	
+}
+
+
 void ACombatPlayerController::CreatePlayerHud()
 {
 	if(IsLocalController())
@@ -55,6 +84,7 @@ void ACombatPlayerController::UpdatePlayerHud(UHudData* HudData)
 		PlayerHud->CurrentClipAmmo = HudData->GetCurrentClipAmmo();
 		PlayerHud->CurrentTotalAmmo = HudData->GetCurrentTotalAmmo();
 		PlayerHud->CurrentWeaponName = HudData->GetCurrentWeaponName();
+		PlayerHud->PlayerShieldHealth = HudData->GetPlayerShieldHealth();
 		PlayerHud->bIsReloading = HudData->GetIsReloading();
 	}
 }
@@ -68,7 +98,41 @@ UHudData* ACombatPlayerController::GetHudData()
 		SetCurrentTotalAmmo(PlayerHud->CurrentTotalAmmo)->
 		SetCurrentWeaponName(PlayerHud->CurrentWeaponName)->
 		SetPlayerHealthPercentage(PlayerHud->PlayerHealthPercentage)->
+		SetPlayerShieldHealth(PlayerHud->PlayerShieldHealth)->
 		SetReloading(PlayerHud->bIsReloading);
 	}
 	return HudData;
 }
+
+void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
+{
+	if(IsLocalController())
+	{
+		if(!BuyMenu && BuyMenuClass)
+		{
+			BuyMenu = CreateWidget<UBuyMenu>(this, BuyMenuClass);
+		}
+		if(BuyMenu)
+		{
+			if(bOpen)
+			{
+				BuyMenu->AddToViewport();
+				SetShowMouseCursor(true);
+				SetInputMode(FInputModeGameAndUI());
+				ActivateUIInputHander(true);
+				MenuWidgetsRef.Add(BuyMenu);
+				
+			}else
+			{
+				if(BuyMenu->IsInViewport()) BuyMenu->RemoveFromParent();
+				SetShowMouseCursor(false);
+				SetInputMode(FInputModeGameOnly());
+				ActivateUIInputHander(false);
+				if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
+			}
+		}
+	}
+}
+
+
+

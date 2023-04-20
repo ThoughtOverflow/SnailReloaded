@@ -34,6 +34,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
+	PlayerHealthComponent->OnShieldHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnShieldHealthChanged);
 
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
@@ -65,10 +66,54 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
 }
 
+ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()
+{
+	if(GetController())
+	{
+		if(ACombatPlayerController* CombatController = Cast<ACombatPlayerController>(GetController()))
+		{
+			return CombatController;
+		}
+	}
+	return nullptr;
+}
+
+void ADefaultPlayerCharacter::BlockPlayerInputs(bool bBlock)
+{
+	if(!HasAuthority())
+	{
+		Server_BlockPlayerInputs(bBlock);
+	}
+
+	ADefaultPlayerController* PC = Cast<ADefaultPlayerController>(GetController());
+	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if(EnhancedInputSubsystem)
+	{
+		if(bBlock)
+		{
+			EnhancedInputSubsystem->RemoveMappingContext(PlayerMappingContext);
+		}else
+		{
+			EnhancedInputSubsystem->AddMappingContext(PlayerMappingContext, 0);
+		}
+	}
+	
+}
+
+void ADefaultPlayerCharacter::Server_BlockPlayerInputs_Implementation(bool bBlock)
+{
+	BlockPlayerInputs(bBlock);
+}
+
 void ADefaultPlayerCharacter::Move(const FInputActionInstance& Action)
 {
 	FInputActionValue InputActionValue = Action.GetValue();
 	FVector2d MoveVector = InputActionValue.Get<FVector2d>();
+
+	if(GetCombatPlayerController())
+	{
+		if(GetCombatPlayerController()->IsAnyMenuOpen()) return;
+	}
 	
 	if(MoveVector.X != 0.f)
 	{
@@ -111,7 +156,14 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 
 void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action)
 {
+	
 	bool ShootingInput = Action.GetValue().Get<bool>();
+
+	if(GetCombatPlayerController())
+	{
+		if(GetCombatPlayerController()->IsAnyMenuOpen()) return;
+	}
+	
 	if(ShootingInput)
 	{
 		//Begin Shooting
@@ -125,6 +177,12 @@ void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action
 
 void ADefaultPlayerCharacter::HandleReloadInput(const FInputActionInstance& Action)
 {
+
+	if(GetCombatPlayerController())
+	{
+		if(GetCombatPlayerController()->IsAnyMenuOpen()) return;
+	}
+	
 	if(Action.GetValue().Get<bool>())
 	{
 		// Do other input checks maybe?
@@ -153,6 +211,17 @@ void ADefaultPlayerCharacter::HandleSelectMeleeInput(const FInputActionInstance&
 	if(Action.GetValue().Get<bool>())
 	{
 		EquipWeapon(EWeaponSlot::Melee);	
+	}
+}
+
+void ADefaultPlayerCharacter::HandleToggleBuyMenu(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		if(IsLocallyControlled() && GetCombatPlayerController())
+		{
+			GetCombatPlayerController()->ToggleBuyMenu(true);
+		}
 	}
 }
 
@@ -251,6 +320,17 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 	}
 }
 
+void ADefaultPlayerCharacter::OnShieldHealthChanged()
+{
+	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
+	{
+		if(IsLocallyControlled())
+		{
+			PlayerController->GetHudData()->SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth())->Submit();
+		}
+	}
+}
+
 void ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged()
 {
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
@@ -290,7 +370,6 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 
 	ADefaultPlayerController* PC = Cast<ADefaultPlayerController>(GetController());
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-	EnhancedInputSubsystem->ClearAllMappings();
 	EnhancedInputSubsystem->AddMappingContext(PlayerMappingContext, 0);
 	
 	EnhancedInputComponent->BindAction(MoveInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::Move);
@@ -302,6 +381,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(SelectPrimaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectPrimaryInput);
 	EnhancedInputComponent->BindAction(SelectSecondaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectSecondaryInput);
 	EnhancedInputComponent->BindAction(SelectMeleeInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectMeleeInput);
+	EnhancedInputComponent->BindAction(ToggleBuyMenu, ETriggerEvent::Started, this, &ADefaultPlayerCharacter::HandleToggleBuyMenu);
 	
 }
 
@@ -314,14 +394,6 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 		{
 			AssignWeapon(TestWpn);
 		}
-		if(TestWpn2)
-		{
-			AssignWeapon(TestWpn2);
-		}
-		if(TestWpn3)
-		{
-			AssignWeapon(TestWpn3);
-		}
 
 		//Load Default hud for player UI
 		Client_LoadDefaultHudData();
@@ -330,16 +402,16 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 }
 
 
-bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
+AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 {
 	if(HasAuthority())
 	{
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = this;
-		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, GetMesh()->GetSocketLocation(FName("hand_r")), FRotator::ZeroRotator, SpawnParameters);
+		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector(0.f, 0.f, 0.f), FRotator(0.f, 90.f, 0.f), SpawnParameters);
 		Weapon->SetIsEquipped(false);
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, FName("hand_r"));
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("hand_r"));
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
 		{
@@ -351,13 +423,47 @@ bool ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
 		case EWeaponSlot::Melee: MeleeWeapon=Weapon; break;
 		default:;
 		}
-		return Weapon != nullptr;
+		return Weapon;
 	}else
 	{
 		Server_AssignWeapon(WeaponClass);
 	}
+	return nullptr;
+}
+
+bool ADefaultPlayerCharacter::RemoveWeapon(EWeaponSlot Slot)
+{
+	if(HasAuthority())
+	{
+
+		if(AWeaponBase* WeaponBase = GetWeaponAtSlot(Slot))
+		{
+			if(GetCurrentlyEquippedWeapon() == WeaponBase)
+			{
+				UnequipWeapon();
+			}
+			WeaponBase->Destroy();
+			switch (Slot) { case EWeaponSlot::None: break;
+			case EWeaponSlot::Primary: PrimaryWeapon = nullptr; break;
+			case EWeaponSlot::Secondary: SecondaryWeapon = nullptr; break;
+			case EWeaponSlot::Melee: MeleeWeapon = nullptr; break;
+			default: ; }
+			EquipStrongestWeapon();
+			return true;
+		}
+		
+	}else
+	{
+		Server_RemoveWeapon(Slot);
+	}
 	return false;
 }
+
+void ADefaultPlayerCharacter::Server_RemoveWeapon_Implementation(EWeaponSlot Slot)
+{
+	RemoveWeapon(Slot);
+}
+
 
 void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
 {
@@ -368,7 +474,7 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 {
 	if(HasAuthority())
 	{
-		if(GetWeaponAtSlot(Slot) != CurrentlyEquippedWeapon)
+		if(GetWeaponAtSlot(Slot) != CurrentlyEquippedWeapon && GetWeaponAtSlot(Slot))
 		{
 			if(CurrentlyEquippedWeapon)
 			{
@@ -530,6 +636,10 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo()-1);
+				if(CurrentlyEquippedWeapon->CanSell())
+				{
+					CurrentlyEquippedWeapon->SetCanSell(false);
+				}
 				
 				float MaxEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
@@ -595,6 +705,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
+				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
@@ -689,6 +800,139 @@ float ADefaultPlayerCharacter::GetReloadProgress()
 		return GetWorldTimerManager().GetTimerElapsed(ReloadTimerHandle) / CurrentlyEquippedWeapon->ReloadTime;	
 	}
 	return 0.f;
+}
+
+AWeaponBase* ADefaultPlayerCharacter::EquipStrongestWeapon()
+{
+	AWeaponBase* StrongestWeapon = nullptr;
+	if(PrimaryWeapon)
+	{
+		StrongestWeapon = PrimaryWeapon;
+	}else if(SecondaryWeapon)
+	{
+		StrongestWeapon = SecondaryWeapon;
+	}else if(MeleeWeapon)
+	{
+		StrongestWeapon = MeleeWeapon;
+	}
+	EquipWeapon(StrongestWeapon->WeaponSlot);
+	return StrongestWeapon;
+}
+
+void ADefaultPlayerCharacter::TryPurchaseItem(EItemIdentifier ItemIdentifier)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->PurchaseItem(this, ItemIdentifier);
+		}
+	}else
+	{
+		Server_TryPurchaseItem(ItemIdentifier);
+	}
+}
+
+void ADefaultPlayerCharacter::TrySellItem(EItemIdentifier ItemIdentifier)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->SellItem(this, ItemIdentifier);
+		}
+	}else
+	{
+		Server_TrySellItem(ItemIdentifier);
+	}
+}
+
+void ADefaultPlayerCharacter::UpdateShieldProperties(FShieldProperties ShieldProperties)
+{
+	if(HasAuthority())
+	{
+		PlayerHealthComponent->UpdateShieldProperties(ShieldProperties);
+	}
+}
+
+void ADefaultPlayerCharacter::StoreCurrentShieldData()
+{
+	if(HasAuthority() && PlayerHealthComponent)
+	{
+		PlayerHealthComponent->StoreCurrentShieldData();
+	}
+}
+
+bool ADefaultPlayerCharacter::HasStoredShield()
+{
+	if(HasAuthority() && PlayerHealthComponent)
+	{
+		return PlayerHealthComponent->GetStoredShieldData().ShieldIdentifier != EItemIdentifier::NullShield;
+	}
+	return false;
+}
+
+TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllItems()
+{
+	TArray<EItemIdentifier> Identifiers;
+	if(PrimaryWeapon) Identifiers.Add(PrimaryWeapon->ItemIdentifier);
+	if(SecondaryWeapon) Identifiers.Add(SecondaryWeapon->ItemIdentifier);
+	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
+	if(PlayerHealthComponent->GetShieldIdentifier() != EItemIdentifier::NullShield) Identifiers.Add(PlayerHealthComponent->GetShieldIdentifier());
+	return Identifiers;
+}
+
+EWeaponSlot ADefaultPlayerCharacter::GetWeaponSlotByIdentifier(EItemIdentifier Identifier)
+{
+	if(PrimaryWeapon && PrimaryWeapon->ItemIdentifier == Identifier) return PrimaryWeapon->WeaponSlot;
+	if(SecondaryWeapon && SecondaryWeapon->ItemIdentifier == Identifier) return SecondaryWeapon->WeaponSlot;
+	if(MeleeWeapon && MeleeWeapon->ItemIdentifier == Identifier) return MeleeWeapon->WeaponSlot;
+	return EWeaponSlot::None;
+}
+
+EItemIdentifier ADefaultPlayerCharacter::GetCurrentShieldType()
+{
+	if(PlayerHealthComponent)
+	{
+		return PlayerHealthComponent->GetShieldIdentifier();
+	}
+	return EItemIdentifier::NullShield;
+}
+
+void ADefaultPlayerCharacter::RevertToPreviousShield()
+{
+	if(PlayerHealthComponent && HasAuthority())
+	{
+		PlayerHealthComponent->RevertToPreviousState();
+	}
+}
+
+
+bool ADefaultPlayerCharacter::CanSellCurrentShield()
+{
+	if(PlayerHealthComponent)
+	{
+		return PlayerHealthComponent->CanSell();
+	}
+	return false;
+}
+
+void ADefaultPlayerCharacter::SetCanSellCurrentShield(bool bSell)
+{
+	if(HasAuthority() && PlayerHealthComponent)
+	{
+		PlayerHealthComponent->SetCanSell(bSell);
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TrySellItem_Implementation(EItemIdentifier ItemIdentifier)
+{
+	TrySellItem(ItemIdentifier);
+}
+
+void ADefaultPlayerCharacter::Server_TryPurchaseItem_Implementation(EItemIdentifier ItemIdentifier)
+{
+	TryPurchaseItem(ItemIdentifier);
 }
 
 void ADefaultPlayerCharacter::Client_LoadDefaultHudData_Implementation()

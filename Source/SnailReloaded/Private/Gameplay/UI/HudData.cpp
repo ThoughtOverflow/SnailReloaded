@@ -54,6 +54,12 @@ UHudData* UHudData::SetCurrentTotalAmmo(int32 NewAmmo)
 	return this;
 }
 
+UHudData* UHudData::SetPlayerShieldHealth(float NewHealth)
+{
+	PlayerShieldHealth = NewHealth;
+	return this;
+}
+
 UHudData* UHudData::SetReloading(bool bReloading)
 {
 	bIsReloading = bReloading;
@@ -86,6 +92,11 @@ int32 UHudData::GetCurrentClipAmmo() const
 int32 UHudData::GetCurrentTotalAmmo() const
 {
 	return CurrentTotalAmmo;
+}
+
+float UHudData::GetPlayerShieldHealth() const
+{
+	return PlayerShieldHealth;
 }
 
 bool UHudData::GetIsReloading() const
