@@ -15,10 +15,15 @@ struct FShieldProperties
 public:
 
 	FShieldProperties();
-	FShieldProperties(float ShieldHealth, float ShieldDamageReduction, EItemIdentifier ShieldIdentifier);
+	FShieldProperties(float ShieldHealth, float ShieldMaxHealth, float ShieldDamageReduction, EItemIdentifier ShieldIdentifier);
+
+	static FShieldProperties NullShield();
+	static FShieldProperties MaxHealthShield(float SetHealth, float ShieldDamageReduction, EItemIdentifier ShieldIdentifier);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ShieldHealth;
+	UPROPERTY(BlueprintReadWrite)
+	float ShieldMaxHealth;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ShieldDamageReduction;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -53,12 +58,12 @@ protected:
 	EItemIdentifier ShieldIdentifier;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", ReplicatedUsing = OnRep_ShieldHealth)
 	float ShieldHealth;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", ReplicatedUsing = OnRep_ShieldHealth)
+	float ShieldMaxHealth;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
 	float ShieldDamageReduction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
 	FShieldProperties StoredShield;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", Replicated)
-	FShieldProperties CurrentShieldProperties;
 	UPROPERTY(Replicated)
 	bool bCanSell;
 
@@ -75,6 +80,10 @@ public:
 	void SetShieldHealth(float NewHealth);
 	UFUNCTION(BlueprintPure)
 	float GetShieldHealth();
+	UFUNCTION(BlueprintCallable)
+	void SetShieldMaxHealth(float NewHealth);
+	UFUNCTION(BlueprintPure)
+	float GetShieldMaxHealth();
 	UFUNCTION(BlueprintCallable)
 	void SetShieldDamageReduction(float NewReduction);
 	UFUNCTION(BlueprintPure)

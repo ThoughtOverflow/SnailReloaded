@@ -17,7 +17,12 @@ FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldI
 {
 	for(auto& Shield : ShieldDataTable)
 	{
-		if(Shield.ShieldIdentifier == ShieldIdentifier) return &Shield;
+		if(Shield.ShieldIdentifier == ShieldIdentifier)
+		{
+			//Set max to default.
+			Shield.ShieldMaxHealth = Shield.ShieldHealth;
+			return &Shield;
+		}
 	}
 	return nullptr;
 }

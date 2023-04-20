@@ -7,15 +7,29 @@
 #include "Net/UnrealNetwork.h"
 
 
-FShieldProperties::FShieldProperties(): ShieldHealth(0), ShieldDamageReduction(0), ShieldIdentifier(EItemIdentifier::NullShield)
+FShieldProperties::FShieldProperties(): ShieldHealth(0), ShieldMaxHealth(ShieldHealth), ShieldDamageReduction(0),
+                                        ShieldIdentifier(EItemIdentifier::NullShield)
 {
 }
 
-FShieldProperties::FShieldProperties(float ShieldHealth, float ShieldDamageReduction, EItemIdentifier ShieldIdentifier):
-	ShieldHealth(ShieldHealth),
-	ShieldDamageReduction(ShieldDamageReduction), ShieldIdentifier(ShieldIdentifier)
+FShieldProperties::FShieldProperties(float ShieldHealth, float ShieldMaxHealth, float ShieldDamageReduction,
+                                     EItemIdentifier ShieldIdentifier): ShieldHealth(ShieldHealth), ShieldMaxHealth(ShieldMaxHealth),
+                                                                        ShieldDamageReduction(ShieldDamageReduction), ShieldIdentifier(ShieldIdentifier)
 {
 }
+
+FShieldProperties FShieldProperties::NullShield()
+{
+	return FShieldProperties();
+}
+
+FShieldProperties FShieldProperties::MaxHealthShield(float SetHealth, float ShieldDamageReduction,
+	EItemIdentifier ShieldIdentifier)
+{
+	FShieldProperties Properties = FShieldProperties(SetHealth, SetHealth, ShieldDamageReduction, ShieldIdentifier);
+	return Properties;
+}
+
 
 UArmoredHealthComponent::UArmoredHealthComponent()
 {
@@ -23,7 +37,6 @@ UArmoredHealthComponent::UArmoredHealthComponent()
 	ShieldDamageReduction = 0.0f;
 	ShieldIdentifier = EItemIdentifier::NullShield;
 	StoredShield = FShieldProperties();
-	CurrentShieldProperties = FShieldProperties();
 	bCanSell = true;
 }
 
@@ -56,11 +69,11 @@ void UArmoredHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldHealth);
+	DOREPLIFETIME(UArmoredHealthComponent, ShieldMaxHealth);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldDamageReduction);
 	DOREPLIFETIME(UArmoredHealthComponent, ShieldIdentifier);
 	DOREPLIFETIME(UArmoredHealthComponent, StoredShield);
 	DOREPLIFETIME(UArmoredHealthComponent, bCanSell);
-	DOREPLIFETIME(UArmoredHealthComponent, CurrentShieldProperties);
 }
 
 void UArmoredHealthComponent::OnRep_ShieldHealth()
@@ -85,6 +98,19 @@ void UArmoredHealthComponent::SetShieldHealth(float NewHealth)
 float UArmoredHealthComponent::GetShieldHealth()
 {
 	return ShieldHealth;
+}
+
+void UArmoredHealthComponent::SetShieldMaxHealth(float NewHealth)
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		ShieldMaxHealth = NewHealth;
+	}
+}
+
+float UArmoredHealthComponent::GetShieldMaxHealth()
+{
+	return ShieldMaxHealth;
 }
 
 void UArmoredHealthComponent::SetShieldDamageReduction(float NewReduction)
@@ -131,10 +157,9 @@ void UArmoredHealthComponent::UpdateShieldProperties(FShieldProperties Propertie
 	{
 		
 		SetShieldHealth(Properties.ShieldHealth);
+		SetShieldMaxHealth(Properties.ShieldMaxHealth);
 		SetShieldDamageReduction(Properties.ShieldDamageReduction);
 		SetShieldIdentifier(Properties.ShieldIdentifier);
-
-		CurrentShieldProperties = FShieldProperties(GetShieldHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
 	}
 }
 
@@ -142,7 +167,7 @@ void UArmoredHealthComponent::StoreCurrentShieldData()
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-		StoredShield = FShieldProperties(GetShieldHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
+		StoredShield = FShieldProperties(GetShieldHealth(), GetShieldMaxHealth(), GetShieldDamageReduction(), GetShieldIdentifier());
 	}
 }
 
