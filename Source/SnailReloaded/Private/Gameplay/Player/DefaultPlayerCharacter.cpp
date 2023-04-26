@@ -150,7 +150,18 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 			DamageRequest.SourceActor = this;
 			DamageRequest.DeltaDamage = 15.f;
 			DamageRequest.TargetActor = this;
-			Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);	
+			Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+
+			//Do the game start as well:
+			if(HasAuthority())
+			{
+				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+				{
+					CombatGameMode->InitializeCurrentGame();
+				}
+				
+			}
+			
 		}
 }
 

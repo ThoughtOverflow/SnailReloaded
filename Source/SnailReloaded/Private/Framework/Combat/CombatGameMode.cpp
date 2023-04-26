@@ -5,8 +5,13 @@
 
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/HealthComponent.h"
+#include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+
+FGamePhase::FGamePhase(): GamePhase(EGamePhase::None), PhaseTimeSeconds(0)
+{
+}
 
 ACombatGameMode::ACombatGameMode()
 {
@@ -179,6 +184,35 @@ bool ACombatGameMode::SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemId
 					}
 				}
 				
+			}
+		}
+	}
+	return false;
+}
+
+void ACombatGameMode::InitializeCurrentGame()
+{
+	if(ACombatGameState* CombatGameState = GetGameState<ACombatGameState>())
+	{
+		if(GamePhases.Num() > 0)
+		{
+			CombatGameState->InitialPlayerMoney = PlayerStartMoney;
+			CombatGameState->SetCurrentGamePhase(GamePhases[0]);
+			CombatGameState->CurrentGameInitialized();
+		}
+	}
+}
+
+bool ACombatGameMode::GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase)
+{
+	if(AllowedPhases.Contains(Phase))
+	{
+		for(int i=0; i<GamePhases.Num(); i++)
+		{
+			if(GamePhases[i].GamePhase == Phase)
+			{
+				RefGamePhase = GamePhases[i];
+				return true;
 			}
 		}
 	}
