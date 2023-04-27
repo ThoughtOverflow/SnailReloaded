@@ -14,6 +14,34 @@ struct FDamageResponse;
 /**
  * 
  */
+
+UENUM(BlueprintType)
+enum class EGamePhase : uint8
+{
+	None = 0,
+	Preparation = 1,
+	ActiveGame = 2,
+	PostPlant = 3,
+	EndPhase = 4
+};
+
+USTRUCT(BlueprintType)
+struct FGamePhase
+{
+	GENERATED_BODY()
+
+public:
+
+	FGamePhase();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	EGamePhase GamePhase;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float PhaseTimeSeconds;
+	
+	
+};
+
 UCLASS()
 class SNAILRELOADED_API ACombatGameMode : public ADefaultGameMode
 {
@@ -35,6 +63,21 @@ protected:
 	TArray<FShieldProperties> ShieldDataTable;
 
 	FShieldProperties* FindShieldDataByType(EItemIdentifier ShieldIdentifier);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
+	TArray<EGamePhase> AllowedPhases;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
+	TArray<FGamePhase> GamePhases;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
+	int32 PlayerStartMoney;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
+	int32 MaxRounds;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
+	bool bAllowOvertime;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	int32 MaxOvertimeRounds;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	int32 OvertimeScoreDifference;
 	
 public:
 
@@ -46,5 +89,12 @@ public:
 	bool PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
 	UFUNCTION(BlueprintCallable)
 	bool SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
+
+	UFUNCTION(BlueprintCallable)
+	void InitializeCurrentGame();
+	UFUNCTION(BlueprintCallable)
+	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
+	UFUNCTION(BlueprintCallable)
+	void StartRound();
 	
 };

@@ -12,6 +12,7 @@
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
 #include "Framework/Combat/CombatGameMode.h"
+#include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
@@ -150,7 +151,18 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 			DamageRequest.SourceActor = this;
 			DamageRequest.DeltaDamage = 15.f;
 			DamageRequest.TargetActor = this;
-			Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);	
+			Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
+
+			//Do the game start as well:
+			if(HasAuthority())
+			{
+				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+				{
+					CombatGameMode->InitializeCurrentGame();
+				}
+				
+			}
+			
 		}
 }
 
@@ -220,7 +232,15 @@ void ADefaultPlayerCharacter::HandleToggleBuyMenu(const FInputActionInstance& Ac
 	{
 		if(IsLocallyControlled() && GetCombatPlayerController())
 		{
-			GetCombatPlayerController()->ToggleBuyMenu(true);
+			//Check for game phase:
+			if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+			{
+				if(CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::Preparation)
+				{
+					GetCombatPlayerController()->ToggleBuyMenu(true);
+				}	
+			}
+			
 		}
 	}
 }
