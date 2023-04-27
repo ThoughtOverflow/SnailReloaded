@@ -9,17 +9,30 @@
 ACombatGameState::ACombatGameState()
 {
 	InitialPlayerMoney = 5000;
+	CurrentRound = 0;
 }
 
 void ACombatGameState::OnRep_GamePhase()
 {
 	//Set timer:
 	SetPhaseTimer();
+	//Notify:
+	OnPhaseSelected(CurrentGamePhase.GamePhase);
+}
+
+void ACombatGameState::OnRep_RoundCounter()
+{
+	
 }
 
 void ACombatGameState::OnPhaseExpired()
 {
 	//Phase expired - allow override.
+}
+
+void ACombatGameState::OnPhaseSelected(EGamePhase NewPhase)
+{
+	
 }
 
 void ACombatGameState::SetPhaseTimer()
@@ -31,7 +44,7 @@ void ACombatGameState::SetPhaseTimer()
 	{
 		CancelPhaseTimer();
 	}
-	GetWorldTimerManager().SetTimer(PhaseTimer, this, &ACombatGameState::OnPhaseExpired, CurrentGamePhase.PhaseTimeSeconds);	
+	GetWorldTimerManager().SetTimer(PhaseTimer, this, &ACombatGameState::OnPhaseExpired, CurrentGamePhase.PhaseTimeSeconds);
 }
 
 void ACombatGameState::CancelPhaseTimer()
@@ -89,4 +102,31 @@ void ACombatGameState::SetCurrentGamePhase(FGamePhase NewPhase)
 float ACombatGameState::GetRemainingPhaseTime()
 {
 	return GetWorldTimerManager().IsTimerActive(PhaseTimer) ? GetWorldTimerManager().GetTimerRemaining(PhaseTimer) : 0.f;
+}
+
+void ACombatGameState::StartNewRound()
+{
+	//Restart from beginning.
+	if(HasAuthority())
+	{
+		
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->StartRound();
+		}
+	}
+}
+
+int32 ACombatGameState::GetCurrentRound()
+{
+	return CurrentRound;
+}
+
+void ACombatGameState::SetCurrentRound(int32 NewRound)
+{
+	if(HasAuthority())
+	{
+		CurrentRound = NewRound;
+		OnRep_RoundCounter();
+	}
 }

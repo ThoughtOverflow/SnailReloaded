@@ -13,5 +13,15 @@ UCLASS()
 class SNAILRELOADED_API AStandardCombatGameState : public ACombatGameState
 {
 	GENERATED_BODY()
+
+public:
+
+	AStandardCombatGameState();
+
+protected:
+
+	virtual void OnPhaseExpired() override;
+	virtual void OnPhaseSelected(EGamePhase NewPhase) override;
+	
 	
 };

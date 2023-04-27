@@ -197,7 +197,7 @@ void ACombatGameMode::InitializeCurrentGame()
 		if(GamePhases.Num() > 0)
 		{
 			CombatGameState->InitialPlayerMoney = PlayerStartMoney;
-			CombatGameState->SetCurrentGamePhase(GamePhases[0]);
+			StartRound();
 			CombatGameState->CurrentGameInitialized();
 		}
 	}
@@ -217,4 +217,17 @@ bool ACombatGameMode::GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePh
 		}
 	}
 	return false;
+}
+
+void ACombatGameMode::StartRound()
+{
+	if(ACombatGameState* CombatGameState = GetGameState<ACombatGameState>())
+	{
+		if(GamePhases.Num() > 0)
+		{
+			CombatGameState->SetCurrentRound(CombatGameState->GetCurrentRound() + 1);
+			CombatGameState->SetCurrentGamePhase(GamePhases[0]);
+		}
+	}
+
 }

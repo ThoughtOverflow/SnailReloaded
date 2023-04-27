@@ -31,11 +31,17 @@ protected:
 	FGamePhase CurrentGamePhase;
 	UFUNCTION()
 	void OnRep_GamePhase();
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_RoundCounter)
+	int32 CurrentRound;
+	UFUNCTION()
+	void OnRep_RoundCounter();
 
 	FTimerHandle PhaseTimer;
 
 	UFUNCTION()
 	virtual void OnPhaseExpired();
+	UFUNCTION()
+	virtual void OnPhaseSelected(EGamePhase NewPhase);
 	UFUNCTION()
 	virtual void SetPhaseTimer();
 	UFUNCTION()
@@ -56,6 +62,13 @@ public:
 	void SetCurrentGamePhase(FGamePhase NewPhase);
 	UFUNCTION(BlueprintPure)
 	float GetRemainingPhaseTime();
+	UFUNCTION(BlueprintCallable)
+	virtual void StartNewRound();
+
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentRound();
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentRound(int32 NewRound);
 	
 	
 };

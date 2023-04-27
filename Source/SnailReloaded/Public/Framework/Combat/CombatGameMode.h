@@ -94,5 +94,7 @@ public:
 	void InitializeCurrentGame();
 	UFUNCTION(BlueprintCallable)
 	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
+	UFUNCTION(BlueprintCallable)
+	void StartRound();
 	
 };
