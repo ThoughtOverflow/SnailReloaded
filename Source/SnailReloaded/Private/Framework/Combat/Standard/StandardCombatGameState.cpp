@@ -16,7 +16,7 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 	case EGamePhase::None: break;
 	case EGamePhase::Preparation: SelectNewPhase(EGamePhase::ActiveGame); break;
 	case EGamePhase::ActiveGame: SelectNewPhase(EGamePhase::EndPhase); break;
-	case EGamePhase::PostPlant: break;
+	case EGamePhase::PostPlant: SelectNewPhase(EGamePhase::EndPhase); break;
 	case EGamePhase::EndPhase: StartNewRound();
 	default: ;
 	}
@@ -27,6 +27,6 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	Super::OnPhaseSelected(NewPhase);
 	if(NewPhase == EGamePhase::EndPhase)
 	{
-		//Do Scoring - round finished.
+		//Do team scoring - round finished.
 	}
 }
