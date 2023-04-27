@@ -124,11 +124,14 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 				
 			}else
 			{
-				if(BuyMenu->IsInViewport()) BuyMenu->RemoveFromParent();
-				SetShowMouseCursor(false);
-				SetInputMode(FInputModeGameOnly());
-				ActivateUIInputHander(false);
-				if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
+				if(BuyMenu->IsInViewport())
+				{
+					BuyMenu->RemoveFromParent();
+					SetShowMouseCursor(false);
+					SetInputMode(FInputModeGameOnly());
+					ActivateUIInputHander(false);
+					if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
+				}
 			}
 		}
 	}

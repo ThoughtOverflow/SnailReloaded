@@ -3,6 +3,8 @@
 
 #include "Framework/Combat/CombatGameState.h"
 
+#include "Framework/Combat/CombatPlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -25,9 +27,27 @@ void ACombatGameState::OnRep_RoundCounter()
 	
 }
 
-void ACombatGameState::OnPhaseExpired()
+void ACombatGameState::PhaseTimerCallback()
+{
+	//Call phase expired notify:
+	OnPhaseExpired(CurrentGamePhase.GamePhase);
+}
+
+void ACombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 {
 	//Phase expired - allow override.
+	
+	//Close all buy menus.
+	if(ExpiredPhase == EGamePhase::Preparation)
+	{
+		for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
+		{
+			if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				PlayerController->ToggleBuyMenu(false);
+			}
+		}
+	}
 }
 
 void ACombatGameState::OnPhaseSelected(EGamePhase NewPhase)
@@ -44,7 +64,7 @@ void ACombatGameState::SetPhaseTimer()
 	{
 		CancelPhaseTimer();
 	}
-	GetWorldTimerManager().SetTimer(PhaseTimer, this, &ACombatGameState::OnPhaseExpired, CurrentGamePhase.PhaseTimeSeconds);
+	GetWorldTimerManager().SetTimer(PhaseTimer, this, &ACombatGameState::PhaseTimerCallback, CurrentGamePhase.PhaseTimeSeconds);
 }
 
 void ACombatGameState::CancelPhaseTimer()

@@ -39,7 +39,9 @@ protected:
 	FTimerHandle PhaseTimer;
 
 	UFUNCTION()
-	virtual void OnPhaseExpired();
+	void PhaseTimerCallback();
+	UFUNCTION()
+	virtual void OnPhaseExpired(EGamePhase ExpiredPhase);
 	UFUNCTION()
 	virtual void OnPhaseSelected(EGamePhase NewPhase);
 	UFUNCTION()

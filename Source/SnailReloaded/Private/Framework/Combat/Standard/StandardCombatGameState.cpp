@@ -8,9 +8,9 @@ AStandardCombatGameState::AStandardCombatGameState()
 	
 }
 
-void AStandardCombatGameState::OnPhaseExpired()
+void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 {
-	Super::OnPhaseExpired();
+	Super::OnPhaseExpired(ExpiredPhase);
 
 	switch (CurrentGamePhase.GamePhase) {
 	case EGamePhase::None: break;

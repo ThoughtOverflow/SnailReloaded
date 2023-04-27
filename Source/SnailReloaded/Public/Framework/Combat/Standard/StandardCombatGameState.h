@@ -20,7 +20,7 @@ public:
 
 protected:
 
-	virtual void OnPhaseExpired() override;
+	virtual void OnPhaseExpired(EGamePhase ExpiredPhase) override;
 	virtual void OnPhaseSelected(EGamePhase NewPhase) override;
 	
 	
