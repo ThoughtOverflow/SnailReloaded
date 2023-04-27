@@ -3,6 +3,11 @@
 
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 
+AStandardCombatGameState::AStandardCombatGameState()
+{
+	
+}
+
 void AStandardCombatGameState::OnPhaseExpired()
 {
 	Super::OnPhaseExpired();

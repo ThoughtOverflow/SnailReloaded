@@ -75,6 +75,7 @@ void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACombatGameState, CurrentGamePhase);
+	DOREPLIFETIME(ACombatGameState, CurrentRound);
 }
 
 void ACombatGameState::CurrentGameInitialized()

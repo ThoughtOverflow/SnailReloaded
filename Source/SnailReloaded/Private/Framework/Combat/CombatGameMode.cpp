@@ -225,8 +225,14 @@ void ACombatGameMode::StartRound()
 	{
 		if(GamePhases.Num() > 0)
 		{
-			CombatGameState->SetCurrentRound(CombatGameState->GetCurrentRound() + 1);
-			CombatGameState->SetCurrentGamePhase(GamePhases[0]);
+			if (CombatGameState->GetCurrentRound() < MaxRounds)
+			{
+				CombatGameState->SetCurrentRound(CombatGameState->GetCurrentRound() + 1);
+				CombatGameState->SetCurrentGamePhase(GamePhases[0]);	
+			}else
+			{
+				//TODO Trigger end match.
+			}
 		}
 	}
 
