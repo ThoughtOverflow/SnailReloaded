@@ -46,7 +46,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	LastFireTime = 0.f;
 	bAllowAutoReload = true;
 
-	bHasBomb = true;
+	bHasBomb = false;
 	bIsInPlantZone = false;
 	
 }
@@ -391,6 +391,10 @@ void ADefaultPlayerCharacter::OnRep_AllowPlant()
 	}
 }
 
+void ADefaultPlayerCharacter::OnRep_HasBomb()
+{
+	
+}
 
 
 // Called every frame
@@ -1045,6 +1049,7 @@ void ADefaultPlayerCharacter::SetHasBomb(bool bHas)
 	if(HasAuthority())
 	{
 		this->bHasBomb = bHas;
+		OnRep_HasBomb();
 		CheckPlantRequirements();
 	}
 }

@@ -4,7 +4,3 @@
 #include "Gameplay/UI/BuyMenu.h"
 
 
-void UBuyMenu::NativeConstruct()
-{
-	Super::NativeConstruct();
-}

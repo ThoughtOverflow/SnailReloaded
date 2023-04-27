@@ -141,13 +141,15 @@ protected:
 	//Plant logic:
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	bool bIsInPlantZone;
-	UPROPERTY(BlueprintReadWrite, Replicated)
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_HasBomb)
 	bool bHasBomb;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_AllowPlant)
 	bool bAllowPlant;
 
 	UFUNCTION()
 	void OnRep_AllowPlant();
+	UFUNCTION()
+	void OnRep_HasBomb();
 
 	void CheckPlantRequirements();
 	

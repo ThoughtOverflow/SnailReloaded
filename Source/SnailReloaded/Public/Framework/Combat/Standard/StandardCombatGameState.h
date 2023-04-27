@@ -22,6 +22,7 @@ protected:
 
 	virtual void OnPhaseExpired(EGamePhase ExpiredPhase) override;
 	virtual void OnPhaseSelected(EGamePhase NewPhase) override;
+	virtual void StartNewRound() override;
 	
 	
 };

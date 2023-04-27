@@ -3,6 +3,9 @@
 
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 
+#include "GameFramework/PlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
+
 AStandardCombatGameState::AStandardCombatGameState()
 {
 	
@@ -29,4 +32,23 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	{
 		//Do team scoring - round finished.
 	}
+}
+
+void AStandardCombatGameState::StartNewRound()
+{
+	Super::StartNewRound();
+	
+	//Give bomb to random player;
+	if(HasAuthority())
+	{
+		int32 randPlayerIndex = FMath::RandRange(0, PlayerArray.Num() - 1);
+		if(TObjectPtr<APlayerState> PlayerState = PlayerArray[randPlayerIndex])
+		{
+			if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				PlayerCharacter->SetHasBomb(true);
+			}
+		}
+	}
+	
 }
