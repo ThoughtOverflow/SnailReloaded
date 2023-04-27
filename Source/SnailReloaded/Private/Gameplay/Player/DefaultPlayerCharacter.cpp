@@ -20,6 +20,7 @@
 #include "Net/UnrealNetwork.h"
 
 
+
 // Sets default values
 ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 {
@@ -44,6 +45,9 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	FiredRoundsPerShootingEvent = 0;
 	LastFireTime = 0.f;
 	bAllowAutoReload = true;
+
+	bHasBomb = true;
+	bIsInPlantZone = false;
 	
 }
 
@@ -65,6 +69,9 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, LineTraceMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bHasBomb);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
 }
 
 ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()
@@ -374,6 +381,17 @@ void ADefaultPlayerCharacter::OnCurrentWeaponReloading()
 		}
 	}
 }
+
+void ADefaultPlayerCharacter::OnRep_AllowPlant()
+{
+	//Show plant message:
+	if(GetCombatPlayerController())
+	{
+		GetCombatPlayerController()->GetHudData()->SetShowPlantHint(bAllowPlant)->Submit();
+	}
+}
+
+
 
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
@@ -996,4 +1014,46 @@ void ADefaultPlayerCharacter::Server_EndShooting_Implementation()
 {
 	EndShooting();
 	
+}
+
+bool ADefaultPlayerCharacter::IsInPlantZone() const
+{
+	return bIsInPlantZone;
+}
+
+bool ADefaultPlayerCharacter::HasBomb() const
+{
+	return bHasBomb;
+}
+
+bool ADefaultPlayerCharacter::IsPlantAllowed() const
+{
+	return bAllowPlant;
+}
+
+void ADefaultPlayerCharacter::SetIsInPlantZone(bool bIs)
+{
+	if(HasAuthority())
+	{
+		this->bIsInPlantZone = bIs;
+		CheckPlantRequirements();
+	}
+}
+
+void ADefaultPlayerCharacter::SetHasBomb(bool bHas)
+{
+	if(HasAuthority())
+	{
+		this->bHasBomb = bHas;
+		CheckPlantRequirements();
+	}
+}
+
+void ADefaultPlayerCharacter::CheckPlantRequirements()
+{
+	if(HasAuthority())
+	{
+		bAllowPlant = HasBomb() && IsInPlantZone();
+		OnRep_AllowPlant();
+	}
 }

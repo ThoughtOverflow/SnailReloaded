@@ -22,6 +22,7 @@ class UHealthComponent;
 UCLASS()
 class SNAILRELOADED_API ADefaultPlayerCharacter : public ACharacter
 {
+	
 	GENERATED_BODY()
 
 public:
@@ -71,6 +72,8 @@ public:
 	bool bAllowAutoReload;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
 	UNiagaraSystem* NiagaraSystem;
+
+	
 
 protected:
 	// Called when the game starts or when spawned
@@ -134,6 +137,19 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
+
+	//Plant logic:
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	bool bIsInPlantZone;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	bool bHasBomb;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_AllowPlant)
+	bool bAllowPlant;
+
+	UFUNCTION()
+	void OnRep_AllowPlant();
+
+	void CheckPlantRequirements();
 	
 
 public:	
@@ -240,7 +256,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetCanSellCurrentShield(bool bSell);
 
-	
+	UFUNCTION(BlueprintPure)
+	bool IsInPlantZone() const;
+	UFUNCTION(BlueprintCallable)
+	void SetIsInPlantZone(bool bIn);
+	UFUNCTION(BlueprintPure)
+	bool HasBomb() const;
+	UFUNCTION(BlueprintCallable)
+	void SetHasBomb(bool bHas);
+	UFUNCTION(BlueprintPure)
+	bool IsPlantAllowed() const;
 	
 	
 };

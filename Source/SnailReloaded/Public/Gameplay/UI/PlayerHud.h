@@ -21,6 +21,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health")
 	float PlayerHealthPercentage;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
 	FText CurrentWeaponName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
@@ -31,4 +32,7 @@ public:
 	float PlayerShieldHealth;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
 	bool bIsReloading;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Planting")
+	bool bShowPlantHint;
 };
