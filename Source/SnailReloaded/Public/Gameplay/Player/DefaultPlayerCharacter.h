@@ -50,6 +50,8 @@ public:
 	UInputAction* SelectMeleeInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* ToggleBuyMenu;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* PlantBomb;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -106,6 +108,8 @@ protected:
 	void HandleSelectMeleeInput(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleToggleBuyMenu(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandlePlantBomb(const FInputActionInstance& Action);
 	
 	//Shooting
 	
@@ -152,6 +156,15 @@ protected:
 	void OnRep_HasBomb();
 
 	void CheckPlantRequirements();
+
+	UFUNCTION()
+	void TryStartPlanting();
+	UFUNCTION(Server, Reliable)
+	void Server_TryStartPlanting();
+	UFUNCTION()
+	void TryStopPlanting();
+	UFUNCTION(Server, Reliable)
+	void Server_TryStopPlanting();
 	
 
 public:	

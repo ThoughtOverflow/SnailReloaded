@@ -52,7 +52,7 @@ protected:
 	virtual void SelectNewPhase(EGamePhase NewPhase);
 
 	//override
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const;
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const override;
 
 public:
 

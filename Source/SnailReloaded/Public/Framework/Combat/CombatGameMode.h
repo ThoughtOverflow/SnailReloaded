@@ -91,7 +91,7 @@ public:
 	bool SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
 
 	UFUNCTION(BlueprintCallable)
-	void InitializeCurrentGame();
+	virtual void InitializeCurrentGame();
 	UFUNCTION(BlueprintCallable)
 	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
 	UFUNCTION(BlueprintCallable)

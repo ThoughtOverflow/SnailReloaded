@@ -14,6 +14,8 @@
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Framework/Combat/Standard/StandardCombatGameMode.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -252,6 +254,23 @@ void ADefaultPlayerCharacter::HandleToggleBuyMenu(const FInputActionInstance& Ac
 	}
 }
 
+void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("START"));
+		TryStartPlanting();
+		
+	}else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("STOP"));
+		TryStopPlanting();
+	}
+}
+
+
+
+
 void ADefaultPlayerCharacter::OnReloadComplete()
 {
 	if(HasAuthority() && CurrentlyEquippedWeapon)
@@ -424,6 +443,8 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(SelectSecondaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectSecondaryInput);
 	EnhancedInputComponent->BindAction(SelectMeleeInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectMeleeInput);
 	EnhancedInputComponent->BindAction(ToggleBuyMenu, ETriggerEvent::Started, this, &ADefaultPlayerCharacter::HandleToggleBuyMenu);
+	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandlePlantBomb);
+	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandlePlantBomb);
 	
 }
 
@@ -1059,6 +1080,54 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 	if(HasAuthority())
 	{
 		bAllowPlant = HasBomb() && IsInPlantZone();
+		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
+		}
 		OnRep_AllowPlant();
 	}
+}
+
+void ADefaultPlayerCharacter::TryStartPlanting()
+{
+	if(HasAuthority())
+	{
+		CheckPlantRequirements();
+		if(IsPlantAllowed())
+		{
+			if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+			{
+				CombatGameMode->BeginPlanting(this);
+			}
+		}
+		
+		
+	}else
+	{
+		Server_TryStartPlanting();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryStartPlanting_Implementation()
+{
+}
+
+void ADefaultPlayerCharacter::TryStopPlanting()
+{
+	if(HasAuthority())
+	{
+		
+		if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->EndPlanting(this);
+		}
+		
+	}else
+	{
+		Server_TryStopPlanting();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()
+{
 }
