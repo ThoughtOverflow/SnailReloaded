@@ -7,6 +7,7 @@
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "GameFramework/PlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Gameplay/Weapons/Bomb.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -35,6 +36,13 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	if(NewPhase == EGamePhase::EndPhase)
 	{
 		//Do team scoring - round finished.
+
+		//Temp - Destroy prev bomb:
+		if(PlantedBomb)
+		{
+			PlantedBomb->Destroy();
+			PlantedBomb = nullptr;	
+		}
 	}
 	//Update plant hint graphic.
 	for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
@@ -68,7 +76,7 @@ void AStandardCombatGameState::StartNewRound()
 
 void AStandardCombatGameState::OnRep_PlantDefuse()
 {
-	if(LatestBombInteractor->GetController()->IsLocalController())
+	if(LatestBombInteractor->GetController() && LatestBombInteractor->GetController()->IsLocalController())
 	{
 		if(IsSomeonePlanting() || IsSomeoneDefusing())
 		{
@@ -164,7 +172,6 @@ void AStandardCombatGameState::OnBombPlanted()
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		SelectNewPhase(EGamePhase::PostPlant);
-		
 	}
 }
 
