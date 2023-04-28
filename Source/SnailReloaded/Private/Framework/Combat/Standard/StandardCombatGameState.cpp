@@ -3,6 +3,7 @@
 
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 
+#include "Framework/Combat/CombatPlayerController.h"
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "GameFramework/PlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
@@ -67,25 +68,32 @@ void AStandardCombatGameState::StartNewRound()
 
 void AStandardCombatGameState::OnRep_PlantDefuse()
 {
+	if(LatestBombInteractor->GetController()->IsLocalController())
+	{
+		if(IsSomeonePlanting() || IsSomeoneDefusing())
+		{
+			LatestBombInteractor->GetController()->SetIgnoreMoveInput(true);
+		}else
+		{
+			LatestBombInteractor->GetController()->ResetIgnoreMoveInput();
+		}
+		
+	}
+	
 	if(IsSomeonePlanting())
 	{
-
 		GetWorldTimerManager().SetTimer(PlantTimer, this, &AStandardCombatGameState::PlantTimerCallback, PlantTime);
-		LatestBombInteractor->GetController()->SetIgnoreMoveInput(true);
 		
 	}else
 	{
-		LatestBombInteractor->GetController()->SetIgnoreMoveInput(false);
 		GetWorldTimerManager().ClearTimer(PlantTimer);
 	}
 
 	if(IsSomeoneDefusing())
 	{
 		GetWorldTimerManager().SetTimer(DefuseTimer, this, &AStandardCombatGameState::DefuseTimerCallback, DefuseTime);
-		LatestBombInteractor->GetController()->SetIgnoreMoveInput(true);
 	}else
 	{
-		LatestBombInteractor->GetController()->SetIgnoreMoveInput(false);
 		GetWorldTimerManager().ClearTimer(DefuseTimer);
 	}
 }
