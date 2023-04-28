@@ -19,9 +19,9 @@ public:
 
 	AStandardCombatGameState();
 
-	UPROPERTY(Replicated)
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	float PlantTime;
-	UPROPERTY(Replicated)
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	float DefuseTime;
 
 	UPROPERTY()
@@ -65,6 +65,8 @@ public:
 	bool IsSomeoneDefusing();
 	UFUNCTION()
 	void OnBombPlanted();
+	UFUNCTION(BlueprintPure)
+	float GetBombActionTimeRemaining();
 	
 	
 };

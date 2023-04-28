@@ -35,6 +35,14 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	{
 		//Do team scoring - round finished.
 	}
+	//Update plant hint graphic.
+	for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
+	{
+		if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+		{
+			PlayerCharacter->CheckPlantRequirements();
+		}
+	}
 }
 
 void AStandardCombatGameState::StartNewRound()
@@ -63,17 +71,21 @@ void AStandardCombatGameState::OnRep_PlantDefuse()
 	{
 
 		GetWorldTimerManager().SetTimer(PlantTimer, this, &AStandardCombatGameState::PlantTimerCallback, PlantTime);
+		LatestBombInteractor->GetController()->SetIgnoreMoveInput(true);
 		
 	}else
 	{
+		LatestBombInteractor->GetController()->SetIgnoreMoveInput(false);
 		GetWorldTimerManager().ClearTimer(PlantTimer);
 	}
 
 	if(IsSomeoneDefusing())
 	{
 		GetWorldTimerManager().SetTimer(DefuseTimer, this, &AStandardCombatGameState::DefuseTimerCallback, DefuseTime);
+		LatestBombInteractor->GetController()->SetIgnoreMoveInput(true);
 	}else
 	{
+		LatestBombInteractor->GetController()->SetIgnoreMoveInput(false);
 		GetWorldTimerManager().ClearTimer(DefuseTimer);
 	}
 }
@@ -141,6 +153,22 @@ void AStandardCombatGameState::OnBombPlanted()
 {
 	if(HasAuthority())
 	{
+		SetPlayerDefusing(LatestBombInteractor, false);
+		SetPlayerPlanting(LatestBombInteractor, false);
 		SelectNewPhase(EGamePhase::PostPlant);
+		
 	}
+}
+
+float AStandardCombatGameState::GetBombActionTimeRemaining()
+{
+	if(IsSomeonePlanting())
+	{
+		return GetWorldTimerManager().GetTimerElapsed(PlantTimer);
+	}
+	if(IsSomeoneDefusing())
+	{
+		return GetWorldTimerManager().GetTimerElapsed(DefuseTimer);
+	}
+	return 0.f;
 }

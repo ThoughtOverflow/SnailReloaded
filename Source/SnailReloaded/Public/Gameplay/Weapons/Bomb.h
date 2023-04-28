@@ -25,15 +25,12 @@ protected:
 
 	UFUNCTION()
 	void ExplosionTimerCallback();
-
-	UFUNCTION(Client, Reliable)
-	void Client_PlantBomb(float BombTime);
 	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void PlantBomb(float BombTime);
+	void PlantBomb();
 
 };

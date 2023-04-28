@@ -66,8 +66,9 @@ void AStandardCombatGameMode::PlantBomb(ADefaultPlayerCharacter* Planter)
 			FGamePhase PostPlantPhase;
 			if(GetGamePhaseByType(EGamePhase::PostPlant, PostPlantPhase))
 			{
-				StandardCombatGameState->PlantedBomb = GetWorld()->SpawnActor<ABomb>(BombActor, Planter->GetActorLocation() + Planter->GetActorRotation().Vector() * 500.f, FRotator::ZeroRotator);
-				StandardCombatGameState->PlantedBomb->PlantBomb(PostPlantPhase.PhaseTimeSeconds);
+				StandardCombatGameState->PlantedBomb = GetWorld()->SpawnActor<ABomb>(BombActor, Planter->GetActorLocation() + Planter->GetActorRotation().Vector() * 100.f, FRotator::ZeroRotator);
+				StandardCombatGameState->PlantedBomb->PlantBomb();
+				Planter->SetHasBomb(false);
 			}
 		}
 	}

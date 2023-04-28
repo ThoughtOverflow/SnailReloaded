@@ -154,8 +154,7 @@ protected:
 	void OnRep_AllowPlant();
 	UFUNCTION()
 	void OnRep_HasBomb();
-
-	void CheckPlantRequirements();
+	
 
 	UFUNCTION()
 	void TryStartPlanting();
@@ -270,7 +269,8 @@ public:
 	bool CanSellCurrentShield();
 	UFUNCTION(BlueprintCallable)
 	void SetCanSellCurrentShield(bool bSell);
-
+	UFUNCTION()
+	void CheckPlantRequirements();
 	UFUNCTION(BlueprintPure)
 	bool IsInPlantZone() const;
 	UFUNCTION(BlueprintCallable)

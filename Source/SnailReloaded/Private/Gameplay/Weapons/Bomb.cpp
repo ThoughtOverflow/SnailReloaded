@@ -43,24 +43,15 @@ void ABomb::Tick(float DeltaTime)
 
 }
 
-void ABomb::PlantBomb(float BombTime)
+void ABomb::PlantBomb()
 {
 	if(HasAuthority())
 	{
-		// Client_PlantBomb(BombTime);
 		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
 		{
-			CombatGameState->SetPlayerDefusing(nullptr, false);
-			CombatGameState->SetPlayerPlanting(nullptr, false);
 			CombatGameState->OnBombPlanted();
 			
 		}
 	}
-	GetWorldTimerManager().SetTimer(ExplosionTimer, this, &ABomb::ExplosionTimerCallback, BombTime);
-}
-
-void ABomb::Client_PlantBomb_Implementation(float BombTime)
-{
-	PlantBomb(BombTime);
 }
 

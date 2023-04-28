@@ -1083,6 +1083,11 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
 		{
 			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
+			//cancel plant if somehow it became false;
+			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
+			{
+				CombatGameState->SetPlayerPlanting(this, false);
+			}
 		}
 		OnRep_AllowPlant();
 	}
