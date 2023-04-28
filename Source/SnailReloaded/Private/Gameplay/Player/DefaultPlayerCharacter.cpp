@@ -170,9 +170,21 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 					CombatGameMode->InitializeCurrentGame();
 				}
 				
+			}else
+			{
+				Server_TemporaryShit();
 			}
 			
 		}
+}
+
+
+void ADefaultPlayerCharacter::Server_TemporaryShit_Implementation()
+{
+	if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		CombatGameMode->InitializeCurrentGame();
+	}
 }
 
 void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action)
@@ -1115,6 +1127,7 @@ void ADefaultPlayerCharacter::TryStartPlanting()
 
 void ADefaultPlayerCharacter::Server_TryStartPlanting_Implementation()
 {
+	TryStartPlanting();
 }
 
 void ADefaultPlayerCharacter::TryStopPlanting()
@@ -1135,4 +1148,5 @@ void ADefaultPlayerCharacter::TryStopPlanting()
 
 void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()
 {
+	TryStopPlanting();
 }

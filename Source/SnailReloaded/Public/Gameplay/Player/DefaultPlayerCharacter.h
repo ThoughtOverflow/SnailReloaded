@@ -164,7 +164,10 @@ protected:
 	void TryStopPlanting();
 	UFUNCTION(Server, Reliable)
 	void Server_TryStopPlanting();
-	
+
+
+	UFUNCTION(Server, Reliable)
+	void Server_TemporaryShit();
 
 public:	
 	// Called every frame
@@ -284,3 +287,4 @@ public:
 	
 	
 };
+
