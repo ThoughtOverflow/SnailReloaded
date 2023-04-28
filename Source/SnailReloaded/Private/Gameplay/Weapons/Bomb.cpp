@@ -31,11 +31,6 @@ void ABomb::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	
 }
 
-void ABomb::ExplosionTimerCallback()
-{
-	UE_LOG(LogTemp, Warning, TEXT("BOOM!"));
-}
-
 // Called every frame
 void ABomb::Tick(float DeltaTime)
 {

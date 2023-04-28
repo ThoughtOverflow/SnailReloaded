@@ -21,10 +21,6 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	FTimerHandle ExplosionTimer;
-
-	UFUNCTION()
-	void ExplosionTimerCallback();
 	
 public:	
 	// Called every frame
