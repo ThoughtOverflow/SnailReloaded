@@ -136,7 +136,15 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 				}
 			}
 		}
+	}else
+	{
+		Client_ToggleBuyMenu(bOpen);
 	}
+}
+
+void ACombatPlayerController::Client_ToggleBuyMenu_Implementation(bool bOpen)
+{
+	ToggleBuyMenu(bOpen);
 }
 
 
