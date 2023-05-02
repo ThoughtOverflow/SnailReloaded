@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/HealthComponent.h"
 #include "Framework/DefaultPlayerState.h"
 #include "CombatPlayerState.generated.h"
 
@@ -24,6 +25,8 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerMoney)
 	int32 PlayerMoney;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
+	GameTeams CurrentTeam;
 
 	UFUNCTION()
 	void OnRep_PlayerMoney();
@@ -38,5 +41,9 @@ public:
 	void ChangePlayerMoney(int32 DeltaMoney);
 	UFUNCTION(BlueprintPure)
 	int32 GetPlayerMoney();
+	UFUNCTION(BlueprintPure)
+	GameTeams GetTeam();
+	UFUNCTION(BlueprintCallable)
+	void SetTeam(GameTeams NewTeam);
 	
 };

@@ -78,6 +78,9 @@ protected:
 	int32 MaxOvertimeRounds;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
 	int32 OvertimeScoreDifference;
+
+	UFUNCTION()
+	float ProcessDamageMultipliers(UHealthComponent* SrcComp, UHealthComponent* TargetComp);
 	
 public:
 
@@ -96,5 +99,7 @@ public:
 	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
 	UFUNCTION(BlueprintCallable)
 	void StartRound();
+	UFUNCTION(BlueprintCallable)
+	virtual void ProcessPlayerDeath(ADefaultPlayerCharacter* PlayerCharacter);
 	
 };

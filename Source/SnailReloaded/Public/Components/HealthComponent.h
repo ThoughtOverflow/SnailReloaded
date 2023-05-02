@@ -7,6 +7,24 @@
 #include "HealthComponent.generated.h"
 
 class ACombatPlayerController;
+
+UENUM(BlueprintType)
+enum class GameTeams : uint8
+{
+	None = 0,
+	TeamA = 1,
+	TeamB = 2
+};
+UENUM(BlueprintType)
+enum class GameObjectTypes : uint8
+{
+	None = 0,
+	AllyPlayer = 1,
+	EnemyPlayer = 2,
+	Bomb = 3,
+		
+};
+
 USTRUCT(BlueprintType)
 struct FDamageRequest
 {
@@ -65,6 +83,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health")
 	float DefaultObjectHealth;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health")
+	bool bInvulnerable;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	FDamageResponse LatestDamage;
@@ -86,6 +106,10 @@ protected:
 	float ObjectHealth;
 	UPROPERTY(Replicated)
 	float ObjectMaxHealth;
+	UPROPERTY(EditDefaultsOnly)
+	GameObjectTypes ObjectType;
+	UPROPERTY(EditDefaultsOnly)
+	TMap<GameObjectTypes, float> DamageMultipliers;
 
 	UFUNCTION()
 	void OnRep_ObjectHealth();
@@ -105,5 +129,9 @@ public:
 	virtual float GetObjectMaxHealth() const;
 	UFUNCTION(BlueprintCallable)
 	virtual void SetObjectMaxHealth(float newHealth);
+	UFUNCTION(BlueprintPure)
+	float GetDamageMultiplierForTarget(UHealthComponent* TargetComp);
+	UFUNCTION(BlueprintPure)
+	GameObjectTypes GetCurrentObjectType();
 		
 };

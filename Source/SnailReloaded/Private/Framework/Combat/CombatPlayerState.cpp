@@ -9,7 +9,7 @@
 
 ACombatPlayerState::ACombatPlayerState()
 {
-	
+	CurrentTeam = GameTeams::None;
 }
 
 void ACombatPlayerState::BeginPlay()
@@ -32,6 +32,7 @@ void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ACombatPlayerState, PlayerMoney);
+	DOREPLIFETIME(ACombatPlayerState, CurrentTeam);
 }
 
 void ACombatPlayerState::SetPlayerMoney(int32 NewMoney)
@@ -54,4 +55,17 @@ void ACombatPlayerState::ChangePlayerMoney(int32 DeltaMoney)
 int32 ACombatPlayerState::GetPlayerMoney()
 {
 	return PlayerMoney;
+}
+
+GameTeams ACombatPlayerState::GetTeam()
+{
+	return CurrentTeam;
+}
+
+void ACombatPlayerState::SetTeam(GameTeams NewTeam)
+{
+	if(HasAuthority())
+	{
+		CurrentTeam = NewTeam;
+	}
 }

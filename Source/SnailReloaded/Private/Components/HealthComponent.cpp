@@ -34,6 +34,7 @@ UHealthComponent::UHealthComponent()
 	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
 	LatestDamage = FDamageResponse();
 	bIsDead = false;
+	bInvulnerable = false;
 }
 
 
@@ -99,7 +100,7 @@ FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, 
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-		if(bIsDead) return FDamageResponse();
+		if(bIsDead || bInvulnerable) return FDamageResponse();
 		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourceActor, DamageRequest.DeltaDamage, ObjectHealth + DamageRequest.DeltaDamage);
 		LatestDamage = DamageResponse;
 		this->ObjectHealth = FMath::Floor(FMath::Clamp(newHealth, 0.f, ObjectMaxHealth));
@@ -128,4 +129,21 @@ void UHealthComponent::SetObjectMaxHealth(float newHealth)
 	{
 		this->ObjectMaxHealth = newHealth;
 	}
+}
+
+float UHealthComponent::GetDamageMultiplierForTarget(UHealthComponent* TargetComp)
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		if(DamageMultipliers.Contains(TargetComp->GetCurrentObjectType()))
+		{
+			return 0.f;
+		}
+	}
+	return 0.f;
+}
+
+GameObjectTypes UHealthComponent::GetCurrentObjectType()
+{
+	return ObjectType; 
 }
