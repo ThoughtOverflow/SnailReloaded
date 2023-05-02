@@ -40,11 +40,14 @@ void ACombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 	//Close all buy menus.
 	if(ExpiredPhase == EGamePhase::Preparation)
 	{
-		for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
+		if(HasAuthority())
 		{
-			if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
 			{
-				PlayerController->ToggleBuyMenu(false);
+				if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+				{
+					PlayerController->ToggleBuyMenu(false);
+				}
 			}
 		}
 	}

@@ -14,10 +14,13 @@
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Framework/Combat/Standard/StandardCombatGameMode.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+
 
 
 // Sets default values
@@ -44,6 +47,9 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	FiredRoundsPerShootingEvent = 0;
 	LastFireTime = 0.f;
 	bAllowAutoReload = true;
+
+	bHasBomb = false;
+	bIsInPlantZone = false;
 	
 }
 
@@ -65,6 +71,9 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, LineTraceMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bHasBomb);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
 }
 
 ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()
@@ -161,9 +170,21 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 					CombatGameMode->InitializeCurrentGame();
 				}
 				
+			}else
+			{
+				Server_TemporaryShit();
 			}
 			
 		}
+}
+
+
+void ADefaultPlayerCharacter::Server_TemporaryShit_Implementation()
+{
+	if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		CombatGameMode->InitializeCurrentGame();
+	}
 }
 
 void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action)
@@ -244,6 +265,23 @@ void ADefaultPlayerCharacter::HandleToggleBuyMenu(const FInputActionInstance& Ac
 		}
 	}
 }
+
+void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("START"));
+		TryStartPlanting();
+		
+	}else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("STOP"));
+		TryStopPlanting();
+	}
+}
+
+
+
 
 void ADefaultPlayerCharacter::OnReloadComplete()
 {
@@ -375,6 +413,21 @@ void ADefaultPlayerCharacter::OnCurrentWeaponReloading()
 	}
 }
 
+void ADefaultPlayerCharacter::OnRep_AllowPlant()
+{
+	//Show plant message:
+	if(GetCombatPlayerController())
+	{
+		GetCombatPlayerController()->GetHudData()->SetShowPlantHint(bAllowPlant)->Submit();
+	}
+}
+
+void ADefaultPlayerCharacter::OnRep_HasBomb()
+{
+	
+}
+
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -402,6 +455,8 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(SelectSecondaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectSecondaryInput);
 	EnhancedInputComponent->BindAction(SelectMeleeInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectMeleeInput);
 	EnhancedInputComponent->BindAction(ToggleBuyMenu, ETriggerEvent::Started, this, &ADefaultPlayerCharacter::HandleToggleBuyMenu);
+	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandlePlantBomb);
+	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandlePlantBomb);
 	
 }
 
@@ -996,4 +1051,102 @@ void ADefaultPlayerCharacter::Server_EndShooting_Implementation()
 {
 	EndShooting();
 	
+}
+
+bool ADefaultPlayerCharacter::IsInPlantZone() const
+{
+	return bIsInPlantZone;
+}
+
+bool ADefaultPlayerCharacter::HasBomb() const
+{
+	return bHasBomb;
+}
+
+bool ADefaultPlayerCharacter::IsPlantAllowed() const
+{
+	return bAllowPlant;
+}
+
+void ADefaultPlayerCharacter::SetIsInPlantZone(bool bIs)
+{
+	if(HasAuthority())
+	{
+		this->bIsInPlantZone = bIs;
+		CheckPlantRequirements();
+	}
+}
+
+void ADefaultPlayerCharacter::SetHasBomb(bool bHas)
+{
+	if(HasAuthority())
+	{
+		this->bHasBomb = bHas;
+		OnRep_HasBomb();
+		CheckPlantRequirements();
+	}
+}
+
+void ADefaultPlayerCharacter::CheckPlantRequirements()
+{
+	if(HasAuthority())
+	{
+		bAllowPlant = HasBomb() && IsInPlantZone();
+		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
+			//cancel plant if somehow it became false;
+			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
+			{
+				CombatGameState->SetPlayerPlanting(this, false);
+			}
+		}
+		OnRep_AllowPlant();
+	}
+}
+
+void ADefaultPlayerCharacter::TryStartPlanting()
+{
+	if(HasAuthority())
+	{
+		CheckPlantRequirements();
+		if(IsPlantAllowed())
+		{
+			if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+			{
+				CombatGameMode->BeginPlanting(this);
+			}
+		}
+		
+		
+	}else
+	{
+		Server_TryStartPlanting();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryStartPlanting_Implementation()
+{
+	TryStartPlanting();
+}
+
+void ADefaultPlayerCharacter::TryStopPlanting()
+{
+	if(HasAuthority())
+	{
+		
+		if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->EndPlanting(this);
+		}
+		
+	}else
+	{
+		Server_TryStopPlanting();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()
+{
+	TryStopPlanting();
 }

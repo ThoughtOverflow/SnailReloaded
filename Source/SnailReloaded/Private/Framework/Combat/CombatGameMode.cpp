@@ -197,7 +197,7 @@ void ACombatGameMode::InitializeCurrentGame()
 		if(GamePhases.Num() > 0)
 		{
 			CombatGameState->InitialPlayerMoney = PlayerStartMoney;
-			StartRound();
+			CombatGameState->StartNewRound();
 			CombatGameState->CurrentGameInitialized();
 		}
 	}

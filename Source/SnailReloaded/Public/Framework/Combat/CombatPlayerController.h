@@ -63,6 +63,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleBuyMenu(bool bOpen);
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleBuyMenu(bool bOpen);
 
 	
 
