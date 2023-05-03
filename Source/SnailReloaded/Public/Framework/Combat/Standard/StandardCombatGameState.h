@@ -33,6 +33,9 @@ protected:
 	virtual void OnPhaseSelected(EGamePhase NewPhase) override;
 	virtual void StartNewRound() override;
 
+	UFUNCTION()
+	void ExplodeBomb();
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlantDefuse)
 	bool bIsPlayerPlanting;
 	UPROPERTY(ReplicatedUsing = OnRep_PlantDefuse)

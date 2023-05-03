@@ -28,6 +28,21 @@ FDamageRequest::FDamageRequest()
 	DeltaDamage = 0.f;
 }
 
+FDamageRequest FDamageRequest::DeathDamage(AActor* SourceActor, AActor* TargetActor)
+{
+	FDamageRequest DamageRequest = FDamageRequest();
+	DamageRequest.SourceActor = SourceActor;
+	DamageRequest.TargetActor = TargetActor;
+	if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(TargetActor->GetComponentByClass(UHealthComponent::StaticClass())))
+	{
+		DamageRequest.DeltaDamage = -HealthComponent->GetObjectHealth();
+	}else
+	{
+		DamageRequest.DeltaDamage = 0.f;
+	}
+	return DamageRequest;
+}
+
 
 FDamageResponse::FDamageResponse()
 {
@@ -164,7 +179,7 @@ float UHealthComponent::GetDamageMultiplierForTarget(UHealthComponent* TargetCom
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
 		EGameObjectTypes CheckType = EGameObjectTypes::None;
-		if(TargetComp->GameObjectType.bIsPlayer)
+		if(TargetComp->GameObjectType.bIsPlayer && GameObjectType.bIsPlayer)
 		{
 			ADefaultPlayerCharacter* SourcePlayer = Cast<ADefaultPlayerCharacter>(GetOwner());
 			ADefaultPlayerCharacter* TargetPlayer = Cast<ADefaultPlayerCharacter>(TargetComp->GetOwner());

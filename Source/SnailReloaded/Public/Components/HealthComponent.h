@@ -56,6 +56,8 @@ public:
 	
 	FDamageRequest();
 	
+	static FDamageRequest DeathDamage(AActor* SourceActor, AActor* TargetActor);
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AActor* SourceActor;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

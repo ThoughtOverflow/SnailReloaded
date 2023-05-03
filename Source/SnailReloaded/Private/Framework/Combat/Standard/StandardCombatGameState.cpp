@@ -36,12 +36,10 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	if(NewPhase == EGamePhase::EndPhase)
 	{
 		//Do team scoring - round finished.
-
-		//Temp - Destroy prev bomb:
+		
 		if(PlantedBomb)
 		{
-			PlantedBomb->Destroy();
-			PlantedBomb = nullptr;	
+			ExplodeBomb();
 		}
 	}
 	//Update plant hint graphic.
@@ -71,6 +69,16 @@ void AStandardCombatGameState::StartNewRound()
 		}
 	}
 	
+}
+
+void AStandardCombatGameState::ExplodeBomb()
+{
+	if(PlantedBomb)
+	{
+		PlantedBomb->ExplodeBomb();
+		PlantedBomb->Destroy();
+		PlantedBomb = nullptr;
+	}
 }
 
 
