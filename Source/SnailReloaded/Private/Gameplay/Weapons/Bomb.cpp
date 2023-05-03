@@ -32,6 +32,7 @@ ABomb::ABomb()
 
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	HealthComponent->bInvulnerable = true;
+	HealthComponent->OnTeamQuery.BindDynamic(this, &ABomb::GetBombTeam);
 	
 }
 
@@ -42,8 +43,14 @@ void ABomb::BeginPlay()
 	
 }
 
+EGameTeams ABomb::GetBombTeam()
+{
+	//Nonsense, return None;
+	return EGameTeams::None;
+}
+
 void ABomb::PlayerEnteredDefuse(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(OtherActor))
 	{
@@ -69,11 +76,11 @@ void ABomb::PlayerLeftDefuse(UPrimitiveComponent* OverlappedComponent, AActor* O
 void ABomb::PlayerEnteredDeath(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(OtherActor))
+	if(OtherActor->GetComponentByClass(UHealthComponent::StaticClass()))
 	{
-		if(!PlayersInDeathRadius.Contains(PlayerCharacter))
+		if(!PlayersInDeathRadius.Contains(OtherActor))
 		{
-			PlayersInDeathRadius.Add(PlayerCharacter);
+			PlayersInDeathRadius.Add(OtherActor);
 		}
 	}
 }
@@ -81,11 +88,11 @@ void ABomb::PlayerEnteredDeath(UPrimitiveComponent* OverlappedComponent, AActor*
 void ABomb::PlayerLeftDeath(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(OtherActor))
+	if(OtherActor->GetComponentByClass(UHealthComponent::StaticClass()))
 	{
-		if(PlayersInDeathRadius.Contains(PlayerCharacter))
+		if(PlayersInDeathRadius.Contains(OtherActor))
 		{
-			PlayersInDeathRadius.Remove(PlayerCharacter);
+			PlayersInDeathRadius.Remove(OtherActor);
 		}
 	}
 }
@@ -122,9 +129,9 @@ void ABomb::ExplodeBomb()
 	{
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
-			for(auto& PlayerCharacter : PlayersInDeathRadius)
+			for(auto& Damageable : PlayersInDeathRadius)
 			{
-				FDamageRequest DamageRequest = FDamageRequest::DeathDamage(this, PlayerCharacter);
+				FDamageRequest DamageRequest = FDamageRequest::DeathDamage(this, Damageable);
 				CombatGameMode->ChangeObjectHealth(DamageRequest);
 			}
 		}

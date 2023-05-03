@@ -14,6 +14,7 @@
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Framework/Combat/CombatPlayerState.h"
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/UI/HudData.h"
@@ -39,6 +40,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
 	PlayerHealthComponent->OnShieldHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnShieldHealthChanged);
+	PlayerHealthComponent->OnTeamQuery.BindDynamic(this, &ADefaultPlayerCharacter::QueryGameTeam);
 
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
@@ -74,6 +76,18 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bHasBomb);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
+}
+
+EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
+{
+	if(GetController())
+	{
+		if(ACombatPlayerState* CombatPlayerState = GetController()->GetPlayerState<ACombatPlayerState>())
+		{
+			return CombatPlayerState->GetTeam();
+		}
+	}
+	return EGameTeams::None;
 }
 
 ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()

@@ -82,6 +82,11 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	//Health Component:
+
+	UFUNCTION()
+	EGameTeams QueryGameTeam();
+
 	//Helpers:
 
 	UFUNCTION(BlueprintCallable)

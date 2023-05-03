@@ -19,10 +19,9 @@ UENUM(BlueprintType)
 enum class EGameObjectTypes : uint8
 {
 	None = 0,
-	AllyPlayer = 1,
-	EnemyPlayer = 2,
-	Bomb = 3,
-	Dummy = 4,
+	Player = 1,
+	Bomb = 2,
+	Dummy = 3,
 		
 };
 
@@ -34,15 +33,16 @@ struct FGameObjectType
 public:
 
 	FGameObjectType();
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bIsPlayer;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "!bIsPlayer", EditConditionHides = true))
 	EGameObjectTypes ObjectType;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<EGameObjectTypes, float> DamageMultipliers;
+	TMap<EGameObjectTypes, float> AllyDamageMultipliers;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EGameObjectTypes, float> EnemyDamageMultipliers;
 	
-	float GetDamageMultiplier(EGameObjectTypes Type);
+	float GetAllyDamageMultiplier(EGameObjectTypes Type);
+	float GetEnemyDamageMultiplier(EGameObjectTypes Type);
 	
 	
 };
@@ -89,6 +89,7 @@ public:
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FObjectHealthChanged, FDamageResponse, DamageResponse);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FObjectKilled, FDamageResponse, LatestDamage);
+DECLARE_DYNAMIC_DELEGATE_RetVal(EGameTeams, FTeamQuery);
 
 UCLASS( ClassGroup=(HealthSystem), meta=(BlueprintSpawnableComponent) )
 class SNAILRELOADED_API UHealthComponent : public UActorComponent
@@ -115,6 +116,8 @@ public:
 	FObjectHealthChanged ObjectHealthChanged;
 	UPROPERTY(BlueprintAssignable)
 	FObjectKilled ObjectKilled;
+	UPROPERTY()
+	FTeamQuery OnTeamQuery;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Dead)
 	bool bIsDead;
 
@@ -135,7 +138,7 @@ protected:
 	void OnRep_ObjectHealth();
 	UFUNCTION()
 	void OnRep_Dead();
-
+	
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

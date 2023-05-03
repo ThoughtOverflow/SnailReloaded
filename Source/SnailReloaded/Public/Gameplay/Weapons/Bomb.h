@@ -31,8 +31,11 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+	EGameTeams GetBombTeam();
+
 	UPROPERTY(Replicated)
-	TArray<ADefaultPlayerCharacter*> PlayersInDeathRadius;
+	TArray<AActor*> PlayersInDeathRadius;
 	UPROPERTY(Replicated)
 	TArray<ADefaultPlayerCharacter*> PlayersInDefuseRadius;
 

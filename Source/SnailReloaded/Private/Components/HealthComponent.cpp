@@ -1,22 +1,31 @@
 // SnailReloaded - ThoughtOverflow 2023 - All rights reserved.
 
-
 #include "Components/HealthComponent.h"
-
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Net/UnrealNetwork.h"
 
 
-FGameObjectType::FGameObjectType(): bIsPlayer(false), ObjectType(EGameObjectTypes::None)
+FGameObjectType::FGameObjectType()
 {
+	ObjectType = EGameObjectTypes::None;
 }
 
-float FGameObjectType::GetDamageMultiplier(EGameObjectTypes Type)
+
+float FGameObjectType::GetAllyDamageMultiplier(EGameObjectTypes Type)
 {
-	if(DamageMultipliers.Contains(Type))
+	if(AllyDamageMultipliers.Contains(Type))
 	{
-		return *DamageMultipliers.Find(Type);
+		return *AllyDamageMultipliers.Find(Type);
+	}
+	return 0.f;
+}
+
+float FGameObjectType::GetEnemyDamageMultiplier(EGameObjectTypes Type)
+{
+	if(EnemyDamageMultipliers.Contains(Type))
+	{
+		return *EnemyDamageMultipliers.Find(Type);
 	}
 	return 0.f;
 }
@@ -178,26 +187,22 @@ float UHealthComponent::GetDamageMultiplierForTarget(UHealthComponent* TargetCom
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-		EGameObjectTypes CheckType = EGameObjectTypes::None;
-		if(TargetComp->GameObjectType.bIsPlayer && GameObjectType.bIsPlayer)
+		EGameTeams SourceTeam = EGameTeams::None;
+		EGameTeams TargetTeam = EGameTeams::None;
+		if(OnTeamQuery.IsBound())
 		{
-			ADefaultPlayerCharacter* SourcePlayer = Cast<ADefaultPlayerCharacter>(GetOwner());
-			ADefaultPlayerCharacter* TargetPlayer = Cast<ADefaultPlayerCharacter>(TargetComp->GetOwner());
-			if(SourcePlayer && TargetPlayer)
-			{
-				ACombatPlayerState* SourcePlayerState = SourcePlayer->GetController()->GetPlayerState<ACombatPlayerState>();
-				ACombatPlayerState* TargetPlayerState = TargetPlayer->GetController()->GetPlayerState<ACombatPlayerState>();
-				if(SourcePlayerState && TargetPlayerState)
-				{
-					CheckType = SourcePlayerState->GetTeam() == TargetPlayerState->GetTeam() ? EGameObjectTypes::AllyPlayer : EGameObjectTypes::EnemyPlayer;
-				}
-				
-			}
-		}else
-		{
-			CheckType = TargetComp->GameObjectType.ObjectType;
+			SourceTeam = OnTeamQuery.Execute();	
 		}
-		return GameObjectType.GetDamageMultiplier(CheckType);
+		if(TargetComp->OnTeamQuery.IsBound())
+		{
+			TargetTeam = TargetComp->OnTeamQuery.Execute();
+		}
+		
+		if(SourceTeam != EGameTeams::None && TargetTeam != EGameTeams::None && SourceTeam == TargetTeam)
+		{
+			return GameObjectType.GetAllyDamageMultiplier(TargetComp->GameObjectType.ObjectType);
+		}
+		return GameObjectType.GetEnemyDamageMultiplier(TargetComp->GameObjectType.ObjectType);
 	}
 	return 0.f;
 }
