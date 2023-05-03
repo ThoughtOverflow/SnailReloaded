@@ -9,7 +9,7 @@
 
 ACombatPlayerState::ACombatPlayerState()
 {
-	CurrentTeam = GameTeams::None;
+	CurrentTeam = EGameTeams::None;
 }
 
 void ACombatPlayerState::BeginPlay()
@@ -57,12 +57,12 @@ int32 ACombatPlayerState::GetPlayerMoney()
 	return PlayerMoney;
 }
 
-GameTeams ACombatPlayerState::GetTeam()
+EGameTeams ACombatPlayerState::GetTeam()
 {
 	return CurrentTeam;
 }
 
-void ACombatPlayerState::SetTeam(GameTeams NewTeam)
+void ACombatPlayerState::SetTeam(EGameTeams NewTeam)
 {
 	if(HasAuthority())
 	{

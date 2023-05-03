@@ -672,7 +672,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 				{
 					if(!HealthComponent->bIsDead)
 					{
-						FDamageRequest DamageRequest;
+						FDamageRequest DamageRequest = FDamageRequest();
 						DamageRequest.SourceActor = this;
 						DamageRequest.TargetActor = HitResult.GetActor();
 						DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
@@ -755,7 +755,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							{
 								if(!HealthComponent->bIsDead)
 								{
-									FDamageRequest DamageRequest;
+									FDamageRequest DamageRequest = FDamageRequest();
 									DamageRequest.SourceActor = this;
 									DamageRequest.TargetActor = HitResult.GetActor();
 									DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
@@ -794,7 +794,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						{
 							if(!HealthComponent->bIsDead)
 							{
-								FDamageRequest DamageRequest;
+								FDamageRequest DamageRequest = FDamageRequest();
 								DamageRequest.SourceActor = this;
 								DamageRequest.TargetActor = HitResult.GetActor();
 								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?

@@ -32,12 +32,7 @@ FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldI
 	return nullptr;
 }
 
-float ACombatGameMode::ProcessDamageMultipliers(UHealthComponent* SrcComp, UHealthComponent* TargetComp)
-{
-	return 0.f;
-}
-
-FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest DamageRequest)
+FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest& DamageRequest)
 {
 	if(DamageRequest.SourceActor)
 	{
@@ -45,7 +40,7 @@ FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest DamageRequest
 		{
 			if(UHealthComponent* SourceHealthComponent = Cast<UHealthComponent>(DamageRequest.SourceActor->GetComponentByClass(UHealthComponent::StaticClass())))
 			{
-				
+				DamageRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
 				const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(DamageRequest);
 				return Response;
 			}

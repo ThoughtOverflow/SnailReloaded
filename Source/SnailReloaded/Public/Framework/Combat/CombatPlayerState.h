@@ -26,7 +26,7 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerMoney)
 	int32 PlayerMoney;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
-	GameTeams CurrentTeam;
+	EGameTeams CurrentTeam;
 
 	UFUNCTION()
 	void OnRep_PlayerMoney();
@@ -42,8 +42,8 @@ public:
 	UFUNCTION(BlueprintPure)
 	int32 GetPlayerMoney();
 	UFUNCTION(BlueprintPure)
-	GameTeams GetTeam();
+	EGameTeams GetTeam();
 	UFUNCTION(BlueprintCallable)
-	void SetTeam(GameTeams NewTeam);
+	void SetTeam(EGameTeams NewTeam);
 	
 };

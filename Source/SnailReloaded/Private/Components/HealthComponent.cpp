@@ -3,22 +3,46 @@
 
 #include "Components/HealthComponent.h"
 
+#include "Framework/Combat/CombatPlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Net/UnrealNetwork.h"
 
 
-FDamageRequest::FDamageRequest(): SourceActor(nullptr), TargetActor(nullptr), DeltaDamage(0)
+FGameObjectType::FGameObjectType(): bIsPlayer(false), ObjectType(EGameObjectTypes::None)
 {
 }
 
-FDamageResponse::FDamageResponse(): SourceActor(nullptr), DeltaHealth(0), NewHealth(-1)
+float FGameObjectType::GetDamageMultiplier(EGameObjectTypes Type)
 {
+	if(DamageMultipliers.Contains(Type))
+	{
+		return *DamageMultipliers.Find(Type);
+	}
+	return 0.f;
+}
+
+FDamageRequest::FDamageRequest()
+{
+	SourceActor = nullptr;
+	TargetActor = nullptr;
+	DeltaDamage = 0.f;
+}
+
+
+FDamageResponse::FDamageResponse()
+{
+	SourceActor = nullptr;
+	DeltaHealth = 0;
+	NewHealth = -1;
 }
 
 
 
-FDamageResponse::FDamageResponse(AActor* SrcActor, float DeltaHealth, float NewHealth):
-	SourceActor(SrcActor), DeltaHealth(DeltaHealth), NewHealth(NewHealth)
+FDamageResponse::FDamageResponse(AActor* SrcActor, float DeltaHealth, float NewHealth)
 {
+	SourceActor = SrcActor;
+	this->DeltaHealth = DeltaHealth;
+	this->NewHealth = NewHealth;
 }
 
 
@@ -30,8 +54,8 @@ UHealthComponent::UHealthComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
 	DefaultObjectHealth = 50.f;
-	SetObjectMaxHealth(100.f);
-	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
+	ObjectMaxHealth = 100.f;
+	ObjectHealth = DefaultObjectHealth;
 	LatestDamage = FDamageResponse();
 	bIsDead = false;
 	bInvulnerable = false;
@@ -42,7 +66,11 @@ UHealthComponent::UHealthComponent()
 void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
+	}
 	
 }
 
@@ -86,7 +114,7 @@ float UHealthComponent::GetObjectHealth() const
 	return ObjectHealth;
 }
 
-FDamageResponse UHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
+FDamageResponse UHealthComponent::ChangeObjectHealth(const FDamageRequest& DamageRequest)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
@@ -96,7 +124,7 @@ FDamageResponse UHealthComponent::ChangeObjectHealth(FDamageRequest DamageReques
 	return FDamageResponse();
 }
 
-FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, float newHealth)
+FDamageResponse UHealthComponent::SetObjectHealth(const FDamageRequest& DamageRequest, float newHealth)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
@@ -135,15 +163,26 @@ float UHealthComponent::GetDamageMultiplierForTarget(UHealthComponent* TargetCom
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-		if(DamageMultipliers.Contains(TargetComp->GetCurrentObjectType()))
+		EGameObjectTypes CheckType = EGameObjectTypes::None;
+		if(TargetComp->GameObjectType.bIsPlayer)
 		{
-			return 0.f;
+			ADefaultPlayerCharacter* SourcePlayer = Cast<ADefaultPlayerCharacter>(GetOwner());
+			ADefaultPlayerCharacter* TargetPlayer = Cast<ADefaultPlayerCharacter>(TargetComp->GetOwner());
+			if(SourcePlayer && TargetPlayer)
+			{
+				ACombatPlayerState* SourcePlayerState = SourcePlayer->GetController()->GetPlayerState<ACombatPlayerState>();
+				ACombatPlayerState* TargetPlayerState = TargetPlayer->GetController()->GetPlayerState<ACombatPlayerState>();
+				if(SourcePlayerState && TargetPlayerState)
+				{
+					CheckType = SourcePlayerState->GetTeam() == TargetPlayerState->GetTeam() ? EGameObjectTypes::AllyPlayer : EGameObjectTypes::EnemyPlayer;
+				}
+				
+			}
+		}else
+		{
+			CheckType = TargetComp->GameObjectType.ObjectType;
 		}
+		return GameObjectType.GetDamageMultiplier(CheckType);
 	}
 	return 0.f;
-}
-
-GameObjectTypes UHealthComponent::GetCurrentObjectType()
-{
-	return ObjectType; 
 }

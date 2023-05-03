@@ -40,7 +40,7 @@ UArmoredHealthComponent::UArmoredHealthComponent()
 	bCanSell = true;
 }
 
-FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
+FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(const FDamageRequest& DamageRequest)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
@@ -50,7 +50,7 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest Damag
 			float DeltaShieldHealth = FMath::Max(FMath::Floor(DamageRequest.DeltaDamage * ShieldDamageReduction), -ShieldHealth);
 			float DeltaObjectHealth = FMath::CeilToFloat(DamageRequest.DeltaDamage - DeltaShieldHealth);
 			UE_LOG(LogTemp, Warning, TEXT("Total damage: %f - Shield take: %f - Body take: %f"), DamageRequest.DeltaDamage, DeltaShieldHealth, DeltaObjectHealth);
-			SetObjectHealth(DamageRequest, GetObjectHealth() + DeltaObjectHealth);
+			FDamageResponse DamageResponse = SetObjectHealth(DamageRequest, GetObjectHealth() + DeltaObjectHealth);
 			SetShieldHealth(FMath::Max(DeltaShieldHealth + ShieldHealth, 0));
 			if(GetShieldHealth() == 0.f)
 			{
@@ -58,6 +58,7 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest Damag
 				UpdateShieldProperties(FShieldProperties());
 			}
 			UE_LOG(LogTemp, Warning, TEXT("Shield hp: %f - Body hp: %f"), ShieldHealth, GetObjectHealth());
+			return DamageResponse;
 		}
 		
 	}

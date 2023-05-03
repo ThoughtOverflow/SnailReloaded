@@ -79,14 +79,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
 	int32 OvertimeScoreDifference;
 
-	UFUNCTION()
-	float ProcessDamageMultipliers(UHealthComponent* SrcComp, UHealthComponent* TargetComp);
 	
 public:
 
 
 	UFUNCTION(BlueprintCallable)
-	FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest);
+	FDamageResponse ChangeObjectHealth(FDamageRequest& DamageRequest);
 
 	UFUNCTION(BlueprintCallable)
 	bool PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);

@@ -9,20 +9,42 @@
 class ACombatPlayerController;
 
 UENUM(BlueprintType)
-enum class GameTeams : uint8
+enum class EGameTeams : uint8
 {
 	None = 0,
 	TeamA = 1,
 	TeamB = 2
 };
 UENUM(BlueprintType)
-enum class GameObjectTypes : uint8
+enum class EGameObjectTypes : uint8
 {
 	None = 0,
 	AllyPlayer = 1,
 	EnemyPlayer = 2,
 	Bomb = 3,
+	Dummy = 4,
 		
+};
+
+USTRUCT(BlueprintType)
+struct FGameObjectType
+{
+	GENERATED_BODY()
+
+public:
+
+	FGameObjectType();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsPlayer;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "!bIsPlayer", EditConditionHides = true))
+	EGameObjectTypes ObjectType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EGameObjectTypes, float> DamageMultipliers;
+	
+	float GetDamageMultiplier(EGameObjectTypes Type);
+	
+	
 };
 
 USTRUCT(BlueprintType)
@@ -33,8 +55,6 @@ struct FDamageRequest
 public:
 	
 	FDamageRequest();
-
-	static FDamageRequest Initialize(UHealthComponent* HealthComponent);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AActor* SourceActor;
@@ -106,10 +126,8 @@ protected:
 	float ObjectHealth;
 	UPROPERTY(Replicated)
 	float ObjectMaxHealth;
-	UPROPERTY(EditDefaultsOnly)
-	GameObjectTypes ObjectType;
-	UPROPERTY(EditDefaultsOnly)
-	TMap<GameObjectTypes, float> DamageMultipliers;
+	UPROPERTY(EditDefaultsOnly, meta = (ShowOnlyInnerProperties))
+	FGameObjectType GameObjectType;
 
 	UFUNCTION()
 	void OnRep_ObjectHealth();
@@ -123,15 +141,13 @@ public:
 	UFUNCTION(BlueprintPure)
 	virtual float GetObjectHealth() const;
 	UFUNCTION(BlueprintCallable)
-	virtual FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest);
-	virtual FDamageResponse SetObjectHealth(FDamageRequest DamageRequest, float newHealth);
+	virtual FDamageResponse ChangeObjectHealth(const FDamageRequest& DamageRequest);
+	virtual FDamageResponse SetObjectHealth(const FDamageRequest& DamageRequest, float newHealth);
 	UFUNCTION(BlueprintPure)
 	virtual float GetObjectMaxHealth() const;
 	UFUNCTION(BlueprintCallable)
 	virtual void SetObjectMaxHealth(float newHealth);
 	UFUNCTION(BlueprintPure)
 	float GetDamageMultiplierForTarget(UHealthComponent* TargetComp);
-	UFUNCTION(BlueprintPure)
-	GameObjectTypes GetCurrentObjectType();
 		
 };

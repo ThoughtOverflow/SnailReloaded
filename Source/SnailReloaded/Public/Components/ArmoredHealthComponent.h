@@ -52,7 +52,7 @@ public:
 	
 protected:
 
-	virtual FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest) override;
+	virtual FDamageResponse ChangeObjectHealth(const FDamageRequest& DamageRequest) override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", ReplicatedUsing = OnRep_ShieldType)
 	EItemIdentifier ShieldIdentifier;
