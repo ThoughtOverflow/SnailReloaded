@@ -36,6 +36,13 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	UBuyMenu* BuyMenu;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
+	TSubclassOf<UUserWidget> DeathScreenClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* DeathScreen;
+
+	
+
 protected:
 
 	virtual void OnPossess(APawn* InPawn) override;
@@ -65,6 +72,13 @@ public:
 	void ToggleBuyMenu(bool bOpen);
 	UFUNCTION(Client, Reliable)
 	void Client_ToggleBuyMenu(bool bOpen);
+
+	//Death screen:
+
+	UFUNCTION(BlueprintCallable)
+	void ShowDeathScreen();
+	UFUNCTION(Client, Reliable)
+	void Client_ShowDeathScreen();
 
 	
 

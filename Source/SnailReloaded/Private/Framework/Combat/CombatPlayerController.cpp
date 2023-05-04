@@ -142,6 +142,29 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 	}
 }
 
+void ACombatPlayerController::ShowDeathScreen()
+{
+	if(IsLocalController())
+	{
+		if(!DeathScreen && DeathScreenClass)
+		{
+			DeathScreen = CreateWidget<UUserWidget>(this, DeathScreenClass);
+		}
+		if(DeathScreen && !DeathScreen->IsInViewport())
+		{
+			DeathScreen->AddToViewport();	
+		}
+	}else
+	{
+		Client_ShowDeathScreen();
+	}
+}
+
+void ACombatPlayerController::Client_ShowDeathScreen_Implementation()
+{
+	ShowDeathScreen();
+}
+
 void ACombatPlayerController::Client_ToggleBuyMenu_Implementation(bool bOpen)
 {
 	ToggleBuyMenu(bOpen);

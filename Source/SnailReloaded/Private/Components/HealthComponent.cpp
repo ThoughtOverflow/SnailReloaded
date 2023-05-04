@@ -206,3 +206,12 @@ float UHealthComponent::GetDamageMultiplierForTarget(UHealthComponent* TargetCom
 	}
 	return 0.f;
 }
+
+EGameTeams UHealthComponent::GetOwnerTeam()
+{
+	if(OnTeamQuery.IsBound())
+	{
+		return OnTeamQuery.Execute();
+	}
+	return EGameTeams::None;
+}

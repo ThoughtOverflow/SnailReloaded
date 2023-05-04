@@ -154,5 +154,7 @@ public:
 	virtual void SetObjectMaxHealth(float newHealth);
 	UFUNCTION(BlueprintPure)
 	float GetDamageMultiplierForTarget(UHealthComponent* TargetComp);
+	UFUNCTION(BlueprintPure)
+	EGameTeams GetOwnerTeam();
 		
 };

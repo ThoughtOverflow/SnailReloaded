@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "ThumbnailHelpers.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Framework/DefaultGameMode.h"
@@ -36,9 +37,11 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	CameraComponent->bUsePawnControlRotation = true;
 	CameraComponent->SetFieldOfView(90.f);
 
+
 	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
+	PlayerHealthComponent->ObjectKilled.AddDynamic(this, &ADefaultPlayerCharacter::OnPlayerDied);
 	PlayerHealthComponent->OnShieldHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnShieldHealthChanged);
 	PlayerHealthComponent->OnTeamQuery.BindDynamic(this, &ADefaultPlayerCharacter::QueryGameTeam);
 
@@ -392,6 +395,29 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 	}
 }
 
+void ADefaultPlayerCharacter::OnPlayerDied(FDamageResponse DamageResponse)
+{
+	if(IsLocallyControlled())
+	{
+		ADefaultPlayerController* PC = Cast<ADefaultPlayerController>(GetController());
+		UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+		EnhancedInputSubsystem->RemoveMappingContext(PlayerMappingContext);
+	}
+	if(HasAuthority())
+	{
+		//TEMP:!!
+		UnequipWeapon();
+		if(PrimaryWeapon) PrimaryWeapon->Destroy();
+		if(SecondaryWeapon) SecondaryWeapon->Destroy();
+		if(MeleeWeapon) MeleeWeapon->Destroy();
+		//////
+		GetCombatPlayerController()->ShowDeathScreen();
+		GetMesh()->SetGenerateOverlapEvents(false);
+		GetCapsuleComponent()->SetGenerateOverlapEvents(false);
+		this->Destroy();
+	}
+}
+
 void ADefaultPlayerCharacter::OnShieldHealthChanged()
 {
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
@@ -590,6 +616,7 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 {
 	if(HasAuthority())
 	{
+		if(!CurrentlyEquippedWeapon) return;
 		if(CurrentlyEquippedWeapon->GetIsReloading())
 		{
 			CancelReload();

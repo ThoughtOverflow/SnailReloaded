@@ -138,6 +138,8 @@ protected:
 	UFUNCTION()
 	void OnHealthChanged(FDamageResponse DamageResponse);
 	UFUNCTION()
+	void OnPlayerDied(FDamageResponse DamageResponse);
+	UFUNCTION()
 	void OnShieldHealthChanged();
 	UFUNCTION()
 	void OnCurrentWeaponAmmoChanged();
