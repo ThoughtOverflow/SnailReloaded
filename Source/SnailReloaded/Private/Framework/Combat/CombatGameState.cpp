@@ -53,7 +53,7 @@ void ACombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 	}
 }
 
-void ACombatGameState::OnPhaseSelected(EGamePhase NewPhase)
+void ACombatGameState:: OnPhaseSelected(EGamePhase NewPhase)
 {
 	
 }
