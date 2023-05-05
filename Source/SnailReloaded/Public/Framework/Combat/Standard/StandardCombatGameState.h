@@ -54,6 +54,9 @@ protected:
 	UFUNCTION()
 	void DefuseTimerCallback();
 
+	UFUNCTION()
+	void RespawnPlayers();
+
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const override;
 	
 public:

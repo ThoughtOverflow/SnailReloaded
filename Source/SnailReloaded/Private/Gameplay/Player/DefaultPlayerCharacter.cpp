@@ -399,9 +399,7 @@ void ADefaultPlayerCharacter::OnPlayerDied(FDamageResponse DamageResponse)
 {
 	if(IsLocallyControlled())
 	{
-		ADefaultPlayerController* PC = Cast<ADefaultPlayerController>(GetController());
-		UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-		EnhancedInputSubsystem->RemoveMappingContext(PlayerMappingContext);
+		BlockPlayerInputs(true);
 	}
 	if(HasAuthority())
 	{
@@ -411,7 +409,7 @@ void ADefaultPlayerCharacter::OnPlayerDied(FDamageResponse DamageResponse)
 		if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
 		//////
-		GetCombatPlayerController()->ShowDeathScreen();
+		GetCombatPlayerController()->ShowDeathScreen(true);
 		this->Destroy();
 	}
 }

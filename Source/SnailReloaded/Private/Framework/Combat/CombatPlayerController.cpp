@@ -142,7 +142,7 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 	}
 }
 
-void ACombatPlayerController::ShowDeathScreen()
+void ACombatPlayerController::ShowDeathScreen(bool bShow)
 {
 	if(IsLocalController())
 	{
@@ -150,19 +150,26 @@ void ACombatPlayerController::ShowDeathScreen()
 		{
 			DeathScreen = CreateWidget<UUserWidget>(this, DeathScreenClass);
 		}
-		if(DeathScreen && !DeathScreen->IsInViewport())
+		if(DeathScreen)
 		{
-			DeathScreen->AddToViewport();	
+			if(bShow)
+			{
+				if(!DeathScreen->IsInViewport()) DeathScreen->AddToViewport();
+			}else
+			{
+				if(DeathScreen->IsInViewport()) DeathScreen->RemoveFromParent();
+			}
+			
 		}
 	}else
 	{
-		Client_ShowDeathScreen();
+		Client_ShowDeathScreen(bShow);
 	}
 }
 
-void ACombatPlayerController::Client_ShowDeathScreen_Implementation()
+void ACombatPlayerController::Client_ShowDeathScreen_Implementation(bool bShow)
 {
-	ShowDeathScreen();
+	ShowDeathScreen(bShow);
 }
 
 void ACombatPlayerController::Client_ToggleBuyMenu_Implementation(bool bOpen)

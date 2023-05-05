@@ -4,12 +4,14 @@
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Framework/Combat/CombatPlayerState.h"
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "GameFramework/PlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/Weapons/Bomb.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "World/Objects/TeamPlayerStart.h"
 
 AStandardCombatGameState::AStandardCombatGameState()
 {
@@ -55,6 +57,8 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 void AStandardCombatGameState::StartNewRound()
 {
 	Super::StartNewRound();
+
+	RespawnPlayers();
 	
 	//Give bomb to random player;
 	if(HasAuthority())
@@ -129,6 +133,37 @@ void AStandardCombatGameState::DefuseTimerCallback()
 	if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
 		CombatGameMode->DefuseBomb(LatestBombInteractor);
+	}
+}
+
+void AStandardCombatGameState::RespawnPlayers()
+{
+	if(HasAuthority())
+	{
+		for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
+		{
+			if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
+				{
+					TArray<ATeamPlayerStart*> TeamSpecStart = GetPlayerStartsByTeam(CombatPlayerState->GetTeam());
+
+					checkf(TeamSpecStart.Num() != 0, TEXT("No team specific player spawns exist! - quitting"));
+
+					ATeamPlayerStart* RandStart = TeamSpecStart[FMath::RandRange(0, TeamSpecStart.Num() - 1)];
+					ADefaultPlayerCharacter* CurrentCharacter = Cast<ADefaultPlayerCharacter>(PlayerController->GetPawn());
+					if(!CurrentCharacter && PlayerCharacterClass)
+					{
+						PlayerController->ShowDeathScreen(false);
+						CurrentCharacter = GetWorld()->SpawnActor<ADefaultPlayerCharacter>(PlayerCharacterClass, RandStart->GetActorLocation(), RandStart->GetActorRotation());
+						PlayerController->Possess(CurrentCharacter);
+					}
+					CurrentCharacter->SetActorLocation(RandStart->GetActorLocation());
+					PlayerController->SetControlRotation(RandStart->GetActorRotation());
+					CurrentCharacter->BlockPlayerInputs(false);
+				}
+			}
+		}
 	}
 }
 

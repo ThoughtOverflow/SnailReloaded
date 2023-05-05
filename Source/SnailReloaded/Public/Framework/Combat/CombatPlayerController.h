@@ -76,9 +76,9 @@ public:
 	//Death screen:
 
 	UFUNCTION(BlueprintCallable)
-	void ShowDeathScreen();
+	void ShowDeathScreen(bool bShow);
 	UFUNCTION(Client, Reliable)
-	void Client_ShowDeathScreen();
+	void Client_ShowDeathScreen(bool bShow);
 
 	
 

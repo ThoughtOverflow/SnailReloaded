@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "World/Objects/TeamPlayerStart.h"
 
 ACombatGameState::ACombatGameState()
 {
@@ -153,4 +154,43 @@ void ACombatGameState::SetCurrentRound(int32 NewRound)
 		CurrentRound = NewRound;
 		OnRep_RoundCounter();
 	}
+}
+
+TArray<ATeamPlayerStart*> ACombatGameState::GetPlayerStartsByTeam(EGameTeams Team)
+{
+	TArray<ATeamPlayerStart*> ReturnSpawns;
+	if(HasAuthority())
+	{
+		TArray<AActor*> FoundSpawns;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATeamPlayerStart::StaticClass(), FoundSpawns);
+		for(auto& Spawn : FoundSpawns)
+		{
+			if(ATeamPlayerStart* PlayerStart = Cast<ATeamPlayerStart>(Spawn))
+			{
+				if(PlayerStart->AssignedTeam == Team)
+				{
+					ReturnSpawns.Add(PlayerStart);
+				}
+			}
+		}
+	}
+	return ReturnSpawns;
+}
+
+TArray<ATeamPlayerStart*> ACombatGameState::GetAllPlayerStarts()
+{
+	TArray<ATeamPlayerStart*> ReturnSpawns;
+	if(HasAuthority())
+	{
+		TArray<AActor*> FoundSpawns;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATeamPlayerStart::StaticClass(), FoundSpawns);
+		for(auto& Spawn : FoundSpawns)
+		{
+			if(ATeamPlayerStart* PlayerStart = Cast<ATeamPlayerStart>(Spawn))
+			{
+				ReturnSpawns.Add(PlayerStart);
+			}
+		}
+	}
+	return ReturnSpawns;
 }
