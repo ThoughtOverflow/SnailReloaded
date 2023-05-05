@@ -22,6 +22,20 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 {
 	Super::OnPhaseExpired(ExpiredPhase);
 
+	if(ExpiredPhase == EGamePhase::Preparation)
+	{
+		//Set all players' weapons sell property to false.
+		for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
+		{
+			if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				if(PlayerCharacter->PrimaryWeapon) PlayerCharacter->PrimaryWeapon->SetCanSell(false);
+				if(PlayerCharacter->SecondaryWeapon) PlayerCharacter->SecondaryWeapon->SetCanSell(false);
+				PlayerCharacter->PlayerHealthComponent->SetCanSell(false);
+			}
+		}
+	}
+
 	switch (CurrentGamePhase.GamePhase) {
 	case EGamePhase::None: break;
 	case EGamePhase::Preparation: SelectNewPhase(EGamePhase::ActiveGame); break;
