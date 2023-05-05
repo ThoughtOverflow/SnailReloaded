@@ -412,8 +412,6 @@ void ADefaultPlayerCharacter::OnPlayerDied(FDamageResponse DamageResponse)
 		if(MeleeWeapon) MeleeWeapon->Destroy();
 		//////
 		GetCombatPlayerController()->ShowDeathScreen();
-		GetMesh()->SetGenerateOverlapEvents(false);
-		GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 		this->Destroy();
 	}
 }

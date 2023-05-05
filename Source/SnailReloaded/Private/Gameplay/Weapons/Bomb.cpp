@@ -76,6 +76,7 @@ void ABomb::PlayerLeftDefuse(UPrimitiveComponent* OverlappedComponent, AActor* O
 void ABomb::PlayerEnteredDeath(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if(OtherActor->IsPendingKillPending()) return;
 	if(OtherActor->GetComponentByClass(UHealthComponent::StaticClass()))
 	{
 		if(!PlayersInDeathRadius.Contains(OtherActor))
@@ -88,6 +89,7 @@ void ABomb::PlayerEnteredDeath(UPrimitiveComponent* OverlappedComponent, AActor*
 void ABomb::PlayerLeftDeath(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	if(OtherActor->IsPendingKillPending()) return;
 	if(OtherActor->GetComponentByClass(UHealthComponent::StaticClass()))
 	{
 		if(PlayersInDeathRadius.Contains(OtherActor))
