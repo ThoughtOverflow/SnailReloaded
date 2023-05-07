@@ -473,6 +473,18 @@ bool ADefaultPlayerCharacter::CanPlayerReload()
 		return bCanReload;
 }
 
+bool ADefaultPlayerCharacter::CanPlayerAttack()
+{
+	bool bCanShoot = true;
+	if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+    		bCanShoot &= !StandardCombatGameState->IsPlayerPlanting(this);
+			bCanShoot &= !StandardCombatGameState->IsPlayerDefusing(this);
+	}
+	bCanShoot &= CanWeaponFireInMode();
+	return bCanShoot;
+}
+
 void ADefaultPlayerCharacter::OnRep_AllowPlant()
 {
 	//Show plant message:
@@ -722,7 +734,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 		FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * 100.f;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this);
-		if(CanWeaponFireInMode())
+		if(CanPlayerAttack())
 		{
 			FiredRoundsPerShootingEvent++;
 			
@@ -767,7 +779,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			QueryParams.AddIgnoredActor(this);
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo())
+			if (CanPlayerAttack() && WeaponHasAmmo())
 			{
 				CancelReload();
 				//Add to Combo counter
@@ -837,7 +849,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo())
+			if (CanPlayerAttack() && WeaponHasAmmo())
 			{
 				CancelReload();
 				//Add to Combo counter

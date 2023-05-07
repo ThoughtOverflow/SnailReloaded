@@ -66,7 +66,8 @@ void ACombatPlayerController::CreatePlayerHud()
 {
 	if(IsLocalController())
 	{
-		if(!PlayerHud && PlayerHudClass) PlayerHud = CreateWidget<UPlayerHud>(this, PlayerHudClass);
+		//Always recreate to avoid net sync issues:
+		if(PlayerHudClass) PlayerHud = CreateWidget<UPlayerHud>(this, PlayerHudClass);
 		if(PlayerHud && !PlayerHud->IsInViewport()) PlayerHud->AddToViewport();
 	}
 }
@@ -155,6 +156,10 @@ void ACombatPlayerController::ShowDeathScreen(bool bShow)
 			if(bShow)
 			{
 				if(!DeathScreen->IsInViewport()) DeathScreen->AddToViewport();
+				if(PlayerHud)
+				{
+					PlayerHud->RemoveFromParent();
+				}
 			}else
 			{
 				if(DeathScreen->IsInViewport()) DeathScreen->RemoveFromParent();

@@ -147,6 +147,8 @@ protected:
 	void OnCurrentWeaponReloading();
 	UFUNCTION(BlueprintPure)
 	bool CanPlayerReload();
+	UFUNCTION(BlueprintCallable)
+	bool CanPlayerAttack();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
