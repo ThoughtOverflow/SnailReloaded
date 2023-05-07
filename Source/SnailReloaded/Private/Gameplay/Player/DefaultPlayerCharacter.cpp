@@ -323,14 +323,17 @@ void ADefaultPlayerCharacter::StartReload()
 	if(CurrentlyEquippedWeapon)
 	{
 		if(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() == 0) return;
-		if(HasAuthority())
+		if(CanPlayerReload())
 		{
-			//Resets the burst combo count:
-			EndShooting();
-			//---
-			CurrentlyEquippedWeapon->SetIsReloading(true);
+			if(HasAuthority())
+			{
+				//Resets the burst combo count:
+				EndShooting();
+				//---
+				CurrentlyEquippedWeapon->SetIsReloading(true);
+			}
+			GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 		}
-		GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 	}
 }
 
@@ -450,6 +453,24 @@ void ADefaultPlayerCharacter::OnCurrentWeaponReloading()
 			PlayerController->GetHudData()->SetReloading(CurrentlyEquippedWeapon->GetIsReloading())->Submit();
 		}
 	}
+}
+
+bool ADefaultPlayerCharacter::CanPlayerReload()
+{
+		bool bCanReload = true;
+		if(CurrentlyEquippedWeapon)
+		{
+			//Is weapon already being reloaded?
+			bCanReload &= !CurrentlyEquippedWeapon->GetIsReloading();
+			bCanReload &= CurrentlyEquippedWeapon->GetCurrentClipAmmo() != CurrentlyEquippedWeapon->GetMaxClipAmmo();
+		}
+		if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			//If we can plant / defuse in the game, are we?
+			bCanReload &= !StandardCombatGameState->IsPlayerPlanting(this);
+			bCanReload &= !StandardCombatGameState->IsPlayerDefusing(this);
+		}
+		return bCanReload;
 }
 
 void ADefaultPlayerCharacter::OnRep_AllowPlant()
@@ -746,8 +767,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			QueryParams.AddIgnoredActor(this);
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
+			if (CanWeaponFireInMode() && WeaponHasAmmo())
 			{
+				CancelReload();
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo()-1);
@@ -815,8 +837,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
+			if (CanWeaponFireInMode() && WeaponHasAmmo())
 			{
+				CancelReload();
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
@@ -1155,6 +1178,7 @@ void ADefaultPlayerCharacter::TryStartPlanting()
 		{
 			if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 			{
+				CancelReload();
 				CombatGameMode->BeginPlanting(this);
 			}
 		}
