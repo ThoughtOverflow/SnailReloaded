@@ -67,7 +67,7 @@ void ACombatPlayerController::CreatePlayerHud()
 	if(IsLocalController())
 	{
 		if(!PlayerHud && PlayerHudClass) PlayerHud = CreateWidget<UPlayerHud>(this, PlayerHudClass);
-		if(PlayerHud) PlayerHud->AddToViewport();
+		if(PlayerHud && !PlayerHud->IsInViewport()) PlayerHud->AddToViewport();
 	}
 }
 

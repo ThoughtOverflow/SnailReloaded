@@ -63,6 +63,7 @@ void ADefaultPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	
 }
 
 void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -390,7 +391,9 @@ void ADefaultPlayerCharacter::OnHealthChanged(const FDamageResponse& DamageRespo
 	{
 		if(IsLocallyControlled())
 		{
-			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->Submit();
+			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->
+			SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth())->
+			Submit();
 		}
 	}
 }
@@ -1055,6 +1058,7 @@ void ADefaultPlayerCharacter::Client_LoadDefaultHudData_Implementation()
 		{
 			UHudData* HudData = PlayerController->GetHudData();
 			HudData->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth());
+			HudData->SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth());
 			if(CurrentlyEquippedWeapon)
 			{
 				HudData->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo())->SetCurrentWeaponName(CurrentlyEquippedWeapon->WeaponName);
