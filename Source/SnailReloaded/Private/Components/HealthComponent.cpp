@@ -44,7 +44,7 @@ FDamageRequest FDamageRequest::DeathDamage(AActor* SourceActor, AActor* TargetAc
 	DamageRequest.TargetActor = TargetActor;
 	if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(TargetActor->GetComponentByClass(UHealthComponent::StaticClass())))
 	{
-		DamageRequest.DeltaDamage = -HealthComponent->GetObjectHealth();
+		DamageRequest.DeltaDamage = HealthComponent->GetDamageToKill();
 	}else
 	{
 		DamageRequest.DeltaDamage = 0.f;
@@ -214,4 +214,9 @@ EGameTeams UHealthComponent::GetOwnerTeam()
 		return OnTeamQuery.Execute();
 	}
 	return EGameTeams::None;
+}
+
+float UHealthComponent::GetDamageToKill()
+{
+	return -GetObjectHealth();
 }

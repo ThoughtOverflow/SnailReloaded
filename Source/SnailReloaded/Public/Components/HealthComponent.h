@@ -156,5 +156,7 @@ public:
 	float GetDamageMultiplierForTarget(UHealthComponent* TargetComp);
 	UFUNCTION(BlueprintPure)
 	EGameTeams GetOwnerTeam();
+	UFUNCTION(BlueprintPure)
+	virtual float GetDamageToKill();
 		
 };

@@ -190,3 +190,11 @@ bool UArmoredHealthComponent::CanSell()
 	return bCanSell;
 }
 
+float UArmoredHealthComponent::GetDamageToKill()
+{
+	// The current object's health should be equal to the damage taken by the object itself, aka the damage * 1 minus the Shield's reduction rate.
+	//Health = Damage * (1 - ReductionRate);
+	float RequiredDamage = GetObjectHealth() / (1 - GetShieldDamageReduction());
+	return -RequiredDamage;
+}
+

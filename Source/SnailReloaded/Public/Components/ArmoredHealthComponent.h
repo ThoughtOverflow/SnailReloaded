@@ -105,5 +105,7 @@ public:
 	void SetCanSell(bool bSell);
 	UFUNCTION(BlueprintPure)
 	bool CanSell();
+
+	virtual float GetDamageToKill() override;
 	
 };
