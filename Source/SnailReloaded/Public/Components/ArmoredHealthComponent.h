@@ -51,8 +51,7 @@ public:
 
 	
 protected:
-
-	virtual FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest) override;
+	
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Shield Properties", ReplicatedUsing = OnRep_ShieldType)
 	EItemIdentifier ShieldIdentifier;
@@ -75,6 +74,8 @@ protected:
 	void OnRep_ShieldType();
 	
 public:
+
+	virtual FDamageResponse ChangeObjectHealth(const FDamageRequest& DamageRequest) override;
 	
 	UFUNCTION(BlueprintCallable)
 	void SetShieldHealth(float NewHealth);

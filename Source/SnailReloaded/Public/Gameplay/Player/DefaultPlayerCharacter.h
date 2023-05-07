@@ -82,6 +82,11 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	//Health Component:
+
+	UFUNCTION()
+	EGameTeams QueryGameTeam();
+
 	//Helpers:
 
 	UFUNCTION(BlueprintCallable)
@@ -132,6 +137,8 @@ protected:
 	void OnRep_CurrentWeapon();
 	UFUNCTION()
 	void OnHealthChanged(FDamageResponse DamageResponse);
+	UFUNCTION()
+	void OnPlayerDied(FDamageResponse DamageResponse);
 	UFUNCTION()
 	void OnShieldHealthChanged();
 	UFUNCTION()

@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "ThumbnailHelpers.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Framework/DefaultGameMode.h"
@@ -14,6 +15,7 @@
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Framework/Combat/CombatPlayerState.h"
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/UI/HudData.h"
@@ -35,10 +37,13 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	CameraComponent->bUsePawnControlRotation = true;
 	CameraComponent->SetFieldOfView(90.f);
 
+
 	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
+	PlayerHealthComponent->ObjectKilled.AddDynamic(this, &ADefaultPlayerCharacter::OnPlayerDied);
 	PlayerHealthComponent->OnShieldHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnShieldHealthChanged);
+	PlayerHealthComponent->OnTeamQuery.BindDynamic(this, &ADefaultPlayerCharacter::QueryGameTeam);
 
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
@@ -74,6 +79,18 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bHasBomb);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
+}
+
+EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
+{
+	if(GetController())
+	{
+		if(ACombatPlayerState* CombatPlayerState = GetController()->GetPlayerState<ACombatPlayerState>())
+		{
+			return CombatPlayerState->GetTeam();
+		}
+	}
+	return EGameTeams::None;
 }
 
 ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()
@@ -378,6 +395,25 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 	}
 }
 
+void ADefaultPlayerCharacter::OnPlayerDied(FDamageResponse DamageResponse)
+{
+	if(IsLocallyControlled())
+	{
+		BlockPlayerInputs(true);
+	}
+	if(HasAuthority())
+	{
+		//TEMP:!!
+		UnequipWeapon();
+		if(PrimaryWeapon) PrimaryWeapon->Destroy();
+		if(SecondaryWeapon) SecondaryWeapon->Destroy();
+		if(MeleeWeapon) MeleeWeapon->Destroy();
+		//////
+		GetCombatPlayerController()->ShowDeathScreen(true);
+		this->Destroy();
+	}
+}
+
 void ADefaultPlayerCharacter::OnShieldHealthChanged()
 {
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
@@ -576,6 +612,7 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 {
 	if(HasAuthority())
 	{
+		if(!CurrentlyEquippedWeapon) return;
 		if(CurrentlyEquippedWeapon->GetIsReloading())
 		{
 			CancelReload();
@@ -672,7 +709,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 				{
 					if(!HealthComponent->bIsDead)
 					{
-						FDamageRequest DamageRequest;
+						FDamageRequest DamageRequest = FDamageRequest();
 						DamageRequest.SourceActor = this;
 						DamageRequest.TargetActor = HitResult.GetActor();
 						DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
@@ -755,7 +792,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							{
 								if(!HealthComponent->bIsDead)
 								{
-									FDamageRequest DamageRequest;
+									FDamageRequest DamageRequest = FDamageRequest();
 									DamageRequest.SourceActor = this;
 									DamageRequest.TargetActor = HitResult.GetActor();
 									DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
@@ -794,7 +831,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						{
 							if(!HealthComponent->bIsDead)
 							{
-								FDamageRequest DamageRequest;
+								FDamageRequest DamageRequest = FDamageRequest();
 								DamageRequest.SourceActor = this;
 								DamageRequest.TargetActor = HitResult.GetActor();
 								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?

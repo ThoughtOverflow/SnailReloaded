@@ -33,6 +33,9 @@ protected:
 	virtual void OnPhaseSelected(EGamePhase NewPhase) override;
 	virtual void StartNewRound() override;
 
+	UFUNCTION()
+	void ExplodeBomb();
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlantDefuse)
 	bool bIsPlayerPlanting;
 	UPROPERTY(ReplicatedUsing = OnRep_PlantDefuse)
@@ -50,6 +53,9 @@ protected:
 	void PlantTimerCallback();
 	UFUNCTION()
 	void DefuseTimerCallback();
+
+	UFUNCTION()
+	void RespawnPlayers();
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const override;
 	

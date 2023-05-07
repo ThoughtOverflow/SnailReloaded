@@ -12,6 +12,7 @@
  */
 
 
+class ATeamPlayerStart;
 struct FGamePhase;
 UCLASS()
 class SNAILRELOADED_API ACombatGameState : public ADefaultGameState
@@ -24,6 +25,8 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	int32 InitialPlayerMoney;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<ADefaultPlayerCharacter> PlayerCharacterClass;
 
 protected:
 
@@ -71,6 +74,13 @@ public:
 	int32 GetCurrentRound();
 	UFUNCTION(BlueprintCallable)
 	void SetCurrentRound(int32 NewRound);
+
+	UFUNCTION(BlueprintCallable)
+	virtual TArray<ATeamPlayerStart*> GetPlayerStartsByTeam(EGameTeams Team);
+	UFUNCTION(BlueprintCallable)
+	virtual TArray<ATeamPlayerStart*> GetAllPlayerStarts();
+
+
 	
 	
 };
