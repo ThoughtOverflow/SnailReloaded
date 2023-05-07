@@ -136,9 +136,9 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
 	UFUNCTION()
-	void OnHealthChanged(FDamageResponse DamageResponse);
+	void OnHealthChanged(const FDamageResponse& DamageResponse);
 	UFUNCTION()
-	void OnPlayerDied(FDamageResponse DamageResponse);
+	void OnPlayerDied(const FDamageResponse& DamageResponse);
 	UFUNCTION()
 	void OnShieldHealthChanged();
 	UFUNCTION()

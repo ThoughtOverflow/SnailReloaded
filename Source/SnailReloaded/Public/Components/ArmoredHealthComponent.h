@@ -96,7 +96,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RevertToPreviousState();
 	UFUNCTION(BlueprintCallable)
-	void UpdateShieldProperties(FShieldProperties Properties);
+	void UpdateShieldProperties(const FShieldProperties& Properties);
 	UFUNCTION(BlueprintCallable)
 	void StoreCurrentShieldData();
 	UFUNCTION(BlueprintPure)

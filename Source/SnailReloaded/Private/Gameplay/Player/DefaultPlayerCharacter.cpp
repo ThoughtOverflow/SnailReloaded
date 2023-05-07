@@ -384,7 +384,7 @@ void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
 	}
 }
 
-void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
+void ADefaultPlayerCharacter::OnHealthChanged(const FDamageResponse& DamageResponse)
 {
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
 	{
@@ -395,7 +395,7 @@ void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
 	}
 }
 
-void ADefaultPlayerCharacter::OnPlayerDied(FDamageResponse DamageResponse)
+void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse)
 {
 	if(IsLocallyControlled())
 	{

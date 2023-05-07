@@ -87,8 +87,8 @@ public:
 	
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FObjectHealthChanged, FDamageResponse, DamageResponse);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FObjectKilled, FDamageResponse, LatestDamage);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FObjectHealthChanged, const FDamageResponse&, DamageResponse);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FObjectKilled, const FDamageResponse&, LatestDamage);
 DECLARE_DYNAMIC_DELEGATE_RetVal(EGameTeams, FTeamQuery);
 
 UCLASS( ClassGroup=(HealthSystem), meta=(BlueprintSpawnableComponent) )
