@@ -80,6 +80,13 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowDeathScreen(bool bShow);
 
+	//Respawn:
+
+	UFUNCTION(BlueprintCallable)
+	void SetRespawnRotation(FRotator NewRotation);
+	UFUNCTION(Client, Reliable)
+	void Client_SetRespawnRotation(FRotator NewRotation);
+
 	
 
 	

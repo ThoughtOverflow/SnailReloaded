@@ -34,9 +34,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
-	void OnKilled(FDamageResponse LatestDamage);
+	void OnKilled(const FDamageResponse& LatestDamage);
 	UFUNCTION()
-	void OnHealthChanged(FDamageResponse LatestDamage);
+	void OnHealthChanged(const FDamageResponse& LatestDamage);
 
 public:	
 	// Called every frame

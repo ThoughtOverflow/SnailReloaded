@@ -173,7 +173,7 @@ void AStandardCombatGameState::RespawnPlayers()
 						PlayerController->Possess(CurrentCharacter);
 					}
 					CurrentCharacter->SetActorLocation(RandStart->GetActorLocation());
-					PlayerController->SetControlRotation(RandStart->GetActorRotation());
+					PlayerController->SetRespawnRotation(RandStart->GetActorRotation());
 					CurrentCharacter->BlockPlayerInputs(false);
 				}
 			}
@@ -220,6 +220,16 @@ bool AStandardCombatGameState::IsSomeonePlanting()
 bool AStandardCombatGameState::IsSomeoneDefusing()
 {
 	return bIsPlayerDefusing;
+}
+
+bool AStandardCombatGameState::IsPlayerPlanting(ADefaultPlayerCharacter* Player)
+{
+	return bIsPlayerDefusing && LatestBombInteractor == Player;
+}
+
+bool AStandardCombatGameState::IsPlayerDefusing(ADefaultPlayerCharacter* Player)
+{
+	return bIsPlayerPlanting && LatestBombInteractor == Player;
 }
 
 void AStandardCombatGameState::OnBombPlanted()

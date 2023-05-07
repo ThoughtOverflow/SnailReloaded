@@ -69,6 +69,10 @@ public:
 	bool IsSomeonePlanting();
 	UFUNCTION(BlueprintPure)
 	bool IsSomeoneDefusing();
+	UFUNCTION(BlueprintCallable)
+	bool IsPlayerPlanting(ADefaultPlayerCharacter* Player);
+	UFUNCTION(BlueprintCallable)
+	bool IsPlayerDefusing(ADefaultPlayerCharacter* Player);
 	UFUNCTION()
 	void OnBombPlanted();
 	UFUNCTION(BlueprintPure)

@@ -52,7 +52,7 @@ void ADummyManny::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	
 }
 
-void ADummyManny::OnKilled(FDamageResponse LatestDamage)
+void ADummyManny::OnKilled(const FDamageResponse& LatestDamage)
 {
 	// SetActorHiddenInGame(true);
 	TextRenderComponent->SetText(FText::FromString("Latest Damage: ded"));
@@ -61,7 +61,7 @@ void ADummyManny::OnKilled(FDamageResponse LatestDamage)
 	SkeletalMeshComponent->SetEnableGravity(true);
 }
 
-void ADummyManny::OnHealthChanged(FDamageResponse LatestDamage)
+void ADummyManny::OnHealthChanged(const FDamageResponse& LatestDamage)
 {
 	TextRenderComponent->SetText(FText::FromString(FString::Printf(TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth)));
 }

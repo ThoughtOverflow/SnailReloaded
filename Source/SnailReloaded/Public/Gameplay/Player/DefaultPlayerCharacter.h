@@ -136,15 +136,19 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
 	UFUNCTION()
-	void OnHealthChanged(FDamageResponse DamageResponse);
+	void OnHealthChanged(const FDamageResponse& DamageResponse);
 	UFUNCTION()
-	void OnPlayerDied(FDamageResponse DamageResponse);
+	void OnPlayerDied(const FDamageResponse& DamageResponse);
 	UFUNCTION()
 	void OnShieldHealthChanged();
 	UFUNCTION()
 	void OnCurrentWeaponAmmoChanged();
 	UFUNCTION()
 	void OnCurrentWeaponReloading();
+	UFUNCTION(BlueprintPure)
+	bool CanPlayerReload();
+	UFUNCTION(BlueprintCallable)
+	bool CanPlayerAttack();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
