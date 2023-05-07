@@ -167,6 +167,22 @@ void ACombatPlayerController::ShowDeathScreen(bool bShow)
 	}
 }
 
+void ACombatPlayerController::SetRespawnRotation(FRotator NewRotation)
+{
+	if(IsLocalController())
+	{
+		SetControlRotation(NewRotation);
+	}else
+	{
+		Client_SetRespawnRotation(NewRotation);
+	}
+}
+
+void ACombatPlayerController::Client_SetRespawnRotation_Implementation(FRotator NewRotation)
+{
+	SetRespawnRotation(NewRotation);
+}
+
 void ACombatPlayerController::Client_ShowDeathScreen_Implementation(bool bShow)
 {
 	ShowDeathScreen(bShow);

@@ -173,7 +173,7 @@ void AStandardCombatGameState::RespawnPlayers()
 						PlayerController->Possess(CurrentCharacter);
 					}
 					CurrentCharacter->SetActorLocation(RandStart->GetActorLocation());
-					PlayerController->SetControlRotation(RandStart->GetActorRotation());
+					PlayerController->SetRespawnRotation(RandStart->GetActorRotation());
 					CurrentCharacter->BlockPlayerInputs(false);
 				}
 			}
