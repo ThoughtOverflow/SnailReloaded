@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "World/Objects/OverviewCamera.h"
 #include "World/Objects/TeamPlayerStart.h"
 
 ACombatGameState::ACombatGameState()
@@ -21,6 +22,17 @@ void ACombatGameState::OnRep_GamePhase()
 	SetPhaseTimer();
 	//Notify:
 	OnPhaseSelected(CurrentGamePhase.GamePhase);
+}
+
+void ACombatGameState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(AOverviewCamera* OverviewCamera = Cast<AOverviewCamera>(UGameplayStatics::GetActorOfClass(GetWorld(), AOverviewCamera::StaticClass())))
+	{
+		LevelOverviewCamera = OverviewCamera;
+	}
+	
 }
 
 void ACombatGameState::OnRep_RoundCounter()
@@ -193,4 +205,9 @@ TArray<ATeamPlayerStart*> ACombatGameState::GetAllPlayerStarts()
 		}
 	}
 	return ReturnSpawns;
+}
+
+AOverviewCamera* ACombatGameState::GetLevelOverviewCamera()
+{
+	return LevelOverviewCamera;
 }

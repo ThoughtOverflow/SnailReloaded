@@ -79,6 +79,8 @@ public:
 	void ShowDeathScreen(bool bShow);
 	UFUNCTION(Client, Reliable)
 	void Client_ShowDeathScreen(bool bShow);
+	UFUNCTION(BlueprintCallable)
+	void SelectOverviewCamera();
 
 	//Respawn:
 

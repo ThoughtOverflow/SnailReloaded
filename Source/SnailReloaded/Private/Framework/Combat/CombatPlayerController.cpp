@@ -5,11 +5,13 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/UI/BuyMenu.h"
 #include "Gameplay/UI/HudData.h"
 #include "Gameplay/UI/PlayerHud.h"
+#include "Kismet/GameplayStatics.h"
 
 
 ACombatPlayerController::ACombatPlayerController()
@@ -67,8 +69,13 @@ void ACombatPlayerController::CreatePlayerHud()
 	if(IsLocalController())
 	{
 		//Always recreate to avoid net sync issues:
+		
 		if(PlayerHudClass) PlayerHud = CreateWidget<UPlayerHud>(this, PlayerHudClass);
 		if(PlayerHud && !PlayerHud->IsInViewport()) PlayerHud->AddToViewport();
+		if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			SetViewTargetWithBlend(GetPawn(), 1.f, VTBlend_EaseInOut, 3.f);
+		}
 	}
 }
 
@@ -155,11 +162,11 @@ void ACombatPlayerController::ShowDeathScreen(bool bShow)
 		{
 			if(bShow)
 			{
-				if(!DeathScreen->IsInViewport()) DeathScreen->AddToViewport();
 				if(PlayerHud)
 				{
 					PlayerHud->RemoveFromParent();
 				}
+				if(!DeathScreen->IsInViewport()) DeathScreen->AddToViewport();
 			}else
 			{
 				if(DeathScreen->IsInViewport()) DeathScreen->RemoveFromParent();
@@ -170,6 +177,15 @@ void ACombatPlayerController::ShowDeathScreen(bool bShow)
 	{
 		Client_ShowDeathScreen(bShow);
 	}
+}
+
+void ACombatPlayerController::SelectOverviewCamera()
+{
+	if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		//TODO: FCK UNREAL'S ASS.
+	}
+	
 }
 
 void ACombatPlayerController::SetRespawnRotation(FRotator NewRotation)

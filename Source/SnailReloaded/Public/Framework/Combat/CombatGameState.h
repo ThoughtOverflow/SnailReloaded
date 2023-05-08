@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "CombatGameMode.h"
 #include "Framework/DefaultGameState.h"
+#include "World/Objects/OverviewCamera.h"
 #include "CombatGameState.generated.h"
 
 /**
@@ -39,6 +40,9 @@ protected:
 	UFUNCTION()
 	void OnRep_RoundCounter();
 
+	UPROPERTY(BlueprintReadWrite)
+	AOverviewCamera* LevelOverviewCamera;
+	
 	FTimerHandle PhaseTimer;
 
 	UFUNCTION()
@@ -56,6 +60,8 @@ protected:
 
 	//override
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const override;
+
+	virtual void BeginPlay() override;
 
 public:
 
@@ -79,8 +85,11 @@ public:
 	virtual TArray<ATeamPlayerStart*> GetPlayerStartsByTeam(EGameTeams Team);
 	UFUNCTION(BlueprintCallable)
 	virtual TArray<ATeamPlayerStart*> GetAllPlayerStarts();
+	UFUNCTION(BlueprintPure)
+	AOverviewCamera* GetLevelOverviewCamera();
 
 
 	
 	
 };
+
