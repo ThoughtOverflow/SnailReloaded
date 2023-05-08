@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CombatGameMode.h"
+#include "CombatPlayerState.h"
 #include "Framework/DefaultGameState.h"
 #include "World/Objects/OverviewCamera.h"
 #include "CombatGameState.generated.h"
@@ -12,6 +13,7 @@
  * 
  */
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGamePlayersUpdated);
 
 class ATeamPlayerStart;
 struct FGamePhase;
@@ -29,6 +31,9 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<ADefaultPlayerCharacter> PlayerCharacterClass;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnGamePlayersUpdated OnGamePlayersUpdated;
+
 protected:
 
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_GamePhase)
@@ -44,6 +49,9 @@ protected:
 	AOverviewCamera* LevelOverviewCamera;
 	
 	FTimerHandle PhaseTimer;
+
+	UPROPERTY(ReplicatedUsing=OnRep_GamePlayers)
+	TArray<ACombatPlayerState*> GamePlayers;
 
 	UFUNCTION()
 	void PhaseTimerCallback();
@@ -82,12 +90,21 @@ public:
 	void SetCurrentRound(int32 NewRound);
 
 	UFUNCTION(BlueprintCallable)
+	void AddGamePlayer(ACombatPlayerState* PlayerState);
+	UFUNCTION(BlueprintCallable)
+	void RemoveGamePlayer(ACombatPlayerState* PlayerState);
+	UFUNCTION(BlueprintPure)
+	TArray<ACombatPlayerState*>& GetAllGamePlayers();
+
+	UFUNCTION(BlueprintCallable)
 	virtual TArray<ATeamPlayerStart*> GetPlayerStartsByTeam(EGameTeams Team);
 	UFUNCTION(BlueprintCallable)
 	virtual TArray<ATeamPlayerStart*> GetAllPlayerStarts();
 	UFUNCTION(BlueprintPure)
 	AOverviewCamera* GetLevelOverviewCamera();
 
+	UFUNCTION()
+	void OnRep_GamePlayers();
 
 	
 	

@@ -51,8 +51,6 @@ public:
 
 	ACombatGameMode();
 
-	
-
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
@@ -79,6 +77,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
 	int32 OvertimeScoreDifference;
 
+	virtual void OnPostLogin(AController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 	
 public:
 

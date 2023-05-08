@@ -22,6 +22,15 @@ void ACombatPlayerState::BeginPlay()
 	}
 }
 
+void ACombatPlayerState::OnRep_GameTeam()
+{
+	//If team changes, notify everything through the GameState.
+	if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		CombatGameState->OnRep_GamePlayers();
+	}
+}
+
 void ACombatPlayerState::OnRep_PlayerMoney()
 {
 	
@@ -67,5 +76,6 @@ void ACombatPlayerState::SetTeam(EGameTeams NewTeam)
 	if(HasAuthority())
 	{
 		CurrentTeam = NewTeam;
+		OnRep_GameTeam();
 	}
 }

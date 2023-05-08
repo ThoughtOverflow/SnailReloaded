@@ -25,16 +25,19 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 	//If player character is possessed, callback to initialize
 	if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(InPawn))
 	{
-		if(IsLocalController())
-		{
-			CreatePlayerHud();
-		}else
-		{
-			Client_CreatePlayerHud();
-		}
+		ToggleTeamSelectionScreen(false);
+		CreatePlayerHud();
 		PlayerCharacter->OnPlayerPossessed(this);
 		
 	}
+}
+
+void ACombatPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	ToggleTeamSelectionScreen(true);
+	
 }
 
 void ACombatPlayerController::CloseLastOpenMenu()
@@ -76,6 +79,9 @@ void ACombatPlayerController::CreatePlayerHud()
 		{
 			SetViewTargetWithBlend(GetPawn(), 1.f, VTBlend_EaseInOut, 3.f);
 		}
+	}else
+	{
+		Client_CreatePlayerHud();
 	}
 }
 
@@ -197,6 +203,58 @@ void ACombatPlayerController::SetRespawnRotation(FRotator NewRotation)
 	{
 		Client_SetRespawnRotation(NewRotation);
 	}
+}
+
+void ACombatPlayerController::ToggleTeamSelectionScreen(bool bOpen)
+{
+	if(IsLocalController())
+	{
+		if(TeamSelectionWidgetClass && !TeamSelectionWidget) TeamSelectionWidget = CreateWidget<UTeamSelectionWidget>(this, TeamSelectionWidgetClass);
+		if(bOpen)
+		{
+			if(TeamSelectionWidget && !TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->AddToViewport();
+			SetShowMouseCursor(true);
+		}else
+		{
+			if(TeamSelectionWidget && TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->RemoveFromParent();
+			SetShowMouseCursor(false);
+		}
+	}else
+	{
+		Client_ToggleTeamSelectionScreen(bOpen);
+	}
+}
+
+void ACombatPlayerController::Client_ToggleTeamSelectionScreen_Implementation(bool bOpen)
+{
+	ToggleTeamSelectionScreen(bOpen);
+}
+
+void ACombatPlayerController::TryStartGame()
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->InitializeCurrentGame();
+		}
+	}
+}
+
+void ACombatPlayerController::AssignPlayerToTeam(EGameTeams Team)
+{
+	if(HasAuthority())
+	{
+		GetPlayerState<ACombatPlayerState>()->SetTeam(Team);
+	}else
+	{
+		Server_AssignPlayerToTeam(Team);
+	}
+}
+
+void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)
+{
+	AssignPlayerToTeam(Team);
 }
 
 void ACombatPlayerController::Client_SetRespawnRotation_Implementation(FRotator NewRotation)
