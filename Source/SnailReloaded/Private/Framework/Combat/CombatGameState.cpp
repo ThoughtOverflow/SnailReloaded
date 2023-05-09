@@ -108,7 +108,10 @@ void ACombatGameState::SelectNewPhase(EGamePhase NewPhase)
 
 void ACombatGameState::OnRep_GamePlayers()
 {
-	OnGamePlayersUpdated.Broadcast();
+	if(!GetWorld()->bIsTearingDown)
+	{
+		OnGamePlayersUpdated.Broadcast();	
+	}
 }
 
 void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

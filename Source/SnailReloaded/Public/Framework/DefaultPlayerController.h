@@ -46,5 +46,8 @@ public:
 	
 	UFUNCTION(BlueprintPure)
 	bool IsAnyMenuOpen();
+
+	UFUNCTION(BlueprintPure)
+	FText FormatMatchTimer(float InSeconds);
 	
 };

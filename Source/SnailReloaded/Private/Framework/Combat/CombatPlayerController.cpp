@@ -35,7 +35,13 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 void ACombatPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
+	if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		if(HasAuthority())
+		{
+			Possess(CombatGameState->GetLevelOverviewCamera());
+		}
+	}
 	ToggleTeamSelectionScreen(true);
 	
 }
