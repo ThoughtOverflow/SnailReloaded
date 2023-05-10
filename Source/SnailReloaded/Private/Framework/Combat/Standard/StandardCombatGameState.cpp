@@ -15,6 +15,9 @@
 
 AStandardCombatGameState::AStandardCombatGameState()
 {
+	TeamAScore = 0;
+	TeamBScore = 0;
+	RoundEndResult = ERoundEndResult::None;
 }
 
 void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
@@ -50,12 +53,15 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	Super::OnPhaseSelected(NewPhase);
 	if(NewPhase == EGamePhase::EndPhase)
 	{
-		//Do team scoring - round finished.
 		
 		if(PlantedBomb)
 		{
 			ExplodeBomb();
 		}
+		
+		//Do team scoring - round finished.
+		HandleTeamScoring();
+		
 	}
 	//Update plant hint graphic.
 	for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
@@ -71,6 +77,8 @@ void AStandardCombatGameState::StartNewRound()
 {
 	Super::StartNewRound();
 	
+	//Reset win result;
+	RoundEndResult = ERoundEndResult::None;
 	RespawnPlayers();
 	
 	//Give bomb to random player;
@@ -107,6 +115,8 @@ void AStandardCombatGameState::ExplodeBomb()
 		PlantedBomb->Destroy();
 		PlantedBomb = nullptr;
 	}
+	//Set win type to check post-report;
+	RoundEndResult = ERoundEndResult::BombExplode;
 }
 
 
@@ -203,6 +213,19 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, NumberOfRounds);
 }
 
+void AStandardCombatGameState::HandleTeamScoring()
+{
+	EGameTeams TeamToScore = EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		TeamToScore = EGameTeams::TeamA;
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		TeamToScore = EGameTeams::TeamB;
+	}
+	ChangeScoreForTeam(TeamToScore, 1);
+}
+
 void AStandardCombatGameState::SetPlayerPlanting(ADefaultPlayerCharacter* Player, bool bPlanting)
 {
 	if(HasAuthority() && bIsPlayerPlanting != bPlanting)
@@ -264,4 +287,33 @@ float AStandardCombatGameState::GetBombActionTimeRemaining()
 		return GetWorldTimerManager().GetTimerElapsed(DefuseTimer);
 	}
 	return 0.f;
+}
+
+void AStandardCombatGameState::SetScoreForTeam(EGameTeams Team, int32 NewScore)
+{
+	if(HasAuthority())
+	{
+		switch (Team) { case EGameTeams::None: break;
+		case EGameTeams::TeamA: TeamAScore = NewScore; break;
+		case EGameTeams::TeamB: TeamBScore = NewScore; break;
+		default: ;
+		}
+	}
+}
+
+void AStandardCombatGameState::ChangeScoreForTeam(EGameTeams Team, int32 DeltaScore)
+{
+	if(HasAuthority())
+	{
+		SetScoreForTeam(Team, GetScoreForTeam(Team) + DeltaScore);
+	}
+}
+
+int32 AStandardCombatGameState::GetScoreForTeam(EGameTeams Team)
+{
+	switch (Team) { case EGameTeams::None: return 0;
+	case EGameTeams::TeamA: return TeamAScore;
+	case EGameTeams::TeamB: return TeamBScore;
+	default: return 0;
+	}
 }
