@@ -23,6 +23,8 @@ public:
 	float PlantTime;
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	float DefuseTime;
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	int32 NumberOfRounds;
 
 	UPROPERTY()
 	ABomb* PlantedBomb;

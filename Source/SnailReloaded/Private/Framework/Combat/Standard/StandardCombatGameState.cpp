@@ -15,7 +15,6 @@
 
 AStandardCombatGameState::AStandardCombatGameState()
 {
-	
 }
 
 void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
@@ -71,16 +70,27 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 void AStandardCombatGameState::StartNewRound()
 {
 	Super::StartNewRound();
-
+	
 	RespawnPlayers();
 	
 	//Give bomb to random player;
 	if(HasAuthority())
 	{
-		int32 randPlayerIndex = FMath::RandRange(0, PlayerArray.Num() - 1);
-		if(TObjectPtr<APlayerState> PlayerState = PlayerArray[randPlayerIndex])
+
+		//Remove all bombs:
+		for(auto& PlayerState : PlayerArray)
 		{
 			if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				PlayerCharacter->SetHasBomb(false);
+			}
+		}
+		
+		TArray<ACombatPlayerState*> TeamPlayers = GetAllPlayersOfTeam(EGameTeams::TeamA);
+		int32 randPlayerIndex = FMath::RandRange(0, TeamPlayers.Num() - 1);
+		if(TeamPlayers[randPlayerIndex])
+		{
+			if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(TeamPlayers[randPlayerIndex]->GetPawn()))
 			{
 				PlayerCharacter->SetHasBomb(true);
 			}
@@ -190,6 +200,7 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, bIsPlayerDefusing);
 	DOREPLIFETIME(AStandardCombatGameState, bIsPlayerPlanting);
 	DOREPLIFETIME(AStandardCombatGameState, LatestBombInteractor);
+	DOREPLIFETIME(AStandardCombatGameState, NumberOfRounds);
 }
 
 void AStandardCombatGameState::SetPlayerPlanting(ADefaultPlayerCharacter* Player, bool bPlanting)

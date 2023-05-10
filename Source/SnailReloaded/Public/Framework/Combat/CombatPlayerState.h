@@ -25,8 +25,11 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerMoney)
 	int32 PlayerMoney;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
+
+	UFUNCTION()
+	void OnRep_GameTeam();
 
 	UFUNCTION()
 	void OnRep_PlayerMoney();

@@ -30,7 +30,7 @@ public:
 	TArray<UUserWidget*> MenuWidgetsRef;
 
 	UFUNCTION(BlueprintCallable)
-	virtual void ActivateUIInputHander(bool bActivate);
+	virtual void ActivateUIInputHandler(bool bActivate);
 
 	UFUNCTION()
 	void OnCloseCurrentlyOpenMenu(const FInputActionInstance& InputActionInstance);
@@ -46,5 +46,8 @@ public:
 	
 	UFUNCTION(BlueprintPure)
 	bool IsAnyMenuOpen();
+
+	UFUNCTION(BlueprintPure)
+	FText FormatMatchTimer(float InSeconds);
 	
 };

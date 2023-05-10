@@ -414,8 +414,8 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(PrimaryWeapon) PrimaryWeapon->Destroy();
 		if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
-		//////
 		GetCombatPlayerController()->ShowDeathScreen(true);
+		GetCombatPlayerController()->SelectOverviewCamera();
 		this->Destroy();
 	}
 }

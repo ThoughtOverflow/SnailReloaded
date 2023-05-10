@@ -32,6 +32,24 @@ FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldI
 	return nullptr;
 }
 
+void ACombatGameMode::OnPostLogin(AController* NewPlayer)
+{
+	Super::OnPostLogin(NewPlayer);
+	if(ACombatPlayerState* PlayerState = NewPlayer->GetPlayerState<ACombatPlayerState>())
+	{
+		GetGameState<ACombatGameState>()->AddGamePlayer(PlayerState);
+	}
+}
+
+void ACombatGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+	if(ACombatPlayerState* PlayerState = Exiting->GetPlayerState<ACombatPlayerState>())
+	{
+		GetGameState<ACombatGameState>()->RemoveGamePlayer(PlayerState);
+	}
+}
+
 FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest& DamageRequest)
 {
 	if(DamageRequest.SourceActor)

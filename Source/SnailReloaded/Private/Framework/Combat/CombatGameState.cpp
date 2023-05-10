@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "World/Objects/OverviewCamera.h"
 #include "World/Objects/TeamPlayerStart.h"
 
 ACombatGameState::ACombatGameState()
@@ -21,6 +22,17 @@ void ACombatGameState::OnRep_GamePhase()
 	SetPhaseTimer();
 	//Notify:
 	OnPhaseSelected(CurrentGamePhase.GamePhase);
+}
+
+void ACombatGameState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(AOverviewCamera* OverviewCamera = Cast<AOverviewCamera>(UGameplayStatics::GetActorOfClass(GetWorld(), AOverviewCamera::StaticClass())))
+	{
+		LevelOverviewCamera = OverviewCamera;
+	}
+	
 }
 
 void ACombatGameState::OnRep_RoundCounter()
@@ -94,12 +106,21 @@ void ACombatGameState::SelectNewPhase(EGamePhase NewPhase)
 	}
 }
 
+void ACombatGameState::OnRep_GamePlayers()
+{
+	if(!GetWorld()->bIsTearingDown)
+	{
+		OnGamePlayersUpdated.Broadcast();	
+	}
+}
+
 void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACombatGameState, CurrentGamePhase);
 	DOREPLIFETIME(ACombatGameState, CurrentRound);
+	DOREPLIFETIME(ACombatGameState, GamePlayers);
 }
 
 void ACombatGameState::CurrentGameInitialized()
@@ -156,11 +177,44 @@ void ACombatGameState::SetCurrentRound(int32 NewRound)
 	}
 }
 
+void ACombatGameState::AddGamePlayer(ACombatPlayerState* PlayerState)
+{
+	if(HasAuthority())
+	{
+		if(!GamePlayers.Contains(PlayerState))
+		{
+			GamePlayers.Add(PlayerState);
+			OnRep_GamePlayers();
+		}
+	}
+}
+
+void ACombatGameState::RemoveGamePlayer(ACombatPlayerState* PlayerState)
+{
+	if(HasAuthority())
+	{
+		if(GamePlayers.Contains(PlayerState))
+		{
+			GamePlayers.Remove(PlayerState);
+			OnRep_GamePlayers();
+		}
+	}
+}
+
+TArray<ACombatPlayerState*>& ACombatGameState::GetAllGamePlayers()
+{
+	return GamePlayers;
+}
+
 TArray<ATeamPlayerStart*> ACombatGameState::GetPlayerStartsByTeam(EGameTeams Team)
 {
 	TArray<ATeamPlayerStart*> ReturnSpawns;
 	if(HasAuthority())
 	{
+		if(Team == EGameTeams::None)
+		{
+			return GetAllPlayerStarts();
+		}
 		TArray<AActor*> FoundSpawns;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATeamPlayerStart::StaticClass(), FoundSpawns);
 		for(auto& Spawn : FoundSpawns)
@@ -193,4 +247,25 @@ TArray<ATeamPlayerStart*> ACombatGameState::GetAllPlayerStarts()
 		}
 	}
 	return ReturnSpawns;
+}
+
+AOverviewCamera* ACombatGameState::GetLevelOverviewCamera()
+{
+	return LevelOverviewCamera;
+}
+
+TArray<ACombatPlayerState*> ACombatGameState::GetAllPlayersOfTeam(EGameTeams Team)
+{
+	TArray<ACombatPlayerState*> Players;
+	for(auto& PlayerState : PlayerArray)
+	{
+		if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
+		{
+			if(CombatPlayerState->GetTeam() == Team)
+			{
+				Players.Add(CombatPlayerState);
+			}
+		}
+	}
+	return Players;
 }

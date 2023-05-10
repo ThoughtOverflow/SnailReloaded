@@ -79,6 +79,30 @@ void AStandardCombatGameMode::DefuseBomb(ADefaultPlayerCharacter* Defuser)
 	//stop bomb - end game.
 }
 
+bool AStandardCombatGameMode::SwapTeams()
+{
+	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	{
+			
+		for(auto& PlayerState : StandardCombatGameState->PlayerArray)
+		{
+			if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
+			{
+				switch (CombatPlayerState->GetTeam()) {
+				case EGameTeams::None: break;
+				case EGameTeams::TeamA: CombatPlayerState->SetTeam(EGameTeams::TeamB); break;
+				case EGameTeams::TeamB: CombatPlayerState->SetTeam(EGameTeams::TeamA); break;
+				default: ;
+				}
+			}
+		}
+		return true;
+		
+	}
+	return false;
+}
+
+
 void AStandardCombatGameMode::InitializeCurrentGame()
 {
 
@@ -86,7 +110,26 @@ void AStandardCombatGameMode::InitializeCurrentGame()
 	{
 		StandardCombatGameState->DefuseTime = DefuseTime;
 		StandardCombatGameState->PlantTime = PlantTime;
+		StandardCombatGameState->NumberOfRounds = MaxRounds;
 	}
 	
 	Super::InitializeCurrentGame();
+}
+
+void AStandardCombatGameMode::StartRound()
+{
+	Super::StartRound();
+
+	if(ACombatGameState* CombatGameState = GetGameState<ACombatGameState>())
+	{
+		if(CombatGameState->GetCurrentRound() < MaxRounds)
+		{
+			//Check for the team swap:
+			if(CombatGameState->GetCurrentRound() == FMath::CeilToInt(MaxRounds / 2.f))
+			{
+				SwapTeams();
+			}
+		}
+	}
+	
 }

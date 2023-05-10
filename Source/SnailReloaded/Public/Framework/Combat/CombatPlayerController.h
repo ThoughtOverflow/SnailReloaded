@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/HealthComponent.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Gameplay/UI/TeamSelectionWidget.h"
 #include "CombatPlayerController.generated.h"
 
 struct FInputActionInstance;
@@ -40,20 +42,25 @@ public:
 	TSubclassOf<UUserWidget> DeathScreenClass;
 	UPROPERTY(BlueprintReadWrite)
 	UUserWidget* DeathScreen;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
+	TSubclassOf<UTeamSelectionWidget> TeamSelectionWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UTeamSelectionWidget* TeamSelectionWidget;
 
 	
 
 protected:
 
 	virtual void OnPossess(APawn* InPawn) override;
-
+	virtual void BeginPlay() override;
 	
 	virtual void CloseLastOpenMenu() override;
 
 
 public:
 
-	virtual void ActivateUIInputHander(bool bActivate) override;
+	virtual void ActivateUIInputHandler(bool bActivate) override;
 	
 	//Player HUD
 	
@@ -79,6 +86,8 @@ public:
 	void ShowDeathScreen(bool bShow);
 	UFUNCTION(Client, Reliable)
 	void Client_ShowDeathScreen(bool bShow);
+	UFUNCTION(BlueprintCallable)
+	void SelectOverviewCamera();
 
 	//Respawn:
 
@@ -87,6 +96,19 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SetRespawnRotation(FRotator NewRotation);
 
+	UFUNCTION(BlueprintCallable)
+	void ToggleTeamSelectionScreen(bool bOpen);
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleTeamSelectionScreen(bool bOpen);
+
+	//Game Start:
+
+	UFUNCTION(BlueprintCallable)
+	void TryStartGame();
+	UFUNCTION(BlueprintCallable)
+	void AssignPlayerToTeam(EGameTeams Team);
+	UFUNCTION(Server, Reliable)
+	void Server_AssignPlayerToTeam(EGameTeams Team);
 	
 
 	

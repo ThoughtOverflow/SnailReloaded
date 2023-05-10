@@ -5,6 +5,9 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "Kismet/KismetStringLibrary.h"
+#include "Kismet/KismetTextLibrary.h"
 
 ADefaultPlayerController::ADefaultPlayerController()
 {
@@ -32,7 +35,7 @@ void ADefaultPlayerController::CloseLastOpenMenu()
 	MenuWidgetsRef.Remove(LastWidget);
 }
 
-void ADefaultPlayerController::ActivateUIInputHander(bool bActivate)
+void ADefaultPlayerController::ActivateUIInputHandler(bool bActivate)
 {
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	
@@ -64,4 +67,12 @@ bool ADefaultPlayerController::IsAnyMenuOpen()
 		}
 	}
 	return false;
+}
+
+FText ADefaultPlayerController::FormatMatchTimer(float InSeconds)
+{
+
+	FTimespan Timespan = FTimespan::FromSeconds(FMath::Floor(InSeconds));
+	FText SecondsText = UKismetTextLibrary::Conv_IntToText(Timespan.GetSeconds(), false, false, 2);
+	return  FText::FromString(FString::Printf(TEXT("%d:%s"), Timespan.GetMinutes(), *SecondsText.ToString()));
 }
