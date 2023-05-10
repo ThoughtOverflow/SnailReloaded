@@ -30,7 +30,7 @@ public:
 	TArray<UUserWidget*> MenuWidgetsRef;
 
 	UFUNCTION(BlueprintCallable)
-	virtual void ActivateUIInputHander(bool bActivate);
+	virtual void ActivateUIInputHandler(bool bActivate);
 
 	UFUNCTION()
 	void OnCloseCurrentlyOpenMenu(const FInputActionInstance& InputActionInstance);

@@ -253,3 +253,19 @@ AOverviewCamera* ACombatGameState::GetLevelOverviewCamera()
 {
 	return LevelOverviewCamera;
 }
+
+TArray<ACombatPlayerState*> ACombatGameState::GetAllPlayersOfTeam(EGameTeams Team)
+{
+	TArray<ACombatPlayerState*> Players;
+	for(auto& PlayerState : PlayerArray)
+	{
+		if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
+		{
+			if(CombatPlayerState->GetTeam() == Team)
+			{
+				Players.Add(CombatPlayerState);
+			}
+		}
+	}
+	return Players;
+}

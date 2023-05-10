@@ -37,9 +37,12 @@ public:
 	void PlantBomb(ADefaultPlayerCharacter* Planter);
 	UFUNCTION(BlueprintCallable)
 	void DefuseBomb(ADefaultPlayerCharacter* Defuser);
+	UFUNCTION(BlueprintCallable)
+	bool SwapTeams();
 
 protected:
 
 	virtual void InitializeCurrentGame() override;
+	virtual void StartRound() override;
 	
 };

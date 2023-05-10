@@ -96,7 +96,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
 	UFUNCTION(BlueprintCallable)
-	void StartRound();
+	virtual void StartRound();
 	UFUNCTION(BlueprintCallable)
 	virtual void ProcessPlayerDeath(ADefaultPlayerCharacter* PlayerCharacter);
 	

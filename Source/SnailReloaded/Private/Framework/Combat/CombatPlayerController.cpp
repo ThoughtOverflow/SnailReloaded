@@ -53,14 +53,14 @@ void ACombatPlayerController::CloseLastOpenMenu()
 	{
 		SetShowMouseCursor(false);
 		SetInputMode(FInputModeGameOnly());
-		ActivateUIInputHander(false);
+		ActivateUIInputHandler(false);
 	}
 	Super::CloseLastOpenMenu();
 }
 
-void ACombatPlayerController::ActivateUIInputHander(bool bActivate)
+void ACombatPlayerController::ActivateUIInputHandler(bool bActivate)
 {
-	Super::ActivateUIInputHander(bActivate);
+	Super::ActivateUIInputHandler(bActivate);
 	//Add player character input blocks as well.
 	if(bActivate)
 	{
@@ -141,7 +141,7 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 				BuyMenu->AddToViewport();
 				SetShowMouseCursor(true);
 				SetInputMode(FInputModeGameAndUI());
-				ActivateUIInputHander(true);
+				ActivateUIInputHandler(true);
 				MenuWidgetsRef.Add(BuyMenu);
 				
 			}else
@@ -151,7 +151,7 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 					BuyMenu->RemoveFromParent();
 					SetShowMouseCursor(false);
 					SetInputMode(FInputModeGameOnly());
-					ActivateUIInputHander(false);
+					ActivateUIInputHandler(false);
 					if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
 				}
 			}

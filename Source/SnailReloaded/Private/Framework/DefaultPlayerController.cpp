@@ -35,7 +35,7 @@ void ADefaultPlayerController::CloseLastOpenMenu()
 	MenuWidgetsRef.Remove(LastWidget);
 }
 
-void ADefaultPlayerController::ActivateUIInputHander(bool bActivate)
+void ADefaultPlayerController::ActivateUIInputHandler(bool bActivate)
 {
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	

@@ -60,7 +60,7 @@ protected:
 
 public:
 
-	virtual void ActivateUIInputHander(bool bActivate) override;
+	virtual void ActivateUIInputHandler(bool bActivate) override;
 	
 	//Player HUD
 	

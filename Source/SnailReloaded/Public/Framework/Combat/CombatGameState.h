@@ -102,6 +102,8 @@ public:
 	virtual TArray<ATeamPlayerStart*> GetAllPlayerStarts();
 	UFUNCTION(BlueprintPure)
 	AOverviewCamera* GetLevelOverviewCamera();
+	UFUNCTION(BlueprintCallable)
+	TArray<ACombatPlayerState*> GetAllPlayersOfTeam(EGameTeams Team);
 
 	UFUNCTION()
 	void OnRep_GamePlayers();
