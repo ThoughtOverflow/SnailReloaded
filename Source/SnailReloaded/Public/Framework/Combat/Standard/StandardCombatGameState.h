@@ -83,6 +83,11 @@ protected:
 
 	UFUNCTION()
 	void HandleTeamScoring();
+
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	EBombTeam TeamASide;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	EBombTeam TeamBSide;
 	
 public:
 
@@ -110,5 +115,11 @@ public:
 	int32 GetScoreForTeam(EGameTeams Team);
 	UFUNCTION()
 	void CheckForAlivePlayers();
+	UFUNCTION(BlueprintCallable)
+	EGameTeams GetTeamBySide(EBombTeam Side);
+	UFUNCTION(BlueprintCallable)
+	EBombTeam GetSideByTeam(EGameTeams Team);
+	UFUNCTION(BlueprintCallable)
+	void SetSideOfTeam(EGameTeams Team, EBombTeam Side);
 	
 };

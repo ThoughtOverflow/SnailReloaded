@@ -206,12 +206,12 @@ TArray<ACombatPlayerState*>& ACombatGameState::GetAllGamePlayers()
 	return GamePlayers;
 }
 
-TArray<ATeamPlayerStart*> ACombatGameState::GetPlayerStartsByTeam(EGameTeams Team)
+TArray<ATeamPlayerStart*> ACombatGameState::GetPlayerStartsByTeam(EBombTeam Team)
 {
 	TArray<ATeamPlayerStart*> ReturnSpawns;
 	if(HasAuthority())
 	{
-		if(Team == EGameTeams::None)
+		if(Team == EBombTeam::None)
 		{
 			return GetAllPlayerStarts();
 		}

@@ -258,8 +258,11 @@ void ACombatGameMode::StartRound()
 					//Do Overtime stuff.
 				}else
 				{
-					EndMatch();
-				}			
+					if(!bMatchEnded)
+					{
+						EndMatch();
+					}
+				}
 			}
 		}
 	}

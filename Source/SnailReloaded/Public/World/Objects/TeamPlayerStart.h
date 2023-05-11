@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/HealthComponent.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "GameFramework/PlayerStart.h"
 #include "TeamPlayerStart.generated.h"
 
@@ -19,6 +20,6 @@ public:
 
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn options")
-	EGameTeams AssignedTeam = EGameTeams::None;
+	EBombTeam AssignedTeam = EBombTeam::None;
 	
 };

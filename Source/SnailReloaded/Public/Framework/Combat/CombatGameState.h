@@ -13,6 +13,14 @@
  * 
  */
 
+UENUM(BlueprintType)
+enum class EBombTeam : uint8
+{
+	None = 0,
+	Attacker = 1,
+	Defender = 2,
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGamePlayersUpdated);
 
 class ATeamPlayerStart;
@@ -97,7 +105,7 @@ public:
 	TArray<ACombatPlayerState*>& GetAllGamePlayers();
 
 	UFUNCTION(BlueprintCallable)
-	virtual TArray<ATeamPlayerStart*> GetPlayerStartsByTeam(EGameTeams Team);
+	virtual TArray<ATeamPlayerStart*> GetPlayerStartsByTeam(EBombTeam Team);
 	UFUNCTION(BlueprintCallable)
 	virtual TArray<ATeamPlayerStart*> GetAllPlayerStarts();
 	UFUNCTION(BlueprintPure)

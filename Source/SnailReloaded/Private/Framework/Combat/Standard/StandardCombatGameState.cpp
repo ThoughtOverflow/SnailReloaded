@@ -18,6 +18,8 @@ AStandardCombatGameState::AStandardCombatGameState()
 	TeamAScore = 0;
 	TeamBScore = 0;
 	RoundEndResult = ERoundEndResult::None;
+	TeamASide = EBombTeam::Attacker;
+	TeamBSide = EBombTeam::Defender;
 }
 
 void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
@@ -94,7 +96,7 @@ void AStandardCombatGameState::StartNewRound()
 			}
 		}
 		
-		TArray<ACombatPlayerState*> TeamPlayers = GetAllPlayersOfTeam(EGameTeams::TeamA);
+		TArray<ACombatPlayerState*> TeamPlayers = GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Attacker));
 		int32 randPlayerIndex = FMath::RandRange(0, TeamPlayers.Num() - 1);
 		if(TeamPlayers[randPlayerIndex])
 		{
@@ -180,7 +182,7 @@ void AStandardCombatGameState::RespawnPlayers()
 			{
 				if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
 				{
-					TArray<ATeamPlayerStart*> TeamSpecStart = GetPlayerStartsByTeam(CombatPlayerState->GetTeam());
+					TArray<ATeamPlayerStart*> TeamSpecStart = GetPlayerStartsByTeam(GetSideByTeam(CombatPlayerState->GetTeam()));
 
 					checkf(TeamSpecStart.Num() != 0, TEXT("No team specific player spawns exist! - quitting"));
 
@@ -211,6 +213,8 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, bIsPlayerPlanting);
 	DOREPLIFETIME(AStandardCombatGameState, LatestBombInteractor);
 	DOREPLIFETIME(AStandardCombatGameState, NumberOfRounds);
+	DOREPLIFETIME(AStandardCombatGameState, TeamASide);
+	DOREPLIFETIME(AStandardCombatGameState, TeamBSide);
 }
 
 void AStandardCombatGameState::HandleTeamScoring()
@@ -218,10 +222,10 @@ void AStandardCombatGameState::HandleTeamScoring()
 	EGameTeams TeamToScore = EGameTeams::None;
 	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
 	{
-		TeamToScore = EGameTeams::TeamA;
+		TeamToScore = GetTeamBySide(EBombTeam::Defender);
 	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
 	{
-		TeamToScore = EGameTeams::TeamB;
+		TeamToScore = GetTeamBySide(EBombTeam::Attacker);
 	}
 	ChangeScoreForTeam(TeamToScore, 1);
 }
@@ -364,3 +368,42 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 	}
 
 }
+
+EGameTeams AStandardCombatGameState::GetTeamBySide(EBombTeam Side)
+{
+	EGameTeams AtkTeam = EGameTeams::None;
+	EGameTeams DefTeam = EGameTeams::None;
+	if(GetSideByTeam(EGameTeams::TeamA) != EBombTeam::None && GetSideByTeam(EGameTeams::TeamB) != EBombTeam::None)
+	{
+		AtkTeam = GetSideByTeam(EGameTeams::TeamA) == EBombTeam::Attacker ? EGameTeams::TeamA : EGameTeams::TeamB;
+		DefTeam = GetSideByTeam(EGameTeams::TeamB) == EBombTeam::Attacker ? EGameTeams::TeamA : EGameTeams::TeamB;
+	}
+	
+	switch (Side) {
+	case EBombTeam::None: return EGameTeams::None;
+	case EBombTeam::Attacker: return AtkTeam;
+	case EBombTeam::Defender: return DefTeam;
+	default: return EGameTeams::None;
+	}
+}
+
+EBombTeam AStandardCombatGameState::GetSideByTeam(EGameTeams Team)
+{
+	switch (Team) {
+	case EGameTeams::None: return EBombTeam::None;
+	case EGameTeams::TeamA: return TeamASide;
+	case EGameTeams::TeamB: return TeamBSide;
+	default: return EBombTeam::None;
+	}
+}
+
+void AStandardCombatGameState::SetSideOfTeam(EGameTeams Team, EBombTeam Side)
+{
+	switch (Team) {
+	case EGameTeams::None: break;
+	case EGameTeams::TeamA: TeamASide = Side;
+	case EGameTeams::TeamB: TeamBSide = Side;
+	default: ;
+	}
+}
+
