@@ -15,7 +15,7 @@ FGamePhase::FGamePhase(): GamePhase(EGamePhase::None), PhaseTimeSeconds(0)
 
 ACombatGameMode::ACombatGameMode()
 {
-	
+	bMatchEnded = false;
 }
 
 FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldIdentifier)
@@ -247,20 +247,33 @@ void ACombatGameMode::StartRound()
 	{
 		if(GamePhases.Num() > 0)
 		{
-			if (CombatGameState->GetCurrentRound() < MaxRounds)
+			if (CombatGameState->GetCurrentRound() < MaxRounds && !bMatchEnded)
 			{
 				CombatGameState->SetCurrentRound(CombatGameState->GetCurrentRound() + 1);
 				CombatGameState->SetCurrentGamePhase(GamePhases[0]);	
 			}else
 			{
-				//TODO Trigger end match.
+				if(bAllowOvertime)
+				{
+					//Do Overtime stuff.
+				}else
+				{
+					EndMatch();
+				}			
 			}
 		}
 	}
 
 }
 
-void ACombatGameMode::ProcessPlayerDeath(ADefaultPlayerCharacter* PlayerCharacter)
+void ACombatGameMode::EndMatch()
+{
+	//Override - Match end results.
+	if(!bMatchEnded) bMatchEnded = true;
+	
+}
+
+void ACombatGameMode::ProcessPlayerDeath(ACombatPlayerState* PlayerState)
 {
 	//Death logic - override.
 }

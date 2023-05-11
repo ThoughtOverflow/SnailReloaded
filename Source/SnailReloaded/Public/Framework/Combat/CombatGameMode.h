@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CombatPlayerState.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "CombatGameMode.generated.h"
@@ -77,6 +78,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
 	int32 OvertimeScoreDifference;
 
+	UPROPERTY()
+	bool bMatchEnded;
+
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	
@@ -97,7 +101,16 @@ public:
 	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
 	UFUNCTION(BlueprintCallable)
 	virtual void StartRound();
+	UFUNCTION()
+	virtual void EndMatch();
+
+		
+	/**
+	 * @brief Called when a player dies.
+	 * @param PlayerState The player state corresponding to the player who just died.
+	 */
 	UFUNCTION(BlueprintCallable)
-	virtual void ProcessPlayerDeath(ADefaultPlayerCharacter* PlayerCharacter);
+	virtual void ProcessPlayerDeath(ACombatPlayerState* PlayerState);
+
 	
 };

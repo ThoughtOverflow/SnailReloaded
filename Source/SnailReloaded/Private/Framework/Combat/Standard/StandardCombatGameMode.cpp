@@ -102,6 +102,33 @@ bool AStandardCombatGameMode::SwapTeams()
 	return false;
 }
 
+void AStandardCombatGameMode::EndMatch()
+{
+	Super::EndMatch();
+
+	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	{
+		int32 AScore = StandardCombatGameState->GetScoreForTeam(EGameTeams::TeamA);
+		int32 BScore = StandardCombatGameState->GetScoreForTeam(EGameTeams::TeamB);
+		
+		if(AScore == BScore)
+		{
+			//Handle tie
+			UE_LOG(LogTemp, Warning, TEXT("TIE"));
+			
+		}else if(AScore > BScore)
+		{
+			//TeamA Win
+			UE_LOG(LogTemp, Warning, TEXT("TeamA WIN!"));
+		}else
+		{
+			//TeamB Win
+			UE_LOG(LogTemp, Warning, TEXT("TeamB WIN!"));
+		}
+	}
+	
+}
+
 
 void AStandardCombatGameMode::InitializeCurrentGame()
 {
@@ -132,4 +159,16 @@ void AStandardCombatGameMode::StartRound()
 		}
 	}
 	
+}
+
+void AStandardCombatGameMode::ProcessPlayerDeath(ACombatPlayerState* PlayerState)
+{
+	Super::ProcessPlayerDeath(PlayerState);
+
+	//Check for any alive players - end round if team's dead.
+
+	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	{
+		StandardCombatGameState->CheckForAlivePlayers();
+	}
 }

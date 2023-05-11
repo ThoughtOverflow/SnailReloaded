@@ -298,6 +298,15 @@ void AStandardCombatGameState::SetScoreForTeam(EGameTeams Team, int32 NewScore)
 		case EGameTeams::TeamB: TeamBScore = NewScore; break;
 		default: ;
 		}
+
+		if(GetScoreForTeam(Team) == FMath::CeilToInt(NumberOfRounds / 2.f))
+		{
+			//Score diff is already at max - End match. - //Note overtime handles by itself.
+			if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+			{
+				StandardCombatGameMode->EndMatch();
+			}
+		}
 	}
 }
 
@@ -316,4 +325,42 @@ int32 AStandardCombatGameState::GetScoreForTeam(EGameTeams Team)
 	case EGameTeams::TeamB: return TeamBScore;
 	default: return 0;
 	}
+}
+
+void AStandardCombatGameState::CheckForAlivePlayers()
+{
+	if(HasAuthority())
+	{
+		bool bTeamADead = true;
+		bool bTeamBDead = true;
+		for(auto& PlayerState : GetAllPlayersOfTeam(EGameTeams::TeamA))
+		{
+			if(ADefaultPlayerCharacter* AliveCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				if(!AliveCharacter->PlayerHealthComponent->bIsDead)
+				{
+					bTeamADead = false;
+					break;
+				}
+			}
+		}
+		for(auto& PlayerState : GetAllPlayersOfTeam(EGameTeams::TeamB))
+		{
+			if(ADefaultPlayerCharacter* AliveCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				if(!AliveCharacter->PlayerHealthComponent->bIsDead)
+				{
+					bTeamBDead = false;
+					break;
+				}
+			}
+		}
+		if(bTeamADead || bTeamBDead)
+		{
+
+			RoundEndResult = bTeamADead ? ERoundEndResult::AttackersKilled : ERoundEndResult::DefendersKilled;
+			SelectNewPhase(EGamePhase::EndPhase);
+		}
+	}
+
 }

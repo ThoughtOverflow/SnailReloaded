@@ -108,6 +108,7 @@ public:
 	void ChangeScoreForTeam(EGameTeams Team, int32 DeltaScore);
 	UFUNCTION(BlueprintPure)
 	int32 GetScoreForTeam(EGameTeams Team);
-	
+	UFUNCTION()
+	void CheckForAlivePlayers();
 	
 };

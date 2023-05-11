@@ -182,19 +182,19 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 
 			//Do the game start as well:
 			if(HasAuthority())
-			{
-				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
-				{
-					CombatGameMode->InitializeCurrentGame();
-				}
-				
-			}else
-			{
-				Server_TemporaryShit();
-			}
-			
-		}
-}
+ 			{
+ 				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+ 				{
+ 					CombatGameMode->InitializeCurrentGame();
+ 				}
+ 				
+ 			}else
+ 			{
+ 				Server_TemporaryShit();
+ 			}
+ 			
+ 		}
+ }
 
 
 void ADefaultPlayerCharacter::Server_TemporaryShit_Implementation()
@@ -416,6 +416,10 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(MeleeWeapon) MeleeWeapon->Destroy();
 		GetCombatPlayerController()->ShowDeathScreen(true);
 		GetCombatPlayerController()->SelectOverviewCamera();
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->ProcessPlayerDeath(Cast<ACombatPlayerState>(GetPlayerState()));
+		}
 		this->Destroy();
 	}
 }

@@ -39,10 +39,13 @@ public:
 	void DefuseBomb(ADefaultPlayerCharacter* Defuser);
 	UFUNCTION(BlueprintCallable)
 	bool SwapTeams();
+	
+	virtual void EndMatch() override;
 
 protected:
 
 	virtual void InitializeCurrentGame() override;
 	virtual void StartRound() override;
+	virtual void ProcessPlayerDeath(ACombatPlayerState* PlayerState) override;
 	
 };
