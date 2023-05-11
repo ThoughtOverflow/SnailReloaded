@@ -1,6 +1,8 @@
 // SnailReloaded - ThoughtOverflow 2023 - All rights reserved.
 
 #include "Components/HealthComponent.h"
+
+#include "Engine/DamageEvents.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Net/UnrealNetwork.h"
@@ -42,13 +44,15 @@ FDamageRequest FDamageRequest::DeathDamage(AActor* SourceActor, AActor* TargetAc
 	FDamageRequest DamageRequest = FDamageRequest();
 	DamageRequest.SourceActor = SourceActor;
 	DamageRequest.TargetActor = TargetActor;
-	if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(TargetActor->GetComponentByClass(UHealthComponent::StaticClass())))
+	if(TargetActor)
 	{
-		DamageRequest.DeltaDamage = HealthComponent->GetDamageToKill();
-	}else
-	{
-		DamageRequest.DeltaDamage = 0.f;
+		if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(TargetActor->GetComponentByClass(UHealthComponent::StaticClass())))
+		{
+			DamageRequest.DeltaDamage = HealthComponent->GetDamageToKill();
+			return DamageRequest;
+		}
 	}
+	DamageRequest.DeltaDamage = 0.f;
 	return DamageRequest;
 }
 
@@ -111,7 +115,6 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void UHealthComponent::OnRep_ObjectHealth()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth);
 	ObjectHealthChanged.Broadcast(LatestDamage);
 	if(bIsDead)
 	{

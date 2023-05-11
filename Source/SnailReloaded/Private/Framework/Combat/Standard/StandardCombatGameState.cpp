@@ -15,6 +15,11 @@
 
 AStandardCombatGameState::AStandardCombatGameState()
 {
+	TeamAScore = 0;
+	TeamBScore = 0;
+	RoundEndResult = ERoundEndResult::None;
+	TeamASide = EBombTeam::Attacker;
+	TeamBSide = EBombTeam::Defender;
 }
 
 void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
@@ -33,6 +38,10 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 				PlayerCharacter->PlayerHealthComponent->SetCanSell(false);
 			}
 		}
+	}else if(ExpiredPhase == EGamePhase::ActiveGame)
+	{
+		//Timer ran out.
+		RoundEndResult = ERoundEndResult::OutOfTime;
 	}
 
 	switch (CurrentGamePhase.GamePhase) {
@@ -50,12 +59,15 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	Super::OnPhaseSelected(NewPhase);
 	if(NewPhase == EGamePhase::EndPhase)
 	{
-		//Do team scoring - round finished.
 		
 		if(PlantedBomb)
 		{
 			ExplodeBomb();
 		}
+		
+		//Do team scoring - round finished.
+		HandleTeamScoring();
+		
 	}
 	//Update plant hint graphic.
 	for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
@@ -70,7 +82,15 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 void AStandardCombatGameState::StartNewRound()
 {
 	Super::StartNewRound();
+
+	//Only restart if the game isn't already over:
+	if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		if(StandardCombatGameMode->IsMatchOver()) return;
+	}
 	
+	//Reset win result;
+	RoundEndResult = ERoundEndResult::None;
 	RespawnPlayers();
 	
 	//Give bomb to random player;
@@ -86,7 +106,7 @@ void AStandardCombatGameState::StartNewRound()
 			}
 		}
 		
-		TArray<ACombatPlayerState*> TeamPlayers = GetAllPlayersOfTeam(EGameTeams::TeamA);
+		TArray<ACombatPlayerState*> TeamPlayers = GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Attacker));
 		int32 randPlayerIndex = FMath::RandRange(0, TeamPlayers.Num() - 1);
 		if(TeamPlayers[randPlayerIndex])
 		{
@@ -107,6 +127,8 @@ void AStandardCombatGameState::ExplodeBomb()
 		PlantedBomb->Destroy();
 		PlantedBomb = nullptr;
 	}
+	//Set win type to check post-report;
+	RoundEndResult = ERoundEndResult::BombExplode;
 }
 
 
@@ -170,7 +192,7 @@ void AStandardCombatGameState::RespawnPlayers()
 			{
 				if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
 				{
-					TArray<ATeamPlayerStart*> TeamSpecStart = GetPlayerStartsByTeam(CombatPlayerState->GetTeam());
+					TArray<ATeamPlayerStart*> TeamSpecStart = GetPlayerStartsByTeam(GetSideByTeam(CombatPlayerState->GetTeam()));
 
 					checkf(TeamSpecStart.Num() != 0, TEXT("No team specific player spawns exist! - quitting"));
 
@@ -201,6 +223,22 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, bIsPlayerPlanting);
 	DOREPLIFETIME(AStandardCombatGameState, LatestBombInteractor);
 	DOREPLIFETIME(AStandardCombatGameState, NumberOfRounds);
+	DOREPLIFETIME(AStandardCombatGameState, TeamASide);
+	DOREPLIFETIME(AStandardCombatGameState, TeamBSide);
+}
+
+void AStandardCombatGameState::HandleTeamScoring()
+{
+	EGameTeams TeamToScore = EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::None) return;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		TeamToScore = GetTeamBySide(EBombTeam::Defender);
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		TeamToScore = GetTeamBySide(EBombTeam::Attacker);
+	}
+	ChangeScoreForTeam(TeamToScore, 1);
 }
 
 void AStandardCombatGameState::SetPlayerPlanting(ADefaultPlayerCharacter* Player, bool bPlanting)
@@ -265,3 +303,120 @@ float AStandardCombatGameState::GetBombActionTimeRemaining()
 	}
 	return 0.f;
 }
+
+void AStandardCombatGameState::SetScoreForTeam(EGameTeams Team, int32 NewScore)
+{
+	if(HasAuthority())
+	{
+		switch (Team) { case EGameTeams::None: break;
+		case EGameTeams::TeamA: TeamAScore = NewScore; break;
+		case EGameTeams::TeamB: TeamBScore = NewScore; break;
+		default: ;
+		}
+
+		if(GetScoreForTeam(Team) == FMath::CeilToInt(NumberOfRounds / 2.f))
+		{
+			//Score diff is already at max - End match. - //Note overtime handles by itself.
+			if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+			{
+				StandardCombatGameMode->EndMatch();
+			}
+		}
+	}
+}
+
+void AStandardCombatGameState::ChangeScoreForTeam(EGameTeams Team, int32 DeltaScore)
+{
+	if(HasAuthority())
+	{
+		SetScoreForTeam(Team, GetScoreForTeam(Team) + DeltaScore);
+	}
+}
+
+int32 AStandardCombatGameState::GetScoreForTeam(EGameTeams Team)
+{
+	switch (Team) { case EGameTeams::None: return 0;
+	case EGameTeams::TeamA: return TeamAScore;
+	case EGameTeams::TeamB: return TeamBScore;
+	default: return 0;
+	}
+}
+
+void AStandardCombatGameState::CheckForAlivePlayers()
+{
+	if(HasAuthority())
+	{
+		bool bAttackersDead = true;
+		bool bDefendersDead = true;
+		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Attacker)))
+		{
+			if(ADefaultPlayerCharacter* AliveCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				if(!AliveCharacter->PlayerHealthComponent->bIsDead)
+				{
+					bAttackersDead = false;
+					break;
+				}
+			}
+		}
+		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Defender)))
+		{
+			if(ADefaultPlayerCharacter* AliveCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				if(!AliveCharacter->PlayerHealthComponent->bIsDead)
+				{
+					bDefendersDead = false;
+					break;
+				}
+			}
+		}
+		if(bAttackersDead || bDefendersDead)
+		{
+			RoundEndResult = bAttackersDead ? ERoundEndResult::AttackersKilled : ERoundEndResult::DefendersKilled;
+			if(!PlantedBomb)
+			{
+				SelectNewPhase(EGamePhase::EndPhase);
+			}
+		}
+	}
+
+}
+
+EGameTeams AStandardCombatGameState::GetTeamBySide(EBombTeam Side)
+{
+	EGameTeams AtkTeam = EGameTeams::None;
+	EGameTeams DefTeam = EGameTeams::None;
+	if(GetSideByTeam(EGameTeams::TeamA) != EBombTeam::None && GetSideByTeam(EGameTeams::TeamB) != EBombTeam::None)
+	{
+		AtkTeam = GetSideByTeam(EGameTeams::TeamA) == EBombTeam::Attacker ? EGameTeams::TeamA : EGameTeams::TeamB;
+		DefTeam = GetSideByTeam(EGameTeams::TeamB) == EBombTeam::Attacker ? EGameTeams::TeamA : EGameTeams::TeamB;
+	}
+	
+	switch (Side) {
+	case EBombTeam::None: return EGameTeams::None;
+	case EBombTeam::Attacker: return AtkTeam;
+	case EBombTeam::Defender: return DefTeam;
+	default: return EGameTeams::None;
+	}
+}
+
+EBombTeam AStandardCombatGameState::GetSideByTeam(EGameTeams Team)
+{
+	switch (Team) {
+	case EGameTeams::None: return EBombTeam::None;
+	case EGameTeams::TeamA: return TeamASide;
+	case EGameTeams::TeamB: return TeamBSide;
+	default: return EBombTeam::None;
+	}
+}
+
+void AStandardCombatGameState::SetSideOfTeam(EGameTeams Team, EBombTeam Side)
+{
+	switch (Team) {
+	case EGameTeams::None: break;
+	case EGameTeams::TeamA: TeamASide = Side;
+	case EGameTeams::TeamB: TeamBSide = Side;
+	default: ;
+	}
+}
+

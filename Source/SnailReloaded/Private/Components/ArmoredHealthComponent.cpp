@@ -49,7 +49,6 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(const FDamageRequest
 			SetCanSell(false);
 			float DeltaShieldHealth = FMath::Max(FMath::Floor(DamageRequest.DeltaDamage * ShieldDamageReduction), -ShieldHealth);
 			float DeltaObjectHealth = FMath::CeilToFloat(DamageRequest.DeltaDamage - DeltaShieldHealth);
-			UE_LOG(LogTemp, Warning, TEXT("Total damage: %f - Shield take: %f - Body take: %f"), DamageRequest.DeltaDamage, DeltaShieldHealth, DeltaObjectHealth);
 			FDamageResponse DamageResponse = SetObjectHealth(DamageRequest, GetObjectHealth() + DeltaObjectHealth);
 			SetShieldHealth(FMath::Max(DeltaShieldHealth + ShieldHealth, 0));
 			if(GetShieldHealth() == 0.f)
@@ -57,7 +56,6 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(const FDamageRequest
 				//Set nullShield as current shield:
 				UpdateShieldProperties(FShieldProperties());
 			}
-			UE_LOG(LogTemp, Warning, TEXT("Shield hp: %f - Body hp: %f"), ShieldHealth, GetObjectHealth());
 			return DamageResponse;
 		}
 		

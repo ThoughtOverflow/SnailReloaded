@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CombatPlayerState.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "CombatGameMode.generated.h"
@@ -72,10 +73,17 @@ protected:
 	int32 MaxRounds;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
 	bool bAllowOvertime;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	/**
+	 * @brief The maximum number of overtime rounds that can be played, before permanently ending the game (in a tie if needed).
+	 * Setting this to 0 will allow infinite overtime rounds to be played.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime", ClampMin = 0))
 	int32 MaxOvertimeRounds;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime", ClampMin = 1))
 	int32 OvertimeScoreDifference;
+
+	UPROPERTY()
+	bool bMatchEnded;
 
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
@@ -97,7 +105,18 @@ public:
 	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
 	UFUNCTION(BlueprintCallable)
 	virtual void StartRound();
+	UFUNCTION()
+	virtual void EndMatch();
+	UFUNCTION(BlueprintPure)
+	bool IsMatchOver();
+
+		
+	/**
+	 * @brief Called when a player dies.
+	 * @param PlayerState The player state corresponding to the player who just died.
+	 */
 	UFUNCTION(BlueprintCallable)
-	virtual void ProcessPlayerDeath(ADefaultPlayerCharacter* PlayerCharacter);
+	virtual void ProcessPlayerDeath(ACombatPlayerState* PlayerState);
+
 	
 };
