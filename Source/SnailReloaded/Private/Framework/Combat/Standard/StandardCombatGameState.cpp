@@ -225,6 +225,8 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, NumberOfRounds);
 	DOREPLIFETIME(AStandardCombatGameState, TeamASide);
 	DOREPLIFETIME(AStandardCombatGameState, TeamBSide);
+	DOREPLIFETIME(AStandardCombatGameState, TeamAScore);
+	DOREPLIFETIME(AStandardCombatGameState, TeamBScore);
 }
 
 void AStandardCombatGameState::HandleTeamScoring()

@@ -7,6 +7,7 @@
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerState.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/UI/BuyMenu.h"
 #include "Gameplay/UI/HudData.h"
@@ -256,6 +257,35 @@ void ACombatPlayerController::AssignPlayerToTeam(EGameTeams Team)
 	{
 		Server_AssignPlayerToTeam(Team);
 	}
+}
+
+int32 ACombatPlayerController::GetAllyTeamScore()
+{
+	if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		if(ACombatPlayerState* CombatPlayerState = GetPlayerState<ACombatPlayerState>())
+		{
+			return StandardCombatGameState->GetScoreForTeam(CombatPlayerState->GetTeam());
+		}
+	}
+	return 0;
+}
+
+int32 ACombatPlayerController::GetEnemyTeamScore()
+{
+	if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		if(ACombatPlayerState* CombatPlayerState = GetPlayerState<ACombatPlayerState>())
+		{
+			switch (CombatPlayerState->GetTeam()) {
+			case EGameTeams::None: return 0;
+			case EGameTeams::TeamA: return StandardCombatGameState->GetScoreForTeam(EGameTeams::TeamB);
+			case EGameTeams::TeamB: return StandardCombatGameState->GetScoreForTeam(EGameTeams::TeamA);
+			default: return 0;
+			}
+		}
+	}
+	return 0;
 }
 
 void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)
