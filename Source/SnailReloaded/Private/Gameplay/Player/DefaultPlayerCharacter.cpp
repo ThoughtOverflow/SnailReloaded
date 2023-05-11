@@ -182,19 +182,19 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 
 			//Do the game start as well:
 			if(HasAuthority())
-			{
-				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
-				{
-					CombatGameMode->InitializeCurrentGame();
-				}
-				
-			}else
-			{
-				Server_TemporaryShit();
-			}
-			
-		}
-}
+ 			{
+ 				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+ 				{
+ 					CombatGameMode->InitializeCurrentGame();
+ 				}
+ 				
+ 			}else
+ 			{
+ 				Server_TemporaryShit();
+ 			}
+ 			
+ 		}
+ }
 
 
 void ADefaultPlayerCharacter::Server_TemporaryShit_Implementation()
@@ -288,12 +288,10 @@ void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action
 {
 	if(Action.GetValue().Get<bool>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("START"));
 		TryStartPlanting();
 		
 	}else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("STOP"));
 		TryStopPlanting();
 	}
 }
@@ -310,7 +308,6 @@ void ADefaultPlayerCharacter::OnReloadComplete()
 		CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() + ClipAddAmount);
 		CurrentlyEquippedWeapon->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() - ClipAddAmount);
 		CurrentlyEquippedWeapon->SetIsReloading(false);
-		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 	}
 }
 
@@ -416,6 +413,10 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(MeleeWeapon) MeleeWeapon->Destroy();
 		GetCombatPlayerController()->ShowDeathScreen(true);
 		GetCombatPlayerController()->SelectOverviewCamera();
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->ProcessPlayerDeath(Cast<ACombatPlayerState>(GetPlayerState()));
+		}
 		this->Destroy();
 	}
 }
@@ -808,8 +809,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FVector EndDeviation = (UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) *
 							DeviationVector.X) +
 						(UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * DeviationVector.Y);
-
-					// UE_LOG(LogTemp, Warning, TEXT("Values: %f, %f"), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationX), LineTraceMaxDistance)), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationY), LineTraceMaxDistance)));
+					
 
 					TraceEndLoc += EndDeviation;
 

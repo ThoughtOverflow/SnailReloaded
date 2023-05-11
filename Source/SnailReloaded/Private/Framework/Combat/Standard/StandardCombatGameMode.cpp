@@ -79,27 +79,64 @@ void AStandardCombatGameMode::DefuseBomb(ADefaultPlayerCharacter* Defuser)
 	//stop bomb - end game.
 }
 
-bool AStandardCombatGameMode::SwapTeams()
+bool AStandardCombatGameMode::SwapTeamForPlayer(ACombatPlayerState* PlayerState)
+{
+	switch (PlayerState->GetTeam()) {
+	case EGameTeams::None: break;
+	case EGameTeams::TeamA: PlayerState->SetTeam(EGameTeams::TeamB); return true;
+	case EGameTeams::TeamB: PlayerState->SetTeam(EGameTeams::TeamA); return true;
+	default: ;
+	}
+	return false;
+}
+
+
+bool AStandardCombatGameMode::SwapSides()
 {
 	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
 	{
-			
-		for(auto& PlayerState : StandardCombatGameState->PlayerArray)
-		{
-			if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
-			{
-				switch (CombatPlayerState->GetTeam()) {
-				case EGameTeams::None: break;
-				case EGameTeams::TeamA: CombatPlayerState->SetTeam(EGameTeams::TeamB); break;
-				case EGameTeams::TeamB: CombatPlayerState->SetTeam(EGameTeams::TeamA); break;
-				default: ;
-				}
-			}
+		switch (StandardCombatGameState->GetSideByTeam(EGameTeams::TeamA)) {
+		case EBombTeam::None: break;
+		case EBombTeam::Attacker: StandardCombatGameState->SetSideOfTeam(EGameTeams::TeamA, EBombTeam::Defender); break;
+		case EBombTeam::Defender: StandardCombatGameState->SetSideOfTeam(EGameTeams::TeamA, EBombTeam::Attacker); break;
+		default: ;
+		}
+		switch (StandardCombatGameState->GetSideByTeam(EGameTeams::TeamB)) {
+		case EBombTeam::None: break;
+		case EBombTeam::Attacker: StandardCombatGameState->SetSideOfTeam(EGameTeams::TeamB, EBombTeam::Defender); break;
+		case EBombTeam::Defender: StandardCombatGameState->SetSideOfTeam(EGameTeams::TeamB, EBombTeam::Attacker); break;
+		default: ;
 		}
 		return true;
-		
 	}
 	return false;
+}
+
+void AStandardCombatGameMode::EndMatch()
+{
+	Super::EndMatch();
+
+	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	{
+		int32 AScore = StandardCombatGameState->GetScoreForTeam(EGameTeams::TeamA);
+		int32 BScore = StandardCombatGameState->GetScoreForTeam(EGameTeams::TeamB);
+		
+		if(AScore == BScore)
+		{
+			//Handle tie
+			UE_LOG(LogTemp, Warning, TEXT("TIE"));
+			
+		}else if(AScore > BScore)
+		{
+			//TeamA Win
+			UE_LOG(LogTemp, Warning, TEXT("TeamA WIN!"));
+		}else
+		{
+			//TeamB Win
+			UE_LOG(LogTemp, Warning, TEXT("TeamB WIN!"));
+		}
+	}
+	
 }
 
 
@@ -127,9 +164,21 @@ void AStandardCombatGameMode::StartRound()
 			//Check for the team swap:
 			if(CombatGameState->GetCurrentRound() == FMath::CeilToInt(MaxRounds / 2.f))
 			{
-				SwapTeams();
+				SwapSides();
 			}
 		}
 	}
 	
+}
+
+void AStandardCombatGameMode::ProcessPlayerDeath(ACombatPlayerState* PlayerState)
+{
+	Super::ProcessPlayerDeath(PlayerState);
+
+	//Check for any alive players - end round if team's dead.
+
+	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	{
+		StandardCombatGameState->CheckForAlivePlayers();
+	}
 }

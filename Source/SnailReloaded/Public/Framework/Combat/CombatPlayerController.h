@@ -109,6 +109,13 @@ public:
 	void AssignPlayerToTeam(EGameTeams Team);
 	UFUNCTION(Server, Reliable)
 	void Server_AssignPlayerToTeam(EGameTeams Team);
+
+	//Team Score display
+
+	UFUNCTION(BlueprintPure)
+	int32 GetAllyTeamScore();
+	UFUNCTION(BlueprintPure)
+	int32 GetEnemyTeamScore();
 	
 
 	
