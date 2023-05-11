@@ -38,6 +38,10 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 				PlayerCharacter->PlayerHealthComponent->SetCanSell(false);
 			}
 		}
+	}else if(ExpiredPhase == EGamePhase::ActiveGame)
+	{
+		//Timer ran out.
+		RoundEndResult = ERoundEndResult::OutOfTime;
 	}
 
 	switch (CurrentGamePhase.GamePhase) {
@@ -78,6 +82,12 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 void AStandardCombatGameState::StartNewRound()
 {
 	Super::StartNewRound();
+
+	//Only restart if the game isn't already over:
+	if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		if(StandardCombatGameMode->IsMatchOver()) return;
+	}
 	
 	//Reset win result;
 	RoundEndResult = ERoundEndResult::None;
@@ -220,6 +230,7 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 void AStandardCombatGameState::HandleTeamScoring()
 {
 	EGameTeams TeamToScore = EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::None) return;
 	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
 	{
 		TeamToScore = GetTeamBySide(EBombTeam::Defender);
@@ -335,35 +346,37 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 {
 	if(HasAuthority())
 	{
-		bool bTeamADead = true;
-		bool bTeamBDead = true;
-		for(auto& PlayerState : GetAllPlayersOfTeam(EGameTeams::TeamA))
+		bool bAttackersDead = true;
+		bool bDefendersDead = true;
+		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Attacker)))
 		{
 			if(ADefaultPlayerCharacter* AliveCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
 			{
 				if(!AliveCharacter->PlayerHealthComponent->bIsDead)
 				{
-					bTeamADead = false;
+					bAttackersDead = false;
 					break;
 				}
 			}
 		}
-		for(auto& PlayerState : GetAllPlayersOfTeam(EGameTeams::TeamB))
+		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Defender)))
 		{
 			if(ADefaultPlayerCharacter* AliveCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
 			{
 				if(!AliveCharacter->PlayerHealthComponent->bIsDead)
 				{
-					bTeamBDead = false;
+					bDefendersDead = false;
 					break;
 				}
 			}
 		}
-		if(bTeamADead || bTeamBDead)
+		if(bAttackersDead || bDefendersDead)
 		{
-
-			RoundEndResult = bTeamADead ? ERoundEndResult::AttackersKilled : ERoundEndResult::DefendersKilled;
-			SelectNewPhase(EGamePhase::EndPhase);
+			RoundEndResult = bAttackersDead ? ERoundEndResult::AttackersKilled : ERoundEndResult::DefendersKilled;
+			if(!PlantedBomb)
+			{
+				SelectNewPhase(EGamePhase::EndPhase);
+			}
 		}
 	}
 

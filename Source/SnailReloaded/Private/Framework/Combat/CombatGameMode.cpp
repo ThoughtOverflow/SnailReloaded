@@ -276,6 +276,11 @@ void ACombatGameMode::EndMatch()
 	
 }
 
+bool ACombatGameMode::IsMatchOver()
+{
+	return bMatchEnded;
+}
+
 void ACombatGameMode::ProcessPlayerDeath(ACombatPlayerState* PlayerState)
 {
 	//Death logic - override.

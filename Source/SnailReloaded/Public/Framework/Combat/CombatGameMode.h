@@ -103,6 +103,8 @@ public:
 	virtual void StartRound();
 	UFUNCTION()
 	virtual void EndMatch();
+	UFUNCTION(BlueprintPure)
+	bool IsMatchOver();
 
 		
 	/**
