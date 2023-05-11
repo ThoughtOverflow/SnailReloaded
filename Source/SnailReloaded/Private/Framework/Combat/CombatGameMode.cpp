@@ -16,6 +16,8 @@ FGamePhase::FGamePhase(): GamePhase(EGamePhase::None), PhaseTimeSeconds(0)
 ACombatGameMode::ACombatGameMode()
 {
 	bMatchEnded = false;
+	OvertimeScoreDifference = 1;
+	MaxOvertimeRounds = 1;
 }
 
 FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldIdentifier)

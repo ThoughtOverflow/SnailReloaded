@@ -115,7 +115,6 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void UHealthComponent::OnRep_ObjectHealth()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth);
 	ObjectHealthChanged.Broadcast(LatestDamage);
 	if(bIsDead)
 	{

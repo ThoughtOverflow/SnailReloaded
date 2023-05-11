@@ -73,9 +73,13 @@ protected:
 	int32 MaxRounds;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
 	bool bAllowOvertime;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	/**
+	 * @brief The maximum number of overtime rounds that can be played, before permanently ending the game (in a tie if needed).
+	 * Setting this to 0 will allow infinite overtime rounds to be played.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime", ClampMin = 0))
 	int32 MaxOvertimeRounds;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime", ClampMin = 1))
 	int32 OvertimeScoreDifference;
 
 	UPROPERTY()
