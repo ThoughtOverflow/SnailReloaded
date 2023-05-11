@@ -107,12 +107,15 @@ void AStandardCombatGameState::StartNewRound()
 		}
 		
 		TArray<ACombatPlayerState*> TeamPlayers = GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Attacker));
-		int32 randPlayerIndex = FMath::RandRange(0, TeamPlayers.Num() - 1);
-		if(TeamPlayers[randPlayerIndex])
+		if(TeamPlayers.Num() > 0)
 		{
-			if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(TeamPlayers[randPlayerIndex]->GetPawn()))
+			int32 randPlayerIndex = FMath::RandRange(0, TeamPlayers.Num() - 1);
+			if(TeamPlayers[randPlayerIndex])
 			{
-				PlayerCharacter->SetHasBomb(true);
+				if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(TeamPlayers[randPlayerIndex]->GetPawn()))
+				{
+					PlayerCharacter->SetHasBomb(true);
+				}
 			}
 		}
 	}
