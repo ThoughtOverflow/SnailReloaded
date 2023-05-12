@@ -77,6 +77,8 @@ public:
 
 	UPROPERTY()
 	float PrevFireTime;
+	UPROPERTY()
+	float PrevReleaseTime;
 
 	
 

@@ -35,6 +35,17 @@ void ACombatGameState::BeginPlay()
 	
 }
 
+void ACombatGameState::OnRep_MatchPause()
+{
+	if(bMatchPaused)
+	{
+		GetWorldTimerManager().PauseTimer(PhaseTimer);
+	}else
+	{
+		GetWorldTimerManager().UnPauseTimer(PhaseTimer);
+	}
+}
+
 void ACombatGameState::OnRep_RoundCounter()
 {
 	
@@ -81,6 +92,8 @@ void ACombatGameState::SetPhaseTimer()
 		CancelPhaseTimer();
 	}
 	GetWorldTimerManager().SetTimer(PhaseTimer, this, &ACombatGameState::PhaseTimerCallback, CurrentGamePhase.PhaseTimeSeconds);
+	//Check if it has to be paused;
+	OnRep_MatchPause();
 }
 
 void ACombatGameState::CancelPhaseTimer()
@@ -114,6 +127,24 @@ void ACombatGameState::OnRep_GamePlayers()
 	}
 }
 
+void ACombatGameState::PauseMatch()
+{
+	if(HasAuthority())
+	{
+		bMatchPaused = true;
+		OnRep_MatchPause();
+	}
+}
+
+void ACombatGameState::UnpauseMatch()
+{
+	if(HasAuthority())
+	{
+		bMatchPaused = true;
+		OnRep_MatchPause();
+	}
+}
+
 void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -121,6 +152,7 @@ void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ACombatGameState, CurrentGamePhase);
 	DOREPLIFETIME(ACombatGameState, CurrentRound);
 	DOREPLIFETIME(ACombatGameState, GamePlayers);
+	DOREPLIFETIME(ACombatGameState, bMatchPaused);
 }
 
 void ACombatGameState::CurrentGameInitialized()

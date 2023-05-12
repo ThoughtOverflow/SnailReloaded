@@ -34,6 +34,8 @@ public:
 
 	ACombatGameState();
 
+
+	
 	UPROPERTY(BlueprintReadWrite)
 	int32 InitialPlayerMoney;
 	UPROPERTY(EditDefaultsOnly)
@@ -44,6 +46,8 @@ public:
 
 protected:
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_MatchPause)
+	bool bMatchPaused;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_GamePhase)
 	FGamePhase CurrentGamePhase;
 	UFUNCTION()
@@ -78,6 +82,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const override;
 
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnRep_MatchPause();
 
 public:
 
@@ -115,6 +122,11 @@ public:
 
 	UFUNCTION()
 	void OnRep_GamePlayers();
+
+	UFUNCTION(BlueprintCallable)
+	void PauseMatch();
+	UFUNCTION(BlueprintCallable)
+	void UnpauseMatch();
 
 	
 	

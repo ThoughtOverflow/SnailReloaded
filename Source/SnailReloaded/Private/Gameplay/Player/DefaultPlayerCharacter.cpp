@@ -722,6 +722,7 @@ void ADefaultPlayerCharacter::EndShooting()
 	{
 		//Reset fired combo;
 		FiredRoundsPerShootingEvent = 0;
+		PrevReleaseTime = GetWorld()->GetTimeSeconds();
 	}
 	
 }
@@ -862,11 +863,21 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 
 
 				//Recoil TEST-----------
-			
-				float RecoilMultTemp = 1000.f;
-				GetCurrentlyEquippedWeapon()->UpdateShotTimes(GetWorld()->TimeSince(PrevFireTime));
+
+				float TimeSinceLast = GetWorld()->TimeSince(PrevFireTime);
+				if(FiredRoundsPerShootingEvent == 1 && GetWorld()->TimeSince(PrevReleaseTime) < TimeSinceLast)
+				{
+					TimeSinceLast -= GetWorld()->TimeSince(PrevReleaseTime);
+				}
+				
+				GetCurrentlyEquippedWeapon()->UpdateShotTimes(TimeSinceLast);
 				PrevFireTime = GetWorld()->GetTimeSeconds();
-				GetCurrentlyEquippedWeapon()->GetRecoilValue();
+				FVector2D RecoilUnitVector = GetCurrentlyEquippedWeapon()->GetRecoilValue();
+				FVector RecoilActualVector = FVector::ZeroVector;
+				RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * LineTraceMaxDistance + 
+					UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * LineTraceMaxDistance;
+
+				TraceEndLoc += RecoilActualVector;
 			
 				//----------------------
 				
