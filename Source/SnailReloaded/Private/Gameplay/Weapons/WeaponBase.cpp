@@ -3,10 +3,19 @@
 
 #include "Gameplay/Weapons/WeaponBase.h"
 
+#include "Curves/CurveVector.h"
 #include "Net/UnrealNetwork.h"
 
 
-
+FWeaponRecoil::FWeaponRecoil()
+{
+	bUseRecoil = true;
+	RecoilResetTime = 1.f;
+	FixedRecoil = nullptr;
+	FixedRecoilTime = 1.f;
+	RandomRecoilRangeMax = FVector2D::ZeroVector;
+	RandomRecoilRangeMin = FVector2D::ZeroVector;
+}
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -36,6 +45,9 @@ AWeaponBase::AWeaponBase()
 	ReloadTime = 3.f;
 	bIsReloading = false;
 	bCanSell = true;
+
+	TotalFireTime = -1.f;
+	TimeSinceLastShot = -1.f;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -215,4 +227,52 @@ void AWeaponBase::SetCanSell(bool bSell)
 		this->bCanSell = bSell;
 		OnRep_CanSell();
 	}
+}
+
+void AWeaponBase::UpdateShotTimes(float NewTimeSinceLast)
+{
+	if(HasAuthority())
+	{
+		TimeSinceLastShot = NewTimeSinceLast;
+		if(TimeSinceLastShot > WeaponRecoil.RecoilResetTime)
+		{
+			TotalFireTime = 0.f;
+		}else
+		{
+			TotalFireTime += NewTimeSinceLast;
+		}
+	}
+}
+
+void AWeaponBase::ResetShotTimes()
+{
+	TotalFireTime = 0.f;
+	TimeSinceLastShot = -1.f;
+}
+
+FVector2D AWeaponBase::GetRecoilValue()
+{
+	FVector2D RecoilVector = FVector2D::ZeroVector;
+	FVector2D RecoilAngles = FVector2D::ZeroVector;
+	if(TotalFireTime != -1.f && TimeSinceLastShot != -1.f)
+	{
+		if(TotalFireTime > WeaponRecoil.FixedRecoilTime)
+		{
+			//Use randomized recoil:
+			float RandX = FMath::RandRange(WeaponRecoil.RandomRecoilRangeMin.X, WeaponRecoil.RandomRecoilRangeMax.X);
+			float RandY = FMath::RandRange(WeaponRecoil.RandomRecoilRangeMin.Y, WeaponRecoil.RandomRecoilRangeMax.Y);
+			RecoilAngles.Set(RandX, RandY);
+		}else
+		{
+			//Use preset recoil:
+			RecoilAngles.Set(WeaponRecoil.FixedRecoil->GetVectorValue(TotalFireTime).X, WeaponRecoil.FixedRecoil->GetVectorValue(TotalFireTime).Y);
+		}
+		//The deviation angles are the y coordinates of the unit circle.
+		RecoilVector.X = FMath::Sin(FMath::DegreesToRadians(RecoilAngles.X));
+		RecoilVector.Y = FMath::Sin(FMath::DegreesToRadians(RecoilAngles.Y));
+		
+		
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Applied recoil X: %f, - Applied recoil Y: %f"), RecoilVector.X, RecoilVector.Y);
+	return RecoilVector;
 }

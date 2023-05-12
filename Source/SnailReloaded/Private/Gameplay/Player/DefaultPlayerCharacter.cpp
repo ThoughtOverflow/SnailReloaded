@@ -848,6 +848,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		else
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
+			
+			
 			//Can Shoot:
 			if (CanPlayerAttack() && WeaponHasAmmo())
 			{
@@ -857,6 +859,17 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+
+
+				//Recoil TEST-----------
+			
+				float RecoilMultTemp = 1000.f;
+				GetCurrentlyEquippedWeapon()->UpdateShotTimes(GetWorld()->TimeSince(PrevFireTime));
+				PrevFireTime = GetWorld()->GetTimeSeconds();
+				GetCurrentlyEquippedWeapon()->GetRecoilValue();
+			
+				//----------------------
+				
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
 				{
