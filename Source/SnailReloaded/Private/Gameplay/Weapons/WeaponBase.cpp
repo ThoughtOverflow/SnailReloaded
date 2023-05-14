@@ -250,6 +250,12 @@ FVector2D AWeaponBase::GetRecoilValue()
 	
 	FVector2D RecoilVector = FVector2D::ZeroVector;
 	FVector2D RecoilAngles = FVector2D::ZeroVector;
+
+		if(Recoil_FiredShots == 0)
+		{
+			return RecoilAngles;
+		}
+	
 		if(Recoil_FiredShots > WeaponRecoil.NumOfFixedShots)
 		{
 			//Use randomized recoil:
@@ -259,8 +265,11 @@ FVector2D AWeaponBase::GetRecoilValue()
 		}else
 		{
 			//Use preset recoil:
-			RecoilAngles.Set(WeaponRecoil.FixedRecoil->GetVectorValue( static_cast<float>(Recoil_FiredShots) / static_cast<float>(WeaponRecoil.NumOfFixedShots)).X,
+			if(WeaponRecoil.FixedRecoil && WeaponRecoil.NumOfFixedShots > 0)
+			{
+				RecoilAngles.Set(WeaponRecoil.FixedRecoil->GetVectorValue( static_cast<float>(Recoil_FiredShots) / static_cast<float>(WeaponRecoil.NumOfFixedShots)).X,
 				WeaponRecoil.FixedRecoil->GetVectorValue(static_cast<float>(Recoil_FiredShots) / static_cast<float>(WeaponRecoil.NumOfFixedShots)).Y);
+			}
 		}
 		//The deviation angles are the y coordinates of the unit circle.
 		RecoilVector.X = FMath::Sin(FMath::DegreesToRadians(RecoilAngles.X));

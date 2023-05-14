@@ -22,6 +22,10 @@ public:
 	float RecoilResetTime;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
 	UCurveVector* FixedRecoil;
+	/**
+	 * @brief Number of shots that will be accurate to the curve's preset value. (Starting from the second shot)
+	 * The first shot is <b>ALWAYS</b> accurate.
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
 	int32 NumOfFixedShots;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))

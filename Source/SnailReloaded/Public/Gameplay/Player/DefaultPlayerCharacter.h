@@ -182,6 +182,8 @@ protected:
 
 	UPROPERTY()
 	float TimeOfLastShot;
+	UFUNCTION()
+	void CalculateWeaponRecoil(FVector& RayEndLocation);
 
 public:	
 	// Called every frame
