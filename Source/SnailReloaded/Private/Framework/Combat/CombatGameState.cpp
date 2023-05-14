@@ -7,6 +7,8 @@
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "World/Objects/OverviewCamera.h"
+#include "World/Objects/TeamPlayerStart.h"
 
 ACombatGameState::ACombatGameState()
 {
@@ -20,6 +22,28 @@ void ACombatGameState::OnRep_GamePhase()
 	SetPhaseTimer();
 	//Notify:
 	OnPhaseSelected(CurrentGamePhase.GamePhase);
+}
+
+void ACombatGameState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(AOverviewCamera* OverviewCamera = Cast<AOverviewCamera>(UGameplayStatics::GetActorOfClass(GetWorld(), AOverviewCamera::StaticClass())))
+	{
+		LevelOverviewCamera = OverviewCamera;
+	}
+	
+}
+
+void ACombatGameState::OnRep_MatchPause()
+{
+	if(bMatchPaused)
+	{
+		GetWorldTimerManager().PauseTimer(PhaseTimer);
+	}else
+	{
+		GetWorldTimerManager().UnPauseTimer(PhaseTimer);
+	}
 }
 
 void ACombatGameState::OnRep_RoundCounter()
@@ -40,17 +64,20 @@ void ACombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 	//Close all buy menus.
 	if(ExpiredPhase == EGamePhase::Preparation)
 	{
-		for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
+		if(HasAuthority())
 		{
-			if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
 			{
-				PlayerController->ToggleBuyMenu(false);
+				if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+				{
+					PlayerController->ToggleBuyMenu(false);
+				}
 			}
 		}
 	}
 }
 
-void ACombatGameState::OnPhaseSelected(EGamePhase NewPhase)
+void ACombatGameState:: OnPhaseSelected(EGamePhase NewPhase)
 {
 	
 }
@@ -65,6 +92,8 @@ void ACombatGameState::SetPhaseTimer()
 		CancelPhaseTimer();
 	}
 	GetWorldTimerManager().SetTimer(PhaseTimer, this, &ACombatGameState::PhaseTimerCallback, CurrentGamePhase.PhaseTimeSeconds);
+	//Check if it has to be paused;
+	OnRep_MatchPause();
 }
 
 void ACombatGameState::CancelPhaseTimer()
@@ -90,12 +119,40 @@ void ACombatGameState::SelectNewPhase(EGamePhase NewPhase)
 	}
 }
 
+void ACombatGameState::OnRep_GamePlayers()
+{
+	if(!GetWorld()->bIsTearingDown)
+	{
+		OnGamePlayersUpdated.Broadcast();	
+	}
+}
+
+void ACombatGameState::PauseMatch()
+{
+	if(HasAuthority())
+	{
+		bMatchPaused = true;
+		OnRep_MatchPause();
+	}
+}
+
+void ACombatGameState::UnpauseMatch()
+{
+	if(HasAuthority())
+	{
+		bMatchPaused = true;
+		OnRep_MatchPause();
+	}
+}
+
 void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACombatGameState, CurrentGamePhase);
 	DOREPLIFETIME(ACombatGameState, CurrentRound);
+	DOREPLIFETIME(ACombatGameState, GamePlayers);
+	DOREPLIFETIME(ACombatGameState, bMatchPaused);
 }
 
 void ACombatGameState::CurrentGameInitialized()
@@ -150,4 +207,97 @@ void ACombatGameState::SetCurrentRound(int32 NewRound)
 		CurrentRound = NewRound;
 		OnRep_RoundCounter();
 	}
+}
+
+void ACombatGameState::AddGamePlayer(ACombatPlayerState* PlayerState)
+{
+	if(HasAuthority())
+	{
+		if(!GamePlayers.Contains(PlayerState))
+		{
+			GamePlayers.Add(PlayerState);
+			OnRep_GamePlayers();
+		}
+	}
+}
+
+void ACombatGameState::RemoveGamePlayer(ACombatPlayerState* PlayerState)
+{
+	if(HasAuthority())
+	{
+		if(GamePlayers.Contains(PlayerState))
+		{
+			GamePlayers.Remove(PlayerState);
+			OnRep_GamePlayers();
+		}
+	}
+}
+
+TArray<ACombatPlayerState*>& ACombatGameState::GetAllGamePlayers()
+{
+	return GamePlayers;
+}
+
+TArray<ATeamPlayerStart*> ACombatGameState::GetPlayerStartsByTeam(EBombTeam Team)
+{
+	TArray<ATeamPlayerStart*> ReturnSpawns;
+	if(HasAuthority())
+	{
+		if(Team == EBombTeam::None)
+		{
+			return GetAllPlayerStarts();
+		}
+		TArray<AActor*> FoundSpawns;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATeamPlayerStart::StaticClass(), FoundSpawns);
+		for(auto& Spawn : FoundSpawns)
+		{
+			if(ATeamPlayerStart* PlayerStart = Cast<ATeamPlayerStart>(Spawn))
+			{
+				if(PlayerStart->AssignedTeam == Team)
+				{
+					ReturnSpawns.Add(PlayerStart);
+				}
+			}
+		}
+	}
+	return ReturnSpawns;
+}
+
+TArray<ATeamPlayerStart*> ACombatGameState::GetAllPlayerStarts()
+{
+	TArray<ATeamPlayerStart*> ReturnSpawns;
+	if(HasAuthority())
+	{
+		TArray<AActor*> FoundSpawns;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATeamPlayerStart::StaticClass(), FoundSpawns);
+		for(auto& Spawn : FoundSpawns)
+		{
+			if(ATeamPlayerStart* PlayerStart = Cast<ATeamPlayerStart>(Spawn))
+			{
+				ReturnSpawns.Add(PlayerStart);
+			}
+		}
+	}
+	return ReturnSpawns;
+}
+
+AOverviewCamera* ACombatGameState::GetLevelOverviewCamera()
+{
+	return LevelOverviewCamera;
+}
+
+TArray<ACombatPlayerState*> ACombatGameState::GetAllPlayersOfTeam(EGameTeams Team)
+{
+	TArray<ACombatPlayerState*> Players;
+	for(auto& PlayerState : PlayerArray)
+	{
+		if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
+		{
+			if(CombatPlayerState->GetTeam() == Team)
+			{
+				Players.Add(CombatPlayerState);
+			}
+		}
+	}
+	return Players;
 }

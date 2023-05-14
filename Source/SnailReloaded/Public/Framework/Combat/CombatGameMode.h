@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CombatPlayerState.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/DefaultGameMode.h"
 #include "CombatGameMode.generated.h"
@@ -51,8 +52,6 @@ public:
 
 	ACombatGameMode();
 
-	
-
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
@@ -63,7 +62,7 @@ protected:
 	TArray<FShieldProperties> ShieldDataTable;
 
 	FShieldProperties* FindShieldDataByType(EItemIdentifier ShieldIdentifier);
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
 	TArray<EGamePhase> AllowedPhases;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
@@ -74,16 +73,26 @@ protected:
 	int32 MaxRounds;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
 	bool bAllowOvertime;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	/**
+	 * @brief The maximum number of overtime rounds that can be played, before permanently ending the game (in a tie if needed).
+	 * Setting this to 0 will allow infinite overtime rounds to be played.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime", ClampMin = 0))
 	int32 MaxOvertimeRounds;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties", meta = (EditCondition = "bAllowOvertime", ClampMin = 1))
 	int32 OvertimeScoreDifference;
+
+	UPROPERTY()
+	bool bMatchEnded;
+
+	virtual void OnPostLogin(AController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 	
 public:
 
 
 	UFUNCTION(BlueprintCallable)
-	FDamageResponse ChangeObjectHealth(FDamageRequest DamageRequest);
+	FDamageResponse ChangeObjectHealth(FDamageRequest& DamageRequest);
 
 	UFUNCTION(BlueprintCallable)
 	bool PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
@@ -91,10 +100,23 @@ public:
 	bool SellItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);
 
 	UFUNCTION(BlueprintCallable)
-	void InitializeCurrentGame();
+	virtual void InitializeCurrentGame();
 	UFUNCTION(BlueprintCallable)
 	bool GetGamePhaseByType(EGamePhase Phase, FGamePhase& RefGamePhase);
 	UFUNCTION(BlueprintCallable)
-	void StartRound();
+	virtual void StartRound();
+	UFUNCTION()
+	virtual void EndMatch();
+	UFUNCTION(BlueprintPure)
+	bool IsMatchOver();
+
+		
+	/**
+	 * @brief Called when a player dies.
+	 * @param PlayerState The player state corresponding to the player who just died.
+	 */
+	UFUNCTION(BlueprintCallable)
+	virtual void ProcessPlayerDeath(ACombatPlayerState* PlayerState);
+
 	
 };

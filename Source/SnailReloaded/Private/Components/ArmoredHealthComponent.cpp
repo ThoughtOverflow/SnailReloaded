@@ -40,7 +40,7 @@ UArmoredHealthComponent::UArmoredHealthComponent()
 	bCanSell = true;
 }
 
-FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
+FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(const FDamageRequest& DamageRequest)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
@@ -49,15 +49,14 @@ FDamageResponse UArmoredHealthComponent::ChangeObjectHealth(FDamageRequest Damag
 			SetCanSell(false);
 			float DeltaShieldHealth = FMath::Max(FMath::Floor(DamageRequest.DeltaDamage * ShieldDamageReduction), -ShieldHealth);
 			float DeltaObjectHealth = FMath::CeilToFloat(DamageRequest.DeltaDamage - DeltaShieldHealth);
-			UE_LOG(LogTemp, Warning, TEXT("Total damage: %f - Shield take: %f - Body take: %f"), DamageRequest.DeltaDamage, DeltaShieldHealth, DeltaObjectHealth);
-			SetObjectHealth(DamageRequest, GetObjectHealth() + DeltaObjectHealth);
+			FDamageResponse DamageResponse = SetObjectHealth(DamageRequest, GetObjectHealth() + DeltaObjectHealth);
 			SetShieldHealth(FMath::Max(DeltaShieldHealth + ShieldHealth, 0));
 			if(GetShieldHealth() == 0.f)
 			{
 				//Set nullShield as current shield:
 				UpdateShieldProperties(FShieldProperties());
 			}
-			UE_LOG(LogTemp, Warning, TEXT("Shield hp: %f - Body hp: %f"), ShieldHealth, GetObjectHealth());
+			return DamageResponse;
 		}
 		
 	}
@@ -151,7 +150,7 @@ void UArmoredHealthComponent::RevertToPreviousState()
 }
 
 
-void UArmoredHealthComponent::UpdateShieldProperties(FShieldProperties Properties)
+void UArmoredHealthComponent::UpdateShieldProperties(const FShieldProperties& Properties)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
@@ -187,5 +186,13 @@ void UArmoredHealthComponent::SetCanSell(bool bSell)
 bool UArmoredHealthComponent::CanSell()
 {
 	return bCanSell;
+}
+
+float UArmoredHealthComponent::GetDamageToKill()
+{
+	// The current object's health should be equal to the damage taken by the object itself, aka the damage * 1 minus the Shield's reduction rate.
+	//Health = Damage * (1 - ReductionRate);
+	float RequiredDamage = GetObjectHealth() / (1.f - GetShieldDamageReduction());
+	return -RequiredDamage;
 }
 

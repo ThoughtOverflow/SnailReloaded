@@ -66,6 +66,17 @@ UHudData* UHudData::SetReloading(bool bReloading)
 	return this;
 }
 
+UHudData* UHudData::SetShowPlantHint(bool bShow)
+{
+	bShowPlantHint = bShow;
+	return this;
+}
+
+bool UHudData::GetShowPlantHint()
+{
+	return bShowPlantHint;
+}
+
 void UHudData::Submit()
 {
 	if(WidgetOwner && WidgetOwner->IsLocalController())

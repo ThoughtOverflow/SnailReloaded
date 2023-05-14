@@ -36,6 +36,8 @@ protected:
 	float PlayerShieldHealth;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsReloading;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bShowPlantHint;
 	UPROPERTY(BlueprintReadWrite)
 	ACombatPlayerController* WidgetOwner;
 
@@ -47,6 +49,7 @@ public:
 	UHudData* SetCurrentTotalAmmo(int32 NewAmmo);
 	UHudData* SetPlayerShieldHealth(float NewHealth);
 	UHudData* SetReloading(bool bReloading);
+	UHudData* SetShowPlantHint(bool bShow);
 	void Submit();
 	
 	float GetPlayerHealthPercentage() const;
@@ -55,6 +58,7 @@ public:
 	int32 GetCurrentTotalAmmo() const;
 	float GetPlayerShieldHealth() const;
 	bool GetIsReloading() const;
+	bool GetShowPlantHint();
 	
 
 	

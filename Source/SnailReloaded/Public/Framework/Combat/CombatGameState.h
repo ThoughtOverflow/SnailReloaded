@@ -4,14 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "CombatGameMode.h"
+#include "CombatPlayerState.h"
 #include "Framework/DefaultGameState.h"
+#include "World/Objects/OverviewCamera.h"
 #include "CombatGameState.generated.h"
 
 /**
  * 
  */
 
+UENUM(BlueprintType)
+enum class EBombTeam : uint8
+{
+	None = 0,
+	Attacker = 1,
+	Defender = 2,
+};
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGamePlayersUpdated);
+
+class ATeamPlayerStart;
 struct FGamePhase;
 UCLASS()
 class SNAILRELOADED_API ACombatGameState : public ADefaultGameState
@@ -22,11 +34,20 @@ public:
 
 	ACombatGameState();
 
+
+	
 	UPROPERTY(BlueprintReadWrite)
 	int32 InitialPlayerMoney;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<ADefaultPlayerCharacter> PlayerCharacterClass;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGamePlayersUpdated OnGamePlayersUpdated;
 
 protected:
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_MatchPause)
+	bool bMatchPaused;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_GamePhase)
 	FGamePhase CurrentGamePhase;
 	UFUNCTION()
@@ -36,7 +57,13 @@ protected:
 	UFUNCTION()
 	void OnRep_RoundCounter();
 
+	UPROPERTY(BlueprintReadWrite)
+	AOverviewCamera* LevelOverviewCamera;
+	
 	FTimerHandle PhaseTimer;
+
+	UPROPERTY(ReplicatedUsing=OnRep_GamePlayers)
+	TArray<ACombatPlayerState*> GamePlayers;
 
 	UFUNCTION()
 	void PhaseTimerCallback();
@@ -52,7 +79,12 @@ protected:
 	virtual void SelectNewPhase(EGamePhase NewPhase);
 
 	//override
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const;
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const override;
+
+	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnRep_MatchPause();
 
 public:
 
@@ -71,6 +103,32 @@ public:
 	int32 GetCurrentRound();
 	UFUNCTION(BlueprintCallable)
 	void SetCurrentRound(int32 NewRound);
+
+	UFUNCTION(BlueprintCallable)
+	void AddGamePlayer(ACombatPlayerState* PlayerState);
+	UFUNCTION(BlueprintCallable)
+	void RemoveGamePlayer(ACombatPlayerState* PlayerState);
+	UFUNCTION(BlueprintPure)
+	TArray<ACombatPlayerState*>& GetAllGamePlayers();
+
+	UFUNCTION(BlueprintCallable)
+	virtual TArray<ATeamPlayerStart*> GetPlayerStartsByTeam(EBombTeam Team);
+	UFUNCTION(BlueprintCallable)
+	virtual TArray<ATeamPlayerStart*> GetAllPlayerStarts();
+	UFUNCTION(BlueprintPure)
+	AOverviewCamera* GetLevelOverviewCamera();
+	UFUNCTION(BlueprintCallable)
+	TArray<ACombatPlayerState*> GetAllPlayersOfTeam(EGameTeams Team);
+
+	UFUNCTION()
+	void OnRep_GamePlayers();
+
+	UFUNCTION(BlueprintCallable)
+	void PauseMatch();
+	UFUNCTION(BlueprintCallable)
+	void UnpauseMatch();
+
 	
 	
 };
+

@@ -15,7 +15,9 @@ FGamePhase::FGamePhase(): GamePhase(EGamePhase::None), PhaseTimeSeconds(0)
 
 ACombatGameMode::ACombatGameMode()
 {
-	
+	bMatchEnded = false;
+	OvertimeScoreDifference = 1;
+	MaxOvertimeRounds = 1;
 }
 
 FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldIdentifier)
@@ -32,14 +34,36 @@ FShieldProperties* ACombatGameMode::FindShieldDataByType(EItemIdentifier ShieldI
 	return nullptr;
 }
 
-FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest DamageRequest)
+void ACombatGameMode::OnPostLogin(AController* NewPlayer)
+{
+	Super::OnPostLogin(NewPlayer);
+	if(ACombatPlayerState* PlayerState = NewPlayer->GetPlayerState<ACombatPlayerState>())
+	{
+		GetGameState<ACombatGameState>()->AddGamePlayer(PlayerState);
+	}
+}
+
+void ACombatGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+	if(ACombatPlayerState* PlayerState = Exiting->GetPlayerState<ACombatPlayerState>())
+	{
+		GetGameState<ACombatGameState>()->RemoveGamePlayer(PlayerState);
+	}
+}
+
+FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest& DamageRequest)
 {
 	if(DamageRequest.SourceActor)
 	{
 		if(UHealthComponent* TargetHealthComponent = Cast<UHealthComponent>(DamageRequest.TargetActor->GetComponentByClass(UHealthComponent::StaticClass())))
 		{
-			const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(DamageRequest);
-			return Response;
+			if(UHealthComponent* SourceHealthComponent = Cast<UHealthComponent>(DamageRequest.SourceActor->GetComponentByClass(UHealthComponent::StaticClass())))
+			{
+				DamageRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
+				const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(DamageRequest);
+				return Response;
+			}
 		}
 	}
 	return FDamageResponse();
@@ -197,7 +221,7 @@ void ACombatGameMode::InitializeCurrentGame()
 		if(GamePhases.Num() > 0)
 		{
 			CombatGameState->InitialPlayerMoney = PlayerStartMoney;
-			StartRound();
+			CombatGameState->StartNewRound();
 			CombatGameState->CurrentGameInitialized();
 		}
 	}
@@ -225,15 +249,41 @@ void ACombatGameMode::StartRound()
 	{
 		if(GamePhases.Num() > 0)
 		{
-			if (CombatGameState->GetCurrentRound() < MaxRounds)
+			if (CombatGameState->GetCurrentRound() < MaxRounds && !bMatchEnded)
 			{
 				CombatGameState->SetCurrentRound(CombatGameState->GetCurrentRound() + 1);
 				CombatGameState->SetCurrentGamePhase(GamePhases[0]);	
 			}else
 			{
-				//TODO Trigger end match.
+				if(bAllowOvertime)
+				{
+					//Do Overtime stuff.
+				}else
+				{
+					if(!bMatchEnded)
+					{
+						EndMatch();
+					}
+				}
 			}
 		}
 	}
 
+}
+
+void ACombatGameMode::EndMatch()
+{
+	//Override - Match end results.
+	if(!bMatchEnded) bMatchEnded = true;
+	
+}
+
+bool ACombatGameMode::IsMatchOver()
+{
+	return bMatchEnded;
+}
+
+void ACombatGameMode::ProcessPlayerDeath(ACombatPlayerState* PlayerState)
+{
+	//Death logic - override.
 }

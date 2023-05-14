@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "ThumbnailHelpers.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Framework/DefaultGameMode.h"
@@ -14,10 +15,14 @@
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Framework/Combat/CombatPlayerState.h"
+#include "Framework/Combat/Standard/StandardCombatGameMode.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+
 
 
 // Sets default values
@@ -32,10 +37,13 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	CameraComponent->bUsePawnControlRotation = true;
 	CameraComponent->SetFieldOfView(90.f);
 
+
 	PlayerHealthComponent = CreateDefaultSubobject<UArmoredHealthComponent>(TEXT("PlayerHealthComponent"));
 	PlayerHealthComponent->DefaultObjectHealth = 100.f;
 	PlayerHealthComponent->ObjectHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnHealthChanged);
+	PlayerHealthComponent->ObjectKilled.AddDynamic(this, &ADefaultPlayerCharacter::OnPlayerDied);
 	PlayerHealthComponent->OnShieldHealthChanged.AddDynamic(this, &ADefaultPlayerCharacter::OnShieldHealthChanged);
+	PlayerHealthComponent->OnTeamQuery.BindDynamic(this, &ADefaultPlayerCharacter::QueryGameTeam);
 
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
@@ -44,6 +52,11 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	FiredRoundsPerShootingEvent = 0;
 	LastFireTime = 0.f;
 	bAllowAutoReload = true;
+
+	bHasBomb = false;
+	bIsInPlantZone = false;
+
+	TimeOfLastShot = 0.f;
 	
 }
 
@@ -51,6 +64,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 void ADefaultPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
 	
 }
 
@@ -65,6 +79,21 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, LineTraceMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bHasBomb);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
+}
+
+EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
+{
+	if(GetController())
+	{
+		if(ACombatPlayerState* CombatPlayerState = GetController()->GetPlayerState<ACombatPlayerState>())
+		{
+			return CombatPlayerState->GetTeam();
+		}
+	}
+	return EGameTeams::None;
 }
 
 ACombatPlayerController* ADefaultPlayerCharacter::GetCombatPlayerController()
@@ -155,15 +184,27 @@ void ADefaultPlayerCharacter::HealthChange(const FInputActionInstance& Action)
 
 			//Do the game start as well:
 			if(HasAuthority())
-			{
-				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
-				{
-					CombatGameMode->InitializeCurrentGame();
-				}
-				
-			}
-			
-		}
+ 			{
+ 				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+ 				{
+ 					CombatGameMode->InitializeCurrentGame();
+ 				}
+ 				
+ 			}else
+ 			{
+ 				Server_TemporaryShit();
+ 			}
+ 			
+ 		}
+ }
+
+
+void ADefaultPlayerCharacter::Server_TemporaryShit_Implementation()
+{
+	if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		CombatGameMode->InitializeCurrentGame();
+	}
 }
 
 void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action)
@@ -245,6 +286,21 @@ void ADefaultPlayerCharacter::HandleToggleBuyMenu(const FInputActionInstance& Ac
 	}
 }
 
+void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		TryStartPlanting();
+		
+	}else
+	{
+		TryStopPlanting();
+	}
+}
+
+
+
+
 void ADefaultPlayerCharacter::OnReloadComplete()
 {
 	if(HasAuthority() && CurrentlyEquippedWeapon)
@@ -254,7 +310,6 @@ void ADefaultPlayerCharacter::OnReloadComplete()
 		CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() + ClipAddAmount);
 		CurrentlyEquippedWeapon->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() - ClipAddAmount);
 		CurrentlyEquippedWeapon->SetIsReloading(false);
-		UE_LOG(LogTemp, Warning, TEXT("Clip Ammo: %d - Total ammo: %d"), CurrentlyEquippedWeapon->GetCurrentClipAmmo(), CurrentlyEquippedWeapon->GetCurrentTotalAmmo());
 	}
 }
 
@@ -267,14 +322,17 @@ void ADefaultPlayerCharacter::StartReload()
 	if(CurrentlyEquippedWeapon)
 	{
 		if(CurrentlyEquippedWeapon->GetCurrentTotalAmmo() == 0) return;
-		if(HasAuthority())
+		if(CanPlayerReload())
 		{
-			//Resets the burst combo count:
-			EndShooting();
-			//---
-			CurrentlyEquippedWeapon->SetIsReloading(true);
+			if(HasAuthority())
+			{
+				//Resets the burst combo count:
+				EndShooting();
+				//---
+				CurrentlyEquippedWeapon->SetIsReloading(true);
+			}
+			GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 		}
-		GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ADefaultPlayerCharacter::OnReloadComplete, CurrentlyEquippedWeapon->ReloadTime);
 	}
 }
 
@@ -329,14 +387,39 @@ void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
 	}
 }
 
-void ADefaultPlayerCharacter::OnHealthChanged(FDamageResponse DamageResponse)
+void ADefaultPlayerCharacter::OnHealthChanged(const FDamageResponse& DamageResponse)
 {
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
 	{
 		if(IsLocallyControlled())
 		{
-			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->Submit();
+			PlayerController->GetHudData()->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth())->
+			SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth())->
+			Submit();
 		}
+	}
+}
+
+void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse)
+{
+	if(IsLocallyControlled())
+	{
+		BlockPlayerInputs(true);
+	}
+	if(HasAuthority())
+	{
+		//TEMP:!!
+		UnequipWeapon();
+		if(PrimaryWeapon) PrimaryWeapon->Destroy();
+		if(SecondaryWeapon) SecondaryWeapon->Destroy();
+		if(MeleeWeapon) MeleeWeapon->Destroy();
+		GetCombatPlayerController()->ShowDeathScreen(true);
+		GetCombatPlayerController()->SelectOverviewCamera();
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->ProcessPlayerDeath(Cast<ACombatPlayerState>(GetPlayerState()));
+		}
+		this->Destroy();
 	}
 }
 
@@ -375,6 +458,72 @@ void ADefaultPlayerCharacter::OnCurrentWeaponReloading()
 	}
 }
 
+bool ADefaultPlayerCharacter::CanPlayerReload()
+{
+		bool bCanReload = true;
+		if(CurrentlyEquippedWeapon)
+		{
+			//Is weapon already being reloaded?
+			bCanReload &= !CurrentlyEquippedWeapon->GetIsReloading();
+			bCanReload &= CurrentlyEquippedWeapon->GetCurrentClipAmmo() != CurrentlyEquippedWeapon->GetMaxClipAmmo();
+		}
+		if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			//If we can plant / defuse in the game, are we?
+			bCanReload &= !StandardCombatGameState->IsPlayerPlanting(this);
+			bCanReload &= !StandardCombatGameState->IsPlayerDefusing(this);
+		}
+		return bCanReload;
+}
+
+bool ADefaultPlayerCharacter::CanPlayerAttack()
+{
+	bool bCanShoot = true;
+	if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+    		bCanShoot &= !StandardCombatGameState->IsPlayerPlanting(this);
+			bCanShoot &= !StandardCombatGameState->IsPlayerDefusing(this);
+	}
+	bCanShoot &= CanWeaponFireInMode();
+	return bCanShoot;
+}
+
+void ADefaultPlayerCharacter::OnRep_AllowPlant()
+{
+	//Show plant message:
+	if(GetCombatPlayerController())
+	{
+		GetCombatPlayerController()->GetHudData()->SetShowPlantHint(bAllowPlant)->Submit();
+	}
+}
+
+void ADefaultPlayerCharacter::OnRep_HasBomb()
+{
+	
+}
+
+
+void ADefaultPlayerCharacter::CalculateWeaponRecoil(FVector& RayEndLocation)
+{
+	if(HasAuthority() && GetCurrentlyEquippedWeapon() && GetCurrentlyEquippedWeapon()->WeaponRecoil.bUseRecoil)
+	{
+			
+		if(GetWorld()->TimeSince(TimeOfLastShot) > GetCurrentlyEquippedWeapon()->WeaponRecoil.RecoilResetTime)
+		{
+			GetCurrentlyEquippedWeapon()->ResetRecoil();
+		}
+
+		FVector2D RecoilUnitVector = GetCurrentlyEquippedWeapon()->GetRecoilValue();
+
+		TimeOfLastShot = GetWorld()->GetTimeSeconds();
+		
+		FVector RecoilActualVector = RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * LineTraceMaxDistance +
+			UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * LineTraceMaxDistance;
+
+		RayEndLocation += RecoilActualVector;
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -402,6 +551,8 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(SelectSecondaryInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectSecondaryInput);
 	EnhancedInputComponent->BindAction(SelectMeleeInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSelectMeleeInput);
 	EnhancedInputComponent->BindAction(ToggleBuyMenu, ETriggerEvent::Started, this, &ADefaultPlayerCharacter::HandleToggleBuyMenu);
+	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandlePlantBomb);
+	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandlePlantBomb);
 	
 }
 
@@ -521,6 +672,7 @@ void ADefaultPlayerCharacter::UnequipWeapon()
 {
 	if(HasAuthority())
 	{
+		if(!CurrentlyEquippedWeapon) return;
 		if(CurrentlyEquippedWeapon->GetIsReloading())
 		{
 			CancelReload();
@@ -606,7 +758,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 		FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * 100.f;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this);
-		if(CanWeaponFireInMode())
+		if(CanPlayerAttack())
 		{
 			FiredRoundsPerShootingEvent++;
 			
@@ -617,7 +769,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 				{
 					if(!HealthComponent->bIsDead)
 					{
-						FDamageRequest DamageRequest;
+						FDamageRequest DamageRequest = FDamageRequest();
 						DamageRequest.SourceActor = this;
 						DamageRequest.TargetActor = HitResult.GetActor();
 						DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
@@ -651,8 +803,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		{
 			QueryParams.AddIgnoredActor(this);
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
+			if (CanPlayerAttack() && WeaponHasAmmo())
 			{
+				CancelReload();
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo()-1);
@@ -679,12 +832,12 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FVector EndDeviation = (UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) *
 							DeviationVector.X) +
 						(UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * DeviationVector.Y);
-
-					// UE_LOG(LogTemp, Warning, TEXT("Values: %f, %f"), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationX), LineTraceMaxDistance)), FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(RandDeviationY), LineTraceMaxDistance)));
+					
 
 					TraceEndLoc += EndDeviation;
-
 					Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+
+					CalculateWeaponRecoil(TraceEndLoc);
 					
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
 						HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
@@ -700,7 +853,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							{
 								if(!HealthComponent->bIsDead)
 								{
-									FDamageRequest DamageRequest;
+									FDamageRequest DamageRequest = FDamageRequest();
 									DamageRequest.SourceActor = this;
 									DamageRequest.TargetActor = HitResult.GetActor();
 									DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
@@ -714,19 +867,27 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						}
 					}
 				}
+				GetCurrentlyEquippedWeapon()->WeaponFired();
 			}
 		}
 		else
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
+			
+			
 			//Can Shoot:
-			if (CanWeaponFireInMode() && WeaponHasAmmo() && !CurrentlyEquippedWeapon->GetIsReloading())
+			if (CanPlayerAttack() && WeaponHasAmmo())
 			{
+				CancelReload();
 				//Add to Combo counter
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+
+				CalculateWeaponRecoil(TraceEndLoc);
+				CurrentlyEquippedWeapon->WeaponFired();
+				
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
 				{
@@ -739,7 +900,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						{
 							if(!HealthComponent->bIsDead)
 							{
-								FDamageRequest DamageRequest;
+								FDamageRequest DamageRequest = FDamageRequest();
 								DamageRequest.SourceActor = this;
 								DamageRequest.TargetActor = HitResult.GetActor();
 								DamageRequest.DeltaDamage = CurrentlyEquippedWeapon->bUseConstantDamage ?
@@ -963,6 +1124,7 @@ void ADefaultPlayerCharacter::Client_LoadDefaultHudData_Implementation()
 		{
 			UHudData* HudData = PlayerController->GetHudData();
 			HudData->SetPlayerHealthPercentage(PlayerHealthComponent->GetObjectHealth() / PlayerHealthComponent->GetObjectMaxHealth());
+			HudData->SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth());
 			if(CurrentlyEquippedWeapon)
 			{
 				HudData->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo())->SetCurrentTotalAmmo(CurrentlyEquippedWeapon->GetCurrentTotalAmmo())->SetCurrentWeaponName(CurrentlyEquippedWeapon->WeaponName);
@@ -996,4 +1158,103 @@ void ADefaultPlayerCharacter::Server_EndShooting_Implementation()
 {
 	EndShooting();
 	
+}
+
+bool ADefaultPlayerCharacter::IsInPlantZone() const
+{
+	return bIsInPlantZone;
+}
+
+bool ADefaultPlayerCharacter::HasBomb() const
+{
+	return bHasBomb;
+}
+
+bool ADefaultPlayerCharacter::IsPlantAllowed() const
+{
+	return bAllowPlant;
+}
+
+void ADefaultPlayerCharacter::SetIsInPlantZone(bool bIs)
+{
+	if(HasAuthority())
+	{
+		this->bIsInPlantZone = bIs;
+		CheckPlantRequirements();
+	}
+}
+
+void ADefaultPlayerCharacter::SetHasBomb(bool bHas)
+{
+	if(HasAuthority())
+	{
+		this->bHasBomb = bHas;
+		OnRep_HasBomb();
+		CheckPlantRequirements();
+	}
+}
+
+void ADefaultPlayerCharacter::CheckPlantRequirements()
+{
+	if(HasAuthority())
+	{
+		bAllowPlant = HasBomb() && IsInPlantZone();
+		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
+			//cancel plant if somehow it became false;
+			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
+			{
+				CombatGameState->SetPlayerPlanting(this, false);
+			}
+		}
+		OnRep_AllowPlant();
+	}
+}
+
+void ADefaultPlayerCharacter::TryStartPlanting()
+{
+	if(HasAuthority())
+	{
+		CheckPlantRequirements();
+		if(IsPlantAllowed())
+		{
+			if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+			{
+				CancelReload();
+				CombatGameMode->BeginPlanting(this);
+			}
+		}
+		
+		
+	}else
+	{
+		Server_TryStartPlanting();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryStartPlanting_Implementation()
+{
+	TryStartPlanting();
+}
+
+void ADefaultPlayerCharacter::TryStopPlanting()
+{
+	if(HasAuthority())
+	{
+		
+		if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->EndPlanting(this);
+		}
+		
+	}else
+	{
+		Server_TryStopPlanting();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()
+{
+	TryStopPlanting();
 }

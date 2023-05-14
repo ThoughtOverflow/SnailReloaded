@@ -22,6 +22,7 @@ class UHealthComponent;
 UCLASS()
 class SNAILRELOADED_API ADefaultPlayerCharacter : public ACharacter
 {
+	
 	GENERATED_BODY()
 
 public:
@@ -49,6 +50,8 @@ public:
 	UInputAction* SelectMeleeInput;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* ToggleBuyMenu;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* PlantBomb;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -72,10 +75,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
 	UNiagaraSystem* NiagaraSystem;
 
+	
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	//Health Component:
+
+	UFUNCTION()
+	EGameTeams QueryGameTeam();
 
 	//Helpers:
 
@@ -103,6 +113,8 @@ protected:
 	void HandleSelectMeleeInput(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleToggleBuyMenu(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandlePlantBomb(const FInputActionInstance& Action);
 	
 	//Shooting
 	
@@ -124,17 +136,54 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
 	UFUNCTION()
-	void OnHealthChanged(FDamageResponse DamageResponse);
+	void OnHealthChanged(const FDamageResponse& DamageResponse);
+	UFUNCTION()
+	void OnPlayerDied(const FDamageResponse& DamageResponse);
 	UFUNCTION()
 	void OnShieldHealthChanged();
 	UFUNCTION()
 	void OnCurrentWeaponAmmoChanged();
 	UFUNCTION()
 	void OnCurrentWeaponReloading();
+	UFUNCTION(BlueprintPure)
+	bool CanPlayerReload();
+	UFUNCTION(BlueprintCallable)
+	bool CanPlayerAttack();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
+
+	//Plant logic:
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	bool bIsInPlantZone;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_HasBomb)
+	bool bHasBomb;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_AllowPlant)
+	bool bAllowPlant;
+
+	UFUNCTION()
+	void OnRep_AllowPlant();
+	UFUNCTION()
+	void OnRep_HasBomb();
 	
+
+	UFUNCTION()
+	void TryStartPlanting();
+	UFUNCTION(Server, Reliable)
+	void Server_TryStartPlanting();
+	UFUNCTION()
+	void TryStopPlanting();
+	UFUNCTION(Server, Reliable)
+	void Server_TryStopPlanting();
+
+
+	UFUNCTION(Server, Reliable)
+	void Server_TemporaryShit();
+
+	UPROPERTY()
+	float TimeOfLastShot;
+	UFUNCTION()
+	void CalculateWeaponRecoil(FVector& RayEndLocation);
 
 public:	
 	// Called every frame
@@ -239,8 +288,19 @@ public:
 	bool CanSellCurrentShield();
 	UFUNCTION(BlueprintCallable)
 	void SetCanSellCurrentShield(bool bSell);
-
-	
+	UFUNCTION()
+	void CheckPlantRequirements();
+	UFUNCTION(BlueprintPure)
+	bool IsInPlantZone() const;
+	UFUNCTION(BlueprintCallable)
+	void SetIsInPlantZone(bool bIn);
+	UFUNCTION(BlueprintPure)
+	bool HasBomb() const;
+	UFUNCTION(BlueprintCallable)
+	void SetHasBomb(bool bHas);
+	UFUNCTION(BlueprintPure)
+	bool IsPlantAllowed() const;
 	
 	
 };
+

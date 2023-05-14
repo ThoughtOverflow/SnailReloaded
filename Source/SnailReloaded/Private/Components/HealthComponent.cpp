@@ -1,24 +1,76 @@
 // SnailReloaded - ThoughtOverflow 2023 - All rights reserved.
 
-
 #include "Components/HealthComponent.h"
 
+#include "Engine/DamageEvents.h"
+#include "Framework/Combat/CombatPlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Net/UnrealNetwork.h"
 
 
-FDamageRequest::FDamageRequest(): SourceActor(nullptr), TargetActor(nullptr), DeltaDamage(0)
+FGameObjectType::FGameObjectType()
 {
-}
-
-FDamageResponse::FDamageResponse(): SourceActor(nullptr), DeltaHealth(0), NewHealth(-1)
-{
+	ObjectType = EGameObjectTypes::None;
 }
 
 
-
-FDamageResponse::FDamageResponse(AActor* SrcActor, float DeltaHealth, float NewHealth):
-	SourceActor(SrcActor), DeltaHealth(DeltaHealth), NewHealth(NewHealth)
+float FGameObjectType::GetAllyDamageMultiplier(EGameObjectTypes Type)
 {
+	if(AllyDamageMultipliers.Contains(Type))
+	{
+		return *AllyDamageMultipliers.Find(Type);
+	}
+	return 0.f;
+}
+
+float FGameObjectType::GetEnemyDamageMultiplier(EGameObjectTypes Type)
+{
+	if(EnemyDamageMultipliers.Contains(Type))
+	{
+		return *EnemyDamageMultipliers.Find(Type);
+	}
+	return 0.f;
+}
+
+FDamageRequest::FDamageRequest()
+{
+	SourceActor = nullptr;
+	TargetActor = nullptr;
+	DeltaDamage = 0.f;
+}
+
+FDamageRequest FDamageRequest::DeathDamage(AActor* SourceActor, AActor* TargetActor)
+{
+	FDamageRequest DamageRequest = FDamageRequest();
+	DamageRequest.SourceActor = SourceActor;
+	DamageRequest.TargetActor = TargetActor;
+	if(TargetActor)
+	{
+		if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(TargetActor->GetComponentByClass(UHealthComponent::StaticClass())))
+		{
+			DamageRequest.DeltaDamage = HealthComponent->GetDamageToKill();
+			return DamageRequest;
+		}
+	}
+	DamageRequest.DeltaDamage = 0.f;
+	return DamageRequest;
+}
+
+
+FDamageResponse::FDamageResponse()
+{
+	SourceActor = nullptr;
+	DeltaHealth = 0;
+	NewHealth = -1;
+}
+
+
+
+FDamageResponse::FDamageResponse(AActor* SrcActor, float DeltaHealth, float NewHealth)
+{
+	SourceActor = SrcActor;
+	this->DeltaHealth = DeltaHealth;
+	this->NewHealth = NewHealth;
 }
 
 
@@ -30,10 +82,11 @@ UHealthComponent::UHealthComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
 	DefaultObjectHealth = 50.f;
-	SetObjectMaxHealth(100.f);
-	SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
+	ObjectMaxHealth = 100.f;
+	ObjectHealth = DefaultObjectHealth;
 	LatestDamage = FDamageResponse();
 	bIsDead = false;
+	bInvulnerable = false;
 }
 
 
@@ -41,7 +94,11 @@ UHealthComponent::UHealthComponent()
 void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		SetObjectHealth(FDamageRequest(), DefaultObjectHealth);
+	}
 	
 }
 
@@ -58,7 +115,6 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void UHealthComponent::OnRep_ObjectHealth()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Latest Damage: %f"), LatestDamage.DeltaHealth);
 	ObjectHealthChanged.Broadcast(LatestDamage);
 	if(bIsDead)
 	{
@@ -85,7 +141,7 @@ float UHealthComponent::GetObjectHealth() const
 	return ObjectHealth;
 }
 
-FDamageResponse UHealthComponent::ChangeObjectHealth(FDamageRequest DamageRequest)
+FDamageResponse UHealthComponent::ChangeObjectHealth(const FDamageRequest& DamageRequest)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
@@ -95,11 +151,11 @@ FDamageResponse UHealthComponent::ChangeObjectHealth(FDamageRequest DamageReques
 	return FDamageResponse();
 }
 
-FDamageResponse UHealthComponent::SetObjectHealth(FDamageRequest DamageRequest, float newHealth)
+FDamageResponse UHealthComponent::SetObjectHealth(const FDamageRequest& DamageRequest, float newHealth)
 {
 	if(GetOwner() && GetOwner()->HasAuthority())
 	{
-		if(bIsDead) return FDamageResponse();
+		if(bIsDead || bInvulnerable) return FDamageResponse();
 		FDamageResponse DamageResponse = FDamageResponse(DamageRequest.SourceActor, DamageRequest.DeltaDamage, ObjectHealth + DamageRequest.DeltaDamage);
 		LatestDamage = DamageResponse;
 		this->ObjectHealth = FMath::Floor(FMath::Clamp(newHealth, 0.f, ObjectMaxHealth));
@@ -128,4 +184,42 @@ void UHealthComponent::SetObjectMaxHealth(float newHealth)
 	{
 		this->ObjectMaxHealth = newHealth;
 	}
+}
+
+float UHealthComponent::GetDamageMultiplierForTarget(UHealthComponent* TargetComp)
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		EGameTeams SourceTeam = EGameTeams::None;
+		EGameTeams TargetTeam = EGameTeams::None;
+		if(OnTeamQuery.IsBound())
+		{
+			SourceTeam = OnTeamQuery.Execute();	
+		}
+		if(TargetComp->OnTeamQuery.IsBound())
+		{
+			TargetTeam = TargetComp->OnTeamQuery.Execute();
+		}
+		
+		if(SourceTeam != EGameTeams::None && TargetTeam != EGameTeams::None && SourceTeam == TargetTeam)
+		{
+			return GameObjectType.GetAllyDamageMultiplier(TargetComp->GameObjectType.ObjectType);
+		}
+		return GameObjectType.GetEnemyDamageMultiplier(TargetComp->GameObjectType.ObjectType);
+	}
+	return 0.f;
+}
+
+EGameTeams UHealthComponent::GetOwnerTeam()
+{
+	if(OnTeamQuery.IsBound())
+	{
+		return OnTeamQuery.Execute();
+	}
+	return EGameTeams::None;
+}
+
+float UHealthComponent::GetDamageToKill()
+{
+	return -GetObjectHealth();
 }

@@ -7,6 +7,34 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+USTRUCT(BlueprintType)
+struct FWeaponRecoil
+{
+	GENERATED_BODY()
+
+public:
+
+	FWeaponRecoil();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bUseRecoil;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	float RecoilResetTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	UCurveVector* FixedRecoil;
+	/**
+	 * @brief Number of shots that will be accurate to the curve's preset value. (Starting from the second shot)
+	 * The first shot is <b>ALWAYS</b> accurate.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	int32 NumOfFixedShots;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	FVector2D RandomRecoilRangeMin;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	FVector2D RandomRecoilRangeMax;
+	
+};
+
 UENUM(BlueprintType)
 enum class EItemIdentifier : uint8
 {
@@ -80,6 +108,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Shotugun Settings", Replicated, meta = (EditCondition = "bShotgunSpread && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	int32 NumOfPellets;
 
+	//Recoil:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Recoil", meta = (ShowOnlyInnerProperties))
+	FWeaponRecoil WeaponRecoil;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* ImpactParticleSystem;
 	
@@ -107,6 +139,7 @@ public:
 	FOnAmmoUpdated OnAmmoUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FOnReload OnReload;
+
 	
 protected:
 	// Called when the game starts or when spawned
@@ -127,6 +160,9 @@ protected:
 	bool bIsReloading;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_CanSell)
 	bool bCanSell;
+
+	UPROPERTY()
+	int32 Recoil_FiredShots;
 
 public:
 	
@@ -184,5 +220,13 @@ public:
 	bool CanSell() const;
 	UFUNCTION(BlueprintCallable)
 	void SetCanSell(bool bSell);
+
+	UFUNCTION(BlueprintCallable)
+	virtual void WeaponFired();
+	UFUNCTION(BlueprintCallable)
+	void ResetRecoil();
+	
+	UFUNCTION(BlueprintCallable)
+	FVector2D GetRecoilValue();
 	
 };
