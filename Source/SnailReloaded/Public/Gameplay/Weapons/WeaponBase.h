@@ -22,8 +22,12 @@ public:
 	float RecoilResetTime;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
 	UCurveVector* FixedRecoil;
+	/**
+	 * @brief Number of shots that will be accurate to the curve's preset value. (Starting from the second shot)
+	 * The first shot is <b>ALWAYS</b> accurate.
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
-	float FixedRecoilTime;
+	int32 NumOfFixedShots;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
 	FVector2D RandomRecoilRangeMin;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
@@ -136,10 +140,6 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnReload OnReload;
 
-	UPROPERTY()
-	float TotalFireTime;
-	UPROPERTY()
-	float TimeSinceLastShot;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -160,6 +160,9 @@ protected:
 	bool bIsReloading;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_CanSell)
 	bool bCanSell;
+
+	UPROPERTY()
+	int32 Recoil_FiredShots;
 
 public:
 	
@@ -218,11 +221,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetCanSell(bool bSell);
 
-	//Recoil
 	UFUNCTION(BlueprintCallable)
-	void UpdateShotTimes(float NewTimeSinceLast);
+	virtual void WeaponFired();
 	UFUNCTION(BlueprintCallable)
-	void ResetShotTimes();
+	void ResetRecoil();
+	
 	UFUNCTION(BlueprintCallable)
 	FVector2D GetRecoilValue();
 	

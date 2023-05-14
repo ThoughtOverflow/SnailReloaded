@@ -12,7 +12,7 @@ FWeaponRecoil::FWeaponRecoil()
 	bUseRecoil = true;
 	RecoilResetTime = 1.f;
 	FixedRecoil = nullptr;
-	FixedRecoilTime = 1.f;
+	NumOfFixedShots = 10;
 	RandomRecoilRangeMax = FVector2D::ZeroVector;
 	RandomRecoilRangeMin = FVector2D::ZeroVector;
 }
@@ -46,8 +46,7 @@ AWeaponBase::AWeaponBase()
 	bIsReloading = false;
 	bCanSell = true;
 
-	TotalFireTime = -1.f;
-	TimeSinceLastShot = -1.f;
+	Recoil_FiredShots = 0;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -109,7 +108,6 @@ void AWeaponBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 
@@ -229,34 +227,36 @@ void AWeaponBase::SetCanSell(bool bSell)
 	}
 }
 
-void AWeaponBase::UpdateShotTimes(float NewTimeSinceLast)
+void AWeaponBase::WeaponFired()
 {
 	if(HasAuthority())
 	{
-		TimeSinceLastShot = NewTimeSinceLast;
-		if(TimeSinceLastShot > WeaponRecoil.RecoilResetTime)
-		{
-			TotalFireTime = 0.f;
-		}else
-		{
-			TotalFireTime += NewTimeSinceLast;
-		}
+		Recoil_FiredShots++;
 	}
 }
 
-void AWeaponBase::ResetShotTimes()
+void AWeaponBase::ResetRecoil()
 {
-	TotalFireTime = 0.f;
-	TimeSinceLastShot = -1.f;
+	if(HasAuthority())
+	{
+		Recoil_FiredShots = 0;
+	}
 }
+
 
 FVector2D AWeaponBase::GetRecoilValue()
 {
+	
+	
 	FVector2D RecoilVector = FVector2D::ZeroVector;
 	FVector2D RecoilAngles = FVector2D::ZeroVector;
-	if(TotalFireTime != -1.f && TimeSinceLastShot != -1.f)
-	{
-		if(TotalFireTime > WeaponRecoil.FixedRecoilTime)
+
+		if(Recoil_FiredShots == 0)
+		{
+			return RecoilAngles;
+		}
+	
+		if(Recoil_FiredShots > WeaponRecoil.NumOfFixedShots)
 		{
 			//Use randomized recoil:
 			float RandX = FMath::RandRange(WeaponRecoil.RandomRecoilRangeMin.X, WeaponRecoil.RandomRecoilRangeMax.X);
@@ -265,14 +265,16 @@ FVector2D AWeaponBase::GetRecoilValue()
 		}else
 		{
 			//Use preset recoil:
-			RecoilAngles.Set(WeaponRecoil.FixedRecoil->GetVectorValue(TotalFireTime).X, WeaponRecoil.FixedRecoil->GetVectorValue(TotalFireTime).Y);
+			if(WeaponRecoil.FixedRecoil && WeaponRecoil.NumOfFixedShots > 0)
+			{
+				RecoilAngles.Set(WeaponRecoil.FixedRecoil->GetVectorValue( static_cast<float>(Recoil_FiredShots) / static_cast<float>(WeaponRecoil.NumOfFixedShots)).X,
+				WeaponRecoil.FixedRecoil->GetVectorValue(static_cast<float>(Recoil_FiredShots) / static_cast<float>(WeaponRecoil.NumOfFixedShots)).Y);
+			}
 		}
 		//The deviation angles are the y coordinates of the unit circle.
 		RecoilVector.X = FMath::Sin(FMath::DegreesToRadians(RecoilAngles.X));
 		RecoilVector.Y = FMath::Sin(FMath::DegreesToRadians(RecoilAngles.Y));
-		
-		
-	}
+	
 	UE_LOG(LogTemp, Warning, TEXT("Applied recoil X: %f, - Applied recoil Y: %f"), RecoilVector.X, RecoilVector.Y);
 	return RecoilVector;
 }

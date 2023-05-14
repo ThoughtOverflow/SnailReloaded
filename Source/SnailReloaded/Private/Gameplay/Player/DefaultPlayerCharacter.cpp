@@ -55,6 +55,8 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 
 	bHasBomb = false;
 	bIsInPlantZone = false;
+
+	TimeOfLastShot = 0.f;
 	
 }
 
@@ -501,6 +503,27 @@ void ADefaultPlayerCharacter::OnRep_HasBomb()
 }
 
 
+void ADefaultPlayerCharacter::CalculateWeaponRecoil(FVector& RayEndLocation)
+{
+	if(HasAuthority() && GetCurrentlyEquippedWeapon() && GetCurrentlyEquippedWeapon()->WeaponRecoil.bUseRecoil)
+	{
+			
+		if(GetWorld()->TimeSince(TimeOfLastShot) > GetCurrentlyEquippedWeapon()->WeaponRecoil.RecoilResetTime)
+		{
+			GetCurrentlyEquippedWeapon()->ResetRecoil();
+		}
+
+		FVector2D RecoilUnitVector = GetCurrentlyEquippedWeapon()->GetRecoilValue();
+
+		TimeOfLastShot = GetWorld()->GetTimeSeconds();
+		
+		FVector RecoilActualVector = RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * LineTraceMaxDistance +
+			UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * LineTraceMaxDistance;
+
+		RayEndLocation += RecoilActualVector;
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -722,7 +745,6 @@ void ADefaultPlayerCharacter::EndShooting()
 	{
 		//Reset fired combo;
 		FiredRoundsPerShootingEvent = 0;
-		PrevReleaseTime = GetWorld()->GetTimeSeconds();
 	}
 	
 }
@@ -813,8 +835,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					
 
 					TraceEndLoc += EndDeviation;
-
 					Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+
+					CalculateWeaponRecoil(TraceEndLoc);
 					
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
 						HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
@@ -844,6 +867,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 						}
 					}
 				}
+				GetCurrentlyEquippedWeapon()->WeaponFired();
 			}
 		}
 		else
@@ -861,25 +885,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 
-
-				//Recoil TEST-----------
-
-				float TimeSinceLast = GetWorld()->TimeSince(PrevFireTime);
-				if(FiredRoundsPerShootingEvent == 1 && GetWorld()->TimeSince(PrevReleaseTime) < TimeSinceLast)
-				{
-					TimeSinceLast -= GetWorld()->TimeSince(PrevReleaseTime);
-				}
-				
-				GetCurrentlyEquippedWeapon()->UpdateShotTimes(TimeSinceLast);
-				PrevFireTime = GetWorld()->GetTimeSeconds();
-				FVector2D RecoilUnitVector = GetCurrentlyEquippedWeapon()->GetRecoilValue();
-				FVector RecoilActualVector = FVector::ZeroVector;
-				RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * LineTraceMaxDistance + 
-					UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * LineTraceMaxDistance;
-
-				TraceEndLoc += RecoilActualVector;
-			
-				//----------------------
+				CalculateWeaponRecoil(TraceEndLoc);
+				CurrentlyEquippedWeapon->WeaponFired();
 				
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
