@@ -62,7 +62,7 @@ protected:
 	TArray<FShieldProperties> ShieldDataTable;
 
 	FShieldProperties* FindShieldDataByType(EItemIdentifier ShieldIdentifier);
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")
 	TArray<EGamePhase> AllowedPhases;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game specific properties")

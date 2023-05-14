@@ -75,6 +75,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
 	UNiagaraSystem* NiagaraSystem;
 
+	UPROPERTY()
+	float PrevFireTime;
+	UPROPERTY()
+	float PrevReleaseTime;
+
 	
 
 protected:

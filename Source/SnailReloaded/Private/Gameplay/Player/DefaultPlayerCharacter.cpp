@@ -722,6 +722,7 @@ void ADefaultPlayerCharacter::EndShooting()
 	{
 		//Reset fired combo;
 		FiredRoundsPerShootingEvent = 0;
+		PrevReleaseTime = GetWorld()->GetTimeSeconds();
 	}
 	
 }
@@ -848,6 +849,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		else
 		{
 			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
+			
+			
 			//Can Shoot:
 			if (CanPlayerAttack() && WeaponHasAmmo())
 			{
@@ -857,6 +860,27 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+
+
+				//Recoil TEST-----------
+
+				float TimeSinceLast = GetWorld()->TimeSince(PrevFireTime);
+				if(FiredRoundsPerShootingEvent == 1 && GetWorld()->TimeSince(PrevReleaseTime) < TimeSinceLast)
+				{
+					TimeSinceLast -= GetWorld()->TimeSince(PrevReleaseTime);
+				}
+				
+				GetCurrentlyEquippedWeapon()->UpdateShotTimes(TimeSinceLast);
+				PrevFireTime = GetWorld()->GetTimeSeconds();
+				FVector2D RecoilUnitVector = GetCurrentlyEquippedWeapon()->GetRecoilValue();
+				FVector RecoilActualVector = FVector::ZeroVector;
+				RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * LineTraceMaxDistance + 
+					UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * LineTraceMaxDistance;
+
+				TraceEndLoc += RecoilActualVector;
+			
+				//----------------------
+				
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
 				                                                       ECC_Visibility, QueryParams))
 				{

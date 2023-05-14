@@ -7,6 +7,30 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+USTRUCT(BlueprintType)
+struct FWeaponRecoil
+{
+	GENERATED_BODY()
+
+public:
+
+	FWeaponRecoil();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bUseRecoil;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	float RecoilResetTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	UCurveVector* FixedRecoil;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	float FixedRecoilTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	FVector2D RandomRecoilRangeMin;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bUseRecoil"))
+	FVector2D RandomRecoilRangeMax;
+	
+};
+
 UENUM(BlueprintType)
 enum class EItemIdentifier : uint8
 {
@@ -80,6 +104,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Shotugun Settings", Replicated, meta = (EditCondition = "bShotgunSpread && WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	int32 NumOfPellets;
 
+	//Recoil:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Recoil", meta = (ShowOnlyInnerProperties))
+	FWeaponRecoil WeaponRecoil;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* ImpactParticleSystem;
 	
@@ -107,6 +135,11 @@ public:
 	FOnAmmoUpdated OnAmmoUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FOnReload OnReload;
+
+	UPROPERTY()
+	float TotalFireTime;
+	UPROPERTY()
+	float TimeSinceLastShot;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -184,5 +217,13 @@ public:
 	bool CanSell() const;
 	UFUNCTION(BlueprintCallable)
 	void SetCanSell(bool bSell);
+
+	//Recoil
+	UFUNCTION(BlueprintCallable)
+	void UpdateShotTimes(float NewTimeSinceLast);
+	UFUNCTION(BlueprintCallable)
+	void ResetShotTimes();
+	UFUNCTION(BlueprintCallable)
+	FVector2D GetRecoilValue();
 	
 };
