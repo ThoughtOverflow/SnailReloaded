@@ -75,11 +75,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
 	UNiagaraSystem* NiagaraSystem;
 
-	UPROPERTY()
-	float PrevFireTime;
-	UPROPERTY()
-	float PrevReleaseTime;
-
 	
 
 protected:
@@ -184,6 +179,9 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_TemporaryShit();
+
+	UPROPERTY()
+	float TimeOfLastShot;
 
 public:	
 	// Called every frame
