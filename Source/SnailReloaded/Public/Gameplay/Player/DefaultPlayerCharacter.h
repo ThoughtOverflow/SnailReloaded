@@ -9,6 +9,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/PlayerHeaderComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
 #include "DefaultPlayerCharacter.generated.h"
 
@@ -74,6 +75,11 @@ public:
 	bool bAllowAutoReload;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
 	UNiagaraSystem* NiagaraSystem;
+
+	//Player header;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPlayerHeaderComponent* PlayerHeader;
 
 	
 
@@ -316,7 +322,10 @@ public:
 	void SetIsInDefuseRadius(bool bIn);
 	UFUNCTION(BlueprintCallable)
 	bool IsInDefuseRadius();
-	
+
+	//Helper:
+	UFUNCTION(BlueprintCallable)
+	void ReloadPlayerBanner();
 	
 };
 

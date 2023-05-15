@@ -28,6 +28,7 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 	{
 		ToggleTeamSelectionScreen(false);
 		CreatePlayerHud();
+		PlayerCharacter->ReloadPlayerBanner();
 		PlayerCharacter->OnPlayerPossessed(this);
 		
 	}
