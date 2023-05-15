@@ -48,6 +48,10 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	UTeamSelectionWidget* TeamSelectionWidget;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
+	TSubclassOf<UUserWidget> ScoreBoardClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* ScoreBoardWidget;
 	
 
 protected:

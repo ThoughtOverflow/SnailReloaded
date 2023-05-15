@@ -5,7 +5,6 @@
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "ThumbnailHelpers.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"

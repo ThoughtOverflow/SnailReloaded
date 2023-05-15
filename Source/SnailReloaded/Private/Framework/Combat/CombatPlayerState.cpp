@@ -104,6 +104,21 @@ int32 ACombatPlayerState::AddAssist()
 	return PlayerAssistCount;
 }
 
+int32 ACombatPlayerState::GetKills()
+{
+	return PlayerKillCount;
+}
+
+int32 ACombatPlayerState::GetDeaths()
+{
+	return PlayerDeathCount;
+}
+
+int32 ACombatPlayerState::GetAssists()
+{
+	return PlayerAssistCount;
+}
+
 EGameTeams ACombatPlayerState::GetTeam()
 {
 	return CurrentTeam;
