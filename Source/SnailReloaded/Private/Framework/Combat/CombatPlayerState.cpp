@@ -48,6 +48,10 @@ void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	
 	DOREPLIFETIME(ACombatPlayerState, PlayerMoney);
 	DOREPLIFETIME(ACombatPlayerState, CurrentTeam);
+	DOREPLIFETIME(ACombatPlayerState, PlayerAssistCount);
+	DOREPLIFETIME(ACombatPlayerState, PlayerDeathCount);
+	DOREPLIFETIME(ACombatPlayerState, PlayerKillCount);
+	DOREPLIFETIME(ACombatPlayerState, PlayerScore);
 }
 
 void ACombatPlayerState::SetPlayerMoney(int32 NewMoney)
@@ -101,6 +105,21 @@ int32 ACombatPlayerState::AddAssist()
 		PlayerAssistCount++;
 		OnRep_ScoreUpdate();
 	}
+	return PlayerAssistCount;
+}
+
+int32 ACombatPlayerState::GetKills()
+{
+	return PlayerKillCount;
+}
+
+int32 ACombatPlayerState::GetDeaths()
+{
+	return PlayerDeathCount;
+}
+
+int32 ACombatPlayerState::GetAssists()
+{
 	return PlayerAssistCount;
 }
 

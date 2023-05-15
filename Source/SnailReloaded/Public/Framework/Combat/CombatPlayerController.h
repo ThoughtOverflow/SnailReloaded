@@ -48,14 +48,28 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	UTeamSelectionWidget* TeamSelectionWidget;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
+	TSubclassOf<UUserWidget> ScoreBoardClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* ScoreBoardWidget;
 	
 
 protected:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UInputMappingContext* CombatUIMappingContext;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UInputAction* ScoreboardToggleAction;
+
+	UFUNCTION()
+	void OnToggleScoreboardTriggered(const FInputActionInstance& InputActionInstance);
 
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void BeginPlay() override;
 	
 	virtual void CloseLastOpenMenu() override;
+
+	virtual void SetupInputComponent() override;
 
 
 public:
@@ -116,6 +130,11 @@ public:
 	int32 GetAllyTeamScore();
 	UFUNCTION(BlueprintPure)
 	int32 GetEnemyTeamScore();
+
+	//Scoreboard:
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleScoreboard(bool bShow);
 	
 
 	
