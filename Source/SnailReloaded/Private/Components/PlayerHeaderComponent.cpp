@@ -4,13 +4,14 @@
 #include "Components/PlayerHeaderComponent.h"
 
 #include "Framework/Combat/CombatGameState.h"
+#include "Framework/Combat/CombatPlayerController.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/UI/PlayerHeaderWidget.h"
 
 UPlayerHeaderComponent::UPlayerHeaderComponent()
 {
 	SetActive(true);
-	SetHiddenInGame(false);
+	SetHiddenInGame(true);
 	SetWidgetSpace(EWidgetSpace::Screen);
 }
 
@@ -28,6 +29,17 @@ void UPlayerHeaderComponent::Reload()
 					if(PlayerState->GetPawn() == DefaultPlayerCharacter)
 					{
 						PlayerHeaderWidget->PlayerName = FText::FromString(PlayerState->GetPlayerName());
+						//Check for the team:
+						if(ACombatPlayerController* OwningController = Cast<ACombatPlayerController>(GetUserWidgetObject()->GetOwningPlayer()))
+						{
+							if(OwningController->GetPlayerState<ACombatPlayerState>()->GetTeam() == Cast<ACombatPlayerState>(PlayerState)->GetTeam())
+							{
+								SetHiddenInGame(false);
+							}else
+							{
+								SetHiddenInGame(true);
+							}
+						}
 						break;
 					}
 				}
