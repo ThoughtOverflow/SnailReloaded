@@ -33,6 +33,9 @@ ABomb::ABomb()
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	HealthComponent->bInvulnerable = true;
 	HealthComponent->OnTeamQuery.BindDynamic(this, &ABomb::GetBombTeam);
+
+	BombParticleComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BombParticles"));
+	BombParticleComponent->SetupAttachment(BombMesh);
 	
 }
 
@@ -57,6 +60,7 @@ void ABomb::PlayerEnteredDefuse(UPrimitiveComponent* OverlappedComponent, AActor
 		if(!PlayersInDefuseRadius.Contains(PlayerCharacter))
 		{
 			PlayersInDefuseRadius.Add(PlayerCharacter);
+			PlayerCharacter->SetIsInDefuseRadius(true);
 		}
 	}
 }
@@ -69,6 +73,7 @@ void ABomb::PlayerLeftDefuse(UPrimitiveComponent* OverlappedComponent, AActor* O
 		if(PlayersInDefuseRadius.Contains(PlayerCharacter))
 		{
 			PlayersInDefuseRadius.Remove(PlayerCharacter);
+			PlayerCharacter->SetIsInDefuseRadius(false);
 		}
 	}
 }
@@ -136,6 +141,17 @@ void ABomb::ExplodeBomb()
 				FDamageRequest DamageRequest = FDamageRequest::DeathDamage(this, Damageable);
 				CombatGameMode->ChangeObjectHealth(DamageRequest);
 			}
+		}
+	}
+}
+
+void ABomb::DefuseBomb()
+{
+	if(!IsPendingKillPending() && HasAuthority())
+	{
+		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			CombatGameState->OnBombDefused();
 		}
 	}
 }

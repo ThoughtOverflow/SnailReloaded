@@ -105,6 +105,8 @@ public:
 	bool IsPlayerDefusing(ADefaultPlayerCharacter* Player);
 	UFUNCTION()
 	void OnBombPlanted();
+	UFUNCTION()
+	void OnBombDefused();
 	UFUNCTION(BlueprintPure)
 	float GetBombActionTimeRemaining();
 	UFUNCTION(BlueprintCallable)

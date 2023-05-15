@@ -156,27 +156,28 @@ protected:
 	//Plant logic:
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	bool bIsInPlantZone;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	bool bIsInDefuseRadius;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_HasBomb)
 	bool bHasBomb;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_AllowPlant)
 	bool bAllowPlant;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_AllowDefuse)
+	bool bAllowDefuse;
 
 	UFUNCTION()
 	void OnRep_AllowPlant();
 	UFUNCTION()
 	void OnRep_HasBomb();
-	
-
 	UFUNCTION()
-	void TryStartPlanting();
+	void OnRep_AllowDefuse();
+	
 	UFUNCTION(Server, Reliable)
 	void Server_TryStartPlanting();
-	UFUNCTION()
-	void TryStopPlanting();
 	UFUNCTION(Server, Reliable)
 	void Server_TryStopPlanting();
 
-
+	
 	UFUNCTION(Server, Reliable)
 	void Server_TemporaryShit();
 
@@ -247,6 +248,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetCurrentlyEqippedWeapon(AWeaponBase* NewWeapon);
 
+	//Bomb:
+
+	UFUNCTION()
+	void TryStartPlanting();
+	UFUNCTION()
+	void TryStopPlanting();
+	
 	//HUD:
 
 	UFUNCTION(Client, Reliable)
@@ -290,6 +298,8 @@ public:
 	void SetCanSellCurrentShield(bool bSell);
 	UFUNCTION()
 	void CheckPlantRequirements();
+	UFUNCTION()
+	void CheckDefuseRequirements();
 	UFUNCTION(BlueprintPure)
 	bool IsInPlantZone() const;
 	UFUNCTION(BlueprintCallable)
@@ -300,6 +310,12 @@ public:
 	void SetHasBomb(bool bHas);
 	UFUNCTION(BlueprintPure)
 	bool IsPlantAllowed() const;
+	UFUNCTION(BlueprintPure)
+	bool IsDefuseAllowed();
+	UFUNCTION(BlueprintCallable)
+	void SetIsInDefuseRadius(bool bIn);
+	UFUNCTION(BlueprintCallable)
+	bool IsInDefuseRadius();
 	
 	
 };
