@@ -5,7 +5,6 @@
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "ThumbnailHelpers.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
@@ -55,8 +54,11 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 
 	bHasBomb = false;
 	bIsInPlantZone = false;
-
 	TimeOfLastShot = 0.f;
+
+	PlayerHeader = CreateDefaultSubobject<UPlayerHeaderComponent>(TEXT("PlayerHeader"));
+	PlayerHeader->SetupAttachment(GetCapsuleComponent());
+	
 	
 }
 
@@ -1338,6 +1340,11 @@ void ADefaultPlayerCharacter::SetIsInDefuseRadius(bool bIn)
 bool ADefaultPlayerCharacter::IsInDefuseRadius()
 {
 	return bIsInDefuseRadius;
+}
+
+void ADefaultPlayerCharacter::ReloadPlayerBanner()
+{
+	PlayerHeader->Reload();
 }
 
 void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()
