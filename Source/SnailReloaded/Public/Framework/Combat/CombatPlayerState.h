@@ -25,14 +25,22 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerMoney)
 	int32 PlayerMoney;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerKillCount;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerDeathCount;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerAssistCount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
 
 	UFUNCTION()
 	void OnRep_GameTeam();
-
+	
 	UFUNCTION()
 	void OnRep_PlayerMoney();
+	UFUNCTION()
+	void OnRep_ScoreUpdate();
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
 
@@ -44,6 +52,12 @@ public:
 	void ChangePlayerMoney(int32 DeltaMoney);
 	UFUNCTION(BlueprintPure)
 	int32 GetPlayerMoney();
+	UFUNCTION(BlueprintCallable)
+	int32 AddKill();
+	UFUNCTION(BlueprintCallable)
+	int32 AddDeath();
+	UFUNCTION(BlueprintCallable)
+	int32 AddAssist();
 	UFUNCTION(BlueprintPure)
 	EGameTeams GetTeam();
 	UFUNCTION(BlueprintCallable)

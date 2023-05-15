@@ -36,6 +36,12 @@ void ACombatPlayerState::OnRep_PlayerMoney()
 	
 }
 
+void ACombatPlayerState::OnRep_ScoreUpdate()
+{
+	
+}
+
+
 void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -64,6 +70,38 @@ void ACombatPlayerState::ChangePlayerMoney(int32 DeltaMoney)
 int32 ACombatPlayerState::GetPlayerMoney()
 {
 	return PlayerMoney;
+}
+
+int32 ACombatPlayerState::AddKill()
+{
+	if(HasAuthority())
+	{
+		PlayerKillCount++;
+		OnRep_ScoreUpdate();
+	}
+	
+	return PlayerKillCount;
+		
+}
+
+int32 ACombatPlayerState::AddDeath()
+{
+	if(HasAuthority())
+	{
+		PlayerDeathCount++;
+		OnRep_ScoreUpdate();
+	}
+	return PlayerDeathCount;
+}
+
+int32 ACombatPlayerState::AddAssist()
+{
+	if(HasAuthority())
+	{
+		PlayerAssistCount++;
+		OnRep_ScoreUpdate();
+	}
+	return PlayerAssistCount;
 }
 
 EGameTeams ACombatPlayerState::GetTeam()
