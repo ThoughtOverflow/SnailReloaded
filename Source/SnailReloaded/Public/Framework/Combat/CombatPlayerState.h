@@ -59,6 +59,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int32 AddAssist();
 	UFUNCTION(BlueprintPure)
+	int32 GetKills();
+	UFUNCTION(BlueprintPure)
+	int32 GetDeaths();
+	UFUNCTION(BlueprintPure)
+	int32 GetAssists();
+	UFUNCTION(BlueprintPure)
 	EGameTeams GetTeam();
 	UFUNCTION(BlueprintCallable)
 	void SetTeam(EGameTeams NewTeam);
