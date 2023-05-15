@@ -82,6 +82,8 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bHasBomb);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInDefuseRadius);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowDefuse);
 }
 
 EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
@@ -499,7 +501,16 @@ void ADefaultPlayerCharacter::OnRep_AllowPlant()
 
 void ADefaultPlayerCharacter::OnRep_HasBomb()
 {
-	
+
+}
+
+void ADefaultPlayerCharacter::OnRep_AllowDefuse()
+{
+	//Show defuse message:
+	if(GetCombatPlayerController())
+	{
+		GetCombatPlayerController()->GetHudData()->SetShowDefuseHint(bAllowDefuse)->Submit();
+	}
 }
 
 
@@ -1175,6 +1186,11 @@ bool ADefaultPlayerCharacter::IsPlantAllowed() const
 	return bAllowPlant;
 }
 
+bool ADefaultPlayerCharacter::IsDefuseAllowed()
+{
+	return bAllowDefuse;
+}
+
 void ADefaultPlayerCharacter::SetIsInPlantZone(bool bIs)
 {
 	if(HasAuthority())
@@ -1202,6 +1218,7 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
 		{
 			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
+			bAllowPlant &= !CombatGameState->IsSomeonePlanting();
 			//cancel plant if somehow it became false;
 			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
 			{
@@ -1212,19 +1229,62 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 	}
 }
 
+void ADefaultPlayerCharacter::CheckDefuseRequirements()
+{
+	if(HasAuthority())
+	{
+		bAllowDefuse = true;
+		if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			if(ACombatPlayerController* CombatPlayerController = GetCombatPlayerController())
+			{
+				bAllowDefuse &= StandardCombatGameState->GetSideByTeam(CombatPlayerController->GetPlayerState<ACombatPlayerState>()->GetTeam()) == EBombTeam::Defender;
+				bAllowDefuse &= !StandardCombatGameState->IsSomeoneDefusing();
+				bAllowDefuse &= bIsInDefuseRadius;
+			}
+		}
+		OnRep_AllowDefuse();
+	}
+
+}
+
 void ADefaultPlayerCharacter::TryStartPlanting()
 {
 	if(HasAuthority())
 	{
-		CheckPlantRequirements();
-		if(IsPlantAllowed())
+
+		if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
 		{
-			if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+			if(StandardCombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::PostPlant)
 			{
-				CancelReload();
-				CombatGameMode->BeginPlanting(this);
+				//Defuse:
+				if(ACombatPlayerController* CombatPlayerController = GetCombatPlayerController())
+				{
+					if(IsDefuseAllowed())
+					{
+						if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+						{
+							CancelReload();
+							CombatGameMode->BeginDefuse(this);
+						}
+					}
+				}
+				
+			}else
+			{
+				//Plant:
+				CheckPlantRequirements();
+				if(IsPlantAllowed())
+				{
+					if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+					{
+						CancelReload();
+						CombatGameMode->BeginPlanting(this);
+					}
+				}
 			}
 		}
+
 		
 		
 	}else
@@ -1246,12 +1306,27 @@ void ADefaultPlayerCharacter::TryStopPlanting()
 		if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			CombatGameMode->EndPlanting(this);
+			CombatGameMode->EndDefuse(this);
 		}
 		
 	}else
 	{
 		Server_TryStopPlanting();
 	}
+}
+
+void ADefaultPlayerCharacter::SetIsInDefuseRadius(bool bIn)
+{
+	if(HasAuthority())
+	{
+		bIsInDefuseRadius = bIn;
+		CheckDefuseRequirements();
+	}
+}
+
+bool ADefaultPlayerCharacter::IsInDefuseRadius()
+{
+	return bIsInDefuseRadius;
 }
 
 void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()

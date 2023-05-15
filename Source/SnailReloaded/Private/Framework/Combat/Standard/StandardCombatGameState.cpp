@@ -126,6 +126,10 @@ void AStandardCombatGameState::ExplodeBomb()
 {
 	if(PlantedBomb)
 	{
+		if(IsSomeoneDefusing() && IsPlayerDefusing(LatestBombInteractor))
+		{
+			LatestBombInteractor->TryStopPlanting();
+		}
 		PlantedBomb->ExplodeBomb();
 		PlantedBomb->Destroy();
 		PlantedBomb = nullptr;
@@ -179,9 +183,15 @@ void AStandardCombatGameState::PlantTimerCallback()
 void AStandardCombatGameState::DefuseTimerCallback()
 {
 	//defuse the bomb:
-	if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	if(HasAuthority())
 	{
-		CombatGameMode->DefuseBomb(LatestBombInteractor);
+		if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			StandardCombatGameMode->DefuseBomb(LatestBombInteractor);
+		}else
+		{
+			UE_LOG(LogTemp, Error, TEXT("YOMOM"));
+		}
 	}
 }
 
@@ -258,7 +268,7 @@ void AStandardCombatGameState::SetPlayerPlanting(ADefaultPlayerCharacter* Player
 
 void AStandardCombatGameState::SetPlayerDefusing(ADefaultPlayerCharacter* Player, bool bDefusing)
 {
-	if(HasAuthority() && bIsPlayerPlanting != bDefusing)
+	if(HasAuthority() && bIsPlayerDefusing != bDefusing)
 	{
 		LatestBombInteractor = Player;
 		bIsPlayerDefusing = bDefusing;
@@ -293,6 +303,20 @@ void AStandardCombatGameState::OnBombPlanted()
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		SelectNewPhase(EGamePhase::PostPlant);
+	}
+}
+
+void AStandardCombatGameState::OnBombDefused()
+{
+	if(HasAuthority())
+	{
+		SetPlayerDefusing(LatestBombInteractor, false);
+		SetPlayerPlanting(LatestBombInteractor, false);
+		if(PlantedBomb)
+		{
+			PlantedBomb->Destroy();
+		}
+		SelectNewPhase(EGamePhase::EndPhase);
 	}
 }
 

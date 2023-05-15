@@ -72,6 +72,17 @@ UHudData* UHudData::SetShowPlantHint(bool bShow)
 	return this;
 }
 
+UHudData* UHudData::SetShowDefuseHint(bool bShow)
+{
+	bShowDefuseHint = bShow;
+	return this;
+}
+
+bool UHudData::GetShowDefuseHint()
+{
+	return bShowDefuseHint;
+}
+
 bool UHudData::GetShowPlantHint()
 {
 	return bShowPlantHint;

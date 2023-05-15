@@ -35,4 +35,6 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Planting")
 	bool bShowPlantHint;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Planting")
+	bool bShowDefuseHint;
 };

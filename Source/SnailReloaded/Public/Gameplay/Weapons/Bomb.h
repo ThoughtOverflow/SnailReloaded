@@ -39,6 +39,7 @@ protected:
 	UPROPERTY(Replicated)
 	TArray<ADefaultPlayerCharacter*> PlayersInDefuseRadius;
 
+	
 	UFUNCTION()
 	void PlayerEnteredDefuse(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
@@ -59,6 +60,8 @@ public:
 	void PlantBomb();
 	UFUNCTION(BlueprintCallable)
 	void ExplodeBomb();
+	UFUNCTION(BlueprintCallable)
+	void DefuseBomb();
 	UFUNCTION(BlueprintPure)
 	bool IsPlayerInDefuseRadius(ADefaultPlayerCharacter* Player);
 

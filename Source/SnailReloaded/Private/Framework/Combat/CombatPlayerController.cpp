@@ -108,6 +108,7 @@ void ACombatPlayerController::UpdatePlayerHud(UHudData* HudData)
 		PlayerHud->PlayerShieldHealth = HudData->GetPlayerShieldHealth();
 		PlayerHud->bIsReloading = HudData->GetIsReloading();
 		PlayerHud->bShowPlantHint = HudData->GetShowPlantHint();
+		PlayerHud->bShowDefuseHint = HudData->GetShowDefuseHint();
 	}
 }
 
@@ -122,7 +123,8 @@ UHudData* ACombatPlayerController::GetHudData()
 		SetPlayerHealthPercentage(PlayerHud->PlayerHealthPercentage)->
 		SetPlayerShieldHealth(PlayerHud->PlayerShieldHealth)->
 		SetReloading(PlayerHud->bIsReloading)->
-		SetShowPlantHint(PlayerHud->bShowPlantHint);
+		SetShowPlantHint(PlayerHud->bShowPlantHint)->
+		SetShowDefuseHint(PlayerHud->bShowDefuseHint);
 	}
 	return HudData;
 }

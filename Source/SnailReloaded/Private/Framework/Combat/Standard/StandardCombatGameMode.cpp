@@ -29,7 +29,10 @@ void AStandardCombatGameMode::EndPlanting(ADefaultPlayerCharacter* PlantingPlaye
 	{
 		if(StandardCombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame)
 		{
-			StandardCombatGameState->SetPlayerPlanting(PlantingPlayer, false);
+			if(StandardCombatGameState->IsPlayerPlanting(PlantingPlayer))
+			{
+				StandardCombatGameState->SetPlayerPlanting(PlantingPlayer, false);
+			}
 		}
 	}
 }
@@ -38,7 +41,7 @@ void AStandardCombatGameMode::BeginDefuse(ADefaultPlayerCharacter* PlantingPlaye
 {
 	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
 	{
-		if(StandardCombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame)
+		if(StandardCombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::PostPlant)
 		{
 			StandardCombatGameState->SetPlayerDefusing(PlantingPlayer, true);
 		}
@@ -49,9 +52,12 @@ void AStandardCombatGameMode::EndDefuse(ADefaultPlayerCharacter* PlantingPlayer)
 {
 	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
 	{
-		if(StandardCombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame)
+		if(StandardCombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::PostPlant)
 		{
-			StandardCombatGameState->SetPlayerDefusing(PlantingPlayer, false);
+			if(StandardCombatGameState->IsPlayerDefusing(PlantingPlayer))
+			{
+				StandardCombatGameState->SetPlayerDefusing(PlantingPlayer, false);
+			}
 		}
 	}
 }
@@ -77,6 +83,13 @@ void AStandardCombatGameMode::PlantBomb(ADefaultPlayerCharacter* Planter)
 void AStandardCombatGameMode::DefuseBomb(ADefaultPlayerCharacter* Defuser)
 {
 	//stop bomb - end game.
+	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	{
+		if(StandardCombatGameState->PlantedBomb)
+		{
+			StandardCombatGameState->PlantedBomb->DefuseBomb();
+		}
+	}
 }
 
 bool AStandardCombatGameMode::SwapTeamForPlayer(ACombatPlayerState* PlayerState)
