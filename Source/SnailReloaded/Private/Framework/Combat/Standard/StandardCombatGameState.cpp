@@ -289,12 +289,12 @@ bool AStandardCombatGameState::IsSomeoneDefusing()
 
 bool AStandardCombatGameState::IsPlayerPlanting(ADefaultPlayerCharacter* Player)
 {
-	return bIsPlayerDefusing && LatestBombInteractor == Player;
+	return bIsPlayerPlanting && LatestBombInteractor == Player;
 }
 
 bool AStandardCombatGameState::IsPlayerDefusing(ADefaultPlayerCharacter* Player)
 {
-	return bIsPlayerPlanting && LatestBombInteractor == Player;
+	return bIsPlayerDefusing && LatestBombInteractor == Player;
 }
 
 void AStandardCombatGameState::OnBombPlanted()

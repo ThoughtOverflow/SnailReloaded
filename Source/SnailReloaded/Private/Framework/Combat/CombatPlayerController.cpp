@@ -20,6 +20,18 @@ ACombatPlayerController::ACombatPlayerController()
 	
 }
 
+void ACombatPlayerController::OnToggleScoreboardTriggered(const FInputActionInstance& InputActionInstance)
+{
+	if(InputActionInstance.GetValue().Get<bool>())
+	{
+		ToggleScoreboard(true);
+	}else
+	{
+		ToggleScoreboard(false);
+	}
+	
+}
+
 void ACombatPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -58,6 +70,23 @@ void ACombatPlayerController::CloseLastOpenMenu()
 		ActivateUIInputHandler(false);
 	}
 	Super::CloseLastOpenMenu();
+}
+
+void ACombatPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if(InputComponent)
+	{
+		UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+		EnhancedInputSubsystem->AddMappingContext(CombatUIMappingContext, 0);
+		
+		UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+
+		EnhancedInputComponent->BindAction(ScoreboardToggleAction, ETriggerEvent::Triggered, this, &ACombatPlayerController::OnToggleScoreboardTriggered);
+		EnhancedInputComponent->BindAction(ScoreboardToggleAction, ETriggerEvent::Completed, this, &ACombatPlayerController::OnToggleScoreboardTriggered);
+		
+	}
 }
 
 void ACombatPlayerController::ActivateUIInputHandler(bool bActivate)
@@ -289,6 +318,25 @@ int32 ACombatPlayerController::GetEnemyTeamScore()
 		}
 	}
 	return 0;
+}
+
+void ACombatPlayerController::ToggleScoreboard(bool bShow)
+{
+	if(IsLocalController())
+	{
+		if(ScoreBoardClass && !ScoreBoardWidget) ScoreBoardWidget = CreateWidget<UUserWidget>(this, ScoreBoardClass);
+
+		if(ScoreBoardWidget)
+		{
+			if(bShow)
+			{
+				if(!ScoreBoardWidget->IsInViewport()) ScoreBoardWidget->AddToViewport();
+			}else
+			{
+				if(ScoreBoardWidget->IsInViewport()) ScoreBoardWidget->RemoveFromParent();
+			}
+		}
+	}
 }
 
 void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)

@@ -31,6 +31,8 @@ protected:
 	int32 PlayerDeathCount;
 	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
 	int32 PlayerAssistCount;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerScore;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
 
