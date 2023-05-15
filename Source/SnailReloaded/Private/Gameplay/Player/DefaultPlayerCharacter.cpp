@@ -413,6 +413,17 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(PrimaryWeapon) PrimaryWeapon->Destroy();
 		if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
+		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
+		{
+			CombatPlayerState->AddDeath();
+		}
+		if(ADefaultPlayerCharacter* Source = Cast<ADefaultPlayerCharacter>(DamageResponse.SourceActor))
+		{
+			if(ACombatPlayerState* CombatPlayerState = Source->GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
+			{
+				CombatPlayerState->AddKill();
+			}	
+		}
 		GetCombatPlayerController()->ShowDeathScreen(true);
 		GetCombatPlayerController()->SelectOverviewCamera();
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
