@@ -26,6 +26,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UHealthComponent* HealthComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UNiagaraComponent* BombParticleComponent;
 
 protected:
 	// Called when the game starts or when spawned

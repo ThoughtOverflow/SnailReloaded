@@ -33,6 +33,9 @@ ABomb::ABomb()
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	HealthComponent->bInvulnerable = true;
 	HealthComponent->OnTeamQuery.BindDynamic(this, &ABomb::GetBombTeam);
+
+	BombParticleComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BombParticles"));
+	BombParticleComponent->SetupAttachment(BombMesh);
 	
 }
 
