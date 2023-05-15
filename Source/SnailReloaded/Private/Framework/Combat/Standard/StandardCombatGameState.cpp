@@ -42,6 +42,12 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 	{
 		//Timer ran out.
 		RoundEndResult = ERoundEndResult::OutOfTime;
+	}else if(ExpiredPhase == EGamePhase::PostPlant)
+	{
+		if(PlantedBomb)
+		{
+			ExplodeBomb();
+		}
 	}
 
 	switch (CurrentGamePhase.GamePhase) {
@@ -59,11 +65,6 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	Super::OnPhaseSelected(NewPhase);
 	if(NewPhase == EGamePhase::EndPhase)
 	{
-		
-		if(PlantedBomb)
-		{
-			ExplodeBomb();
-		}
 		
 		//Do team scoring - round finished.
 		HandleTeamScoring();
@@ -316,6 +317,7 @@ void AStandardCombatGameState::OnBombDefused()
 		{
 			PlantedBomb->Destroy();
 		}
+		RoundEndResult = ERoundEndResult::BombDefuse;
 		SelectNewPhase(EGamePhase::EndPhase);
 	}
 }
