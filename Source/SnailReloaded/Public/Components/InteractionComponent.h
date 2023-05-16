@@ -50,15 +50,15 @@ public:
 	
 
 	UFUNCTION(BlueprintCallable)
-	void BeginFocus(APawn* Interactor);
+	virtual void BeginFocus(APawn* Interactor);
 	UFUNCTION(BlueprintCallable)
-	void EndFocus(APawn* Interactor);
+	virtual void EndFocus(APawn* Interactor);
 	UFUNCTION(BlueprintCallable)
-	void BeginInteract(APawn* Interactor);
+	virtual void BeginInteract(APawn* Interactor);
 	UFUNCTION(BlueprintCallable)
-	void Interact(APawn* Interactor);
+	virtual void Interact(APawn* Interactor);
 	UFUNCTION(BlueprintCallable)
-	void EndInteract(APawn* Interactor);
+	virtual void EndInteract(APawn* Interactor);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnBeginFocus OnBeginFocus;

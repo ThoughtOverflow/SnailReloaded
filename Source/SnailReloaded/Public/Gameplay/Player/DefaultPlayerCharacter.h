@@ -55,6 +55,8 @@ public:
 	UInputAction* ToggleBuyMenu;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* PlantBomb;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* InteractAction;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -130,6 +132,8 @@ protected:
 	void HandleToggleBuyMenu(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandlePlantBomb(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleInteract(const FInputActionInstance& Action);
 	
 	//Shooting
 	
@@ -209,6 +213,20 @@ protected:
 	void InteractableFound(UInteractionComponent* FoundComp);
 	UFUNCTION()
 	void NoNewInteractionComponent();
+
+	UFUNCTION()
+	void BeginInteract();
+	UFUNCTION()
+	void EndInteract();
+	UFUNCTION(Server, Reliable)
+	void Server_BeginInteract();
+	UFUNCTION(Server, Reliable)
+	void Server_EndInteract();
+
+	UPROPERTY()
+	FTimerHandle InteractionTimer;
+	UFUNCTION()
+	void InteractionTimerCallback();
 
 public:	
 	// Called every frame
@@ -344,6 +362,9 @@ public:
 	//Helper:
 	UFUNCTION(BlueprintCallable)
 	void ReloadPlayerBanner();
+
+	UFUNCTION(BlueprintPure)
+	float GetInteractionPercentage();
 	
 };
 

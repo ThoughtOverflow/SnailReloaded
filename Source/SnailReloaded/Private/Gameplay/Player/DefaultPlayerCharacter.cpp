@@ -305,7 +305,16 @@ void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action
 	}
 }
 
-
+void ADefaultPlayerCharacter::HandleInteract(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		BeginInteract();
+	}else
+	{
+		EndInteract();
+	}
+}
 
 
 void ADefaultPlayerCharacter::OnReloadComplete()
@@ -597,6 +606,56 @@ void ADefaultPlayerCharacter::NoNewInteractionComponent()
 	}
 }
 
+void ADefaultPlayerCharacter::BeginInteract()
+{
+	if(!HasAuthority())
+	{
+		Server_BeginInteract();
+	}
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->BeginInteract(this);
+		if(FMath::IsNearlyZero(PlayerInteractionData.LastFocusedComponent->InteractionTime))
+		{
+			PlayerInteractionData.LastFocusedComponent->Interact(this);
+		}else
+		{
+			GetWorldTimerManager().SetTimer(InteractionTimer, this, &ADefaultPlayerCharacter::InteractionTimerCallback, PlayerInteractionData.LastFocusedComponent->InteractionTime);
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::EndInteract()
+{
+	if(!HasAuthority())
+	{
+		Server_EndInteract();
+	}
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->EndInteract(this);
+		GetWorldTimerManager().ClearTimer(InteractionTimer);
+	}
+}
+
+void ADefaultPlayerCharacter::Server_BeginInteract_Implementation()
+{
+	BeginInteract();
+}
+
+void ADefaultPlayerCharacter::Server_EndInteract_Implementation()
+{
+	EndInteract();
+}
+
+void ADefaultPlayerCharacter::InteractionTimerCallback()
+{
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->Interact(this);
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -629,6 +688,8 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(ToggleBuyMenu, ETriggerEvent::Started, this, &ADefaultPlayerCharacter::HandleToggleBuyMenu);
 	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandlePlantBomb);
 	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandlePlantBomb);
+	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleInteract);
+	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleInteract);
 	
 }
 
@@ -1397,6 +1458,15 @@ bool ADefaultPlayerCharacter::IsInDefuseRadius()
 void ADefaultPlayerCharacter::ReloadPlayerBanner()
 {
 	PlayerHeader->Reload();
+}
+
+float ADefaultPlayerCharacter::GetInteractionPercentage()
+{
+	if(GetWorldTimerManager().IsTimerActive(InteractionTimer) && PlayerInteractionData.LastFocusedComponent)
+	{
+		return GetWorldTimerManager().GetTimerElapsed(InteractionTimer) / PlayerInteractionData.LastFocusedComponent->InteractionTime;
+	}
+	return 0.f;
 }
 
 void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()
