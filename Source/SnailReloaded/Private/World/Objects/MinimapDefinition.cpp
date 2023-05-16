@@ -44,3 +44,19 @@ FVector2D AMinimapDefinition::TranslateWorldLocation(FVector ObjectLocation)
 	
 }
 
+float AMinimapDefinition::TranslateWorldRotation(FRotator ObjectRotation)
+{
+	FVector RotVector = ObjectRotation.Vector() * FVector(1.f, 1.f, 0.f);
+
+	float DotX = RotVector.Dot(FVector(1.f, 0.f, 0.f));
+	float DotY = RotVector.Dot(FVector(0.f, 1.f, 0.f));
+
+	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotX));
+	if(DotY < 0.f)
+	{
+		Angle = 360.f - Angle;
+	}
+	return Angle;
+}
+
+

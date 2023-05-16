@@ -29,5 +29,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FVector2D TranslateWorldLocation(FVector ObjectLocation);
+	UFUNCTION(BlueprintCallable)
+	float TranslateWorldRotation(FRotator ObjectRotation);
 
 };
