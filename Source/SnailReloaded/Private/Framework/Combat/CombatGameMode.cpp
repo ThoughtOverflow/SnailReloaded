@@ -52,7 +52,7 @@ void ACombatGameMode::Logout(AController* Exiting)
 	}
 }
 
-FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest& DamageRequest)
+FDamageResponse ACombatGameMode::ChangeObjectHealth(const FDamageRequest& DamageRequest)
 {
 	if(DamageRequest.SourceActor)
 	{
@@ -60,8 +60,9 @@ FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest& DamageReques
 		{
 			if(UHealthComponent* SourceHealthComponent = Cast<UHealthComponent>(DamageRequest.SourceActor->GetComponentByClass(UHealthComponent::StaticClass())))
 			{
-				DamageRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
-				const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(DamageRequest);
+				FDamageRequest ModifiedRequest = DamageRequest;
+				ModifiedRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
+				const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(ModifiedRequest);
 				return Response;
 			}
 		}
