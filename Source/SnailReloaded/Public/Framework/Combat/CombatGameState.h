@@ -60,7 +60,7 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 	AOverviewCamera* LevelOverviewCamera;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY()
 	AMinimapDefinition* MinimapDefinition;
 	
 	FTimerHandle PhaseTimer;
