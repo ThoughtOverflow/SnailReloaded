@@ -40,15 +40,25 @@ void UInteractionComponent::EndFocus(APawn* Interactor)
 
 void UInteractionComponent::BeginInteract(APawn* Interactor)
 {
-	OnBeginInteract.Broadcast(Interactor);
+	if(bInteractionEnabled)
+	{
+		OnBeginInteract.Broadcast(Interactor);
+	}
+	
 }
 
 void UInteractionComponent::Interact(APawn* Interactor)
 {
-	OnInteract.Broadcast(Interactor);
+	if(bInteractionEnabled)
+	{
+		OnInteract.Broadcast(Interactor);
+	}
 }
 
 void UInteractionComponent::EndInteract(APawn* Interactor)
 {
-	OnEndInteract.Broadcast(Interactor);
+	if(bInteractionEnabled)
+	{
+		OnEndInteract.Broadcast(Interactor);
+	}
 }
