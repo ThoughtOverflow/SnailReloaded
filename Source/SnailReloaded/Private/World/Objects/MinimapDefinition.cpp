@@ -4,13 +4,14 @@
 #include "World/Objects/MinimapDefinition.h"
 
 #include "Components/BoxComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AMinimapDefinition::AMinimapDefinition()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	bReplicates = true;
 	MinimapArea = CreateDefaultSubobject<UBoxComponent>(TEXT("MinimapArea"));
 	
 }
@@ -20,6 +21,19 @@ void AMinimapDefinition::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void AMinimapDefinition::OnRep_MapMarkers()
+{
+	OnMapMarkersUpdated.Broadcast();
+}
+
+void AMinimapDefinition::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMinimapDefinition, bShowPlantedBomb);
+	DOREPLIFETIME(AMinimapDefinition, BombLoc);
 }
 
 // Called every frame
@@ -44,12 +58,11 @@ FVector2D AMinimapDefinition::TranslateWorldLocation(FVector ObjectLocation)
 	
 }
 
-float AMinimapDefinition::TranslateWorldRotation(FRotator ObjectRotation)
+float AMinimapDefinition::TranslateWorldRotation(FVector ForwardVector)
 {
-	FVector RotVector = ObjectRotation.Vector() * FVector(1.f, 1.f, 0.f);
 
-	float DotX = RotVector.Dot(FVector(1.f, 0.f, 0.f));
-	float DotY = RotVector.Dot(FVector(0.f, 1.f, 0.f));
+	float DotX = ForwardVector.Dot(FVector(1.f, 0.f, 0.f));
+	float DotY = ForwardVector.Dot(FVector(0.f, 1.f, 0.f));
 
 	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotX));
 	if(DotY < 0.f)
@@ -57,6 +70,34 @@ float AMinimapDefinition::TranslateWorldRotation(FRotator ObjectRotation)
 		Angle = 360.f - Angle;
 	}
 	return Angle;
+}
+
+void AMinimapDefinition::SetShowPlantMarker(bool bShow)
+{
+	if(HasAuthority())
+	{
+		bShowPlantedBomb = bShow;
+		OnRep_MapMarkers();
+	}
+}
+
+bool AMinimapDefinition::ShouldShowPlantMarker()
+{
+	return bShowPlantedBomb;
+}
+
+void AMinimapDefinition::SetBombLocation(FVector NewLoc)
+{
+	if(HasAuthority())
+	{
+		BombLoc = NewLoc;
+		OnRep_MapMarkers();
+	}
+}
+
+FVector AMinimapDefinition::GetBombLocation()
+{
+	return BombLoc;
 }
 
 

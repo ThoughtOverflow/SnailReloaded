@@ -38,7 +38,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	int32 NumberOfRounds;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	ABomb* PlantedBomb;
 
 protected:

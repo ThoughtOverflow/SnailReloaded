@@ -339,6 +339,7 @@ void ACombatPlayerController::ToggleScoreboard(bool bShow)
 	}
 }
 
+
 void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)
 {
 	AssignPlayerToTeam(Team);

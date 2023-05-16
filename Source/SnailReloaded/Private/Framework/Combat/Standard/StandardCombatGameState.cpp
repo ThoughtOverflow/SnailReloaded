@@ -241,6 +241,7 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, TeamBSide);
 	DOREPLIFETIME(AStandardCombatGameState, TeamAScore);
 	DOREPLIFETIME(AStandardCombatGameState, TeamBScore);
+	DOREPLIFETIME(AStandardCombatGameState, PlantedBomb);
 }
 
 void AStandardCombatGameState::HandleTeamScoring()
@@ -304,6 +305,11 @@ void AStandardCombatGameState::OnBombPlanted()
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		SelectNewPhase(EGamePhase::PostPlant);
+
+		//Minimap maker:
+		GetMinimapDefinition()->SetBombLocation(PlantedBomb->GetActorLocation());
+		GetMinimapDefinition()->SetShowPlantMarker(true);
+		
 	}
 }
 
@@ -319,6 +325,8 @@ void AStandardCombatGameState::OnBombDefused()
 		}
 		RoundEndResult = ERoundEndResult::BombDefuse;
 		SelectNewPhase(EGamePhase::EndPhase);
+		//Minimap maker:
+		GetMinimapDefinition()->SetShowPlantMarker(false);
 	}
 }
 
