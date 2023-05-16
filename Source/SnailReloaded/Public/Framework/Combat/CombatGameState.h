@@ -6,6 +6,7 @@
 #include "CombatGameMode.h"
 #include "CombatPlayerState.h"
 #include "Framework/DefaultGameState.h"
+#include "World/Objects/MinimapDefinition.h"
 #include "World/Objects/OverviewCamera.h"
 #include "CombatGameState.generated.h"
 
@@ -59,6 +60,8 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 	AOverviewCamera* LevelOverviewCamera;
+	UPROPERTY()
+	AMinimapDefinition* MinimapDefinition;
 	
 	FTimerHandle PhaseTimer;
 
@@ -127,6 +130,9 @@ public:
 	void PauseMatch();
 	UFUNCTION(BlueprintCallable)
 	void UnpauseMatch();
+
+	UFUNCTION(BlueprintPure)
+	AMinimapDefinition* GetMinimapDefinition();
 
 	
 	

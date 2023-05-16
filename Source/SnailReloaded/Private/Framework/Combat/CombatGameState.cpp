@@ -32,7 +32,11 @@ void ACombatGameState::BeginPlay()
 	{
 		LevelOverviewCamera = OverviewCamera;
 	}
-	
+	if(AMinimapDefinition* MapDef = Cast<AMinimapDefinition>(UGameplayStatics::GetActorOfClass(GetWorld(), AMinimapDefinition::StaticClass())))
+	{
+		MinimapDefinition = MapDef;
+	}
+	checkf(MinimapDefinition, TEXT("No minimap definition found in level!"));
 }
 
 void ACombatGameState::OnRep_MatchPause()
@@ -143,6 +147,11 @@ void ACombatGameState::UnpauseMatch()
 		bMatchPaused = true;
 		OnRep_MatchPause();
 	}
+}
+
+AMinimapDefinition* ACombatGameState::GetMinimapDefinition()
+{
+	return MinimapDefinition;
 }
 
 void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
