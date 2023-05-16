@@ -9,11 +9,13 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/InteractionComponent.h"
 #include "Components/PlayerHeaderComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
 #include "DefaultPlayerCharacter.generated.h"
 
 
+class UInteractionComponent;
 struct FShieldProperties;
 struct FDamageResponse;
 class ACombatPlayerController;
@@ -80,6 +82,13 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UPlayerHeaderComponent* PlayerHeader;
+
+	//Interacion:
+
+	UPROPERTY(BlueprintReadWrite)
+	FInteractionData PlayerInteractionData;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float InteractionCastDistance;
 
 	
 
@@ -191,6 +200,15 @@ protected:
 	float TimeOfLastShot;
 	UFUNCTION()
 	void CalculateWeaponRecoil(FVector& RayEndLocation);
+
+	//Interaction:
+
+	UFUNCTION()
+	void CheckForInteractable();
+	UFUNCTION()
+	void InteractableFound(UInteractionComponent* FoundComp);
+	UFUNCTION()
+	void NoNewInteractionComponent();
 
 public:	
 	// Called every frame

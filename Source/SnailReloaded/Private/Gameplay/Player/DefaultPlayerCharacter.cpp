@@ -58,6 +58,9 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 
 	PlayerHeader = CreateDefaultSubobject<UPlayerHeaderComponent>(TEXT("PlayerHeader"));
 	PlayerHeader->SetupAttachment(GetCapsuleComponent());
+
+	InteractionCastDistance = 1000.f;
+	PlayerInteractionData = FInteractionData();
 	
 	
 }
@@ -548,11 +551,60 @@ void ADefaultPlayerCharacter::CalculateWeaponRecoil(FVector& RayEndLocation)
 	}
 }
 
+void ADefaultPlayerCharacter::CheckForInteractable()
+{
+	if(GetWorld() && GetCombatPlayerController() && !IsPendingKillPending())
+	{
+		FHitResult HitResult;
+		FVector TraceStartLocation = CameraComponent->GetComponentLocation();
+		FVector TraceEndLocation = TraceStartLocation + GetCombatPlayerController()->GetControlRotation().Vector() * InteractionCastDistance;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+
+		if(GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLocation, TraceEndLocation, ECC_Visibility, QueryParams))
+		{
+			if(UInteractionComponent* FoundComponent = Cast<UInteractionComponent>(HitResult.GetActor()->GetComponentByClass(UInteractionComponent::StaticClass())))
+			{
+				float CompDistance = (HitResult.GetActor()->GetActorLocation() - TraceStartLocation).Length();
+				if(FoundComponent != PlayerInteractionData.LastFocusedComponent && CompDistance <= FoundComponent->InteractionDistance)
+				{
+					InteractableFound(FoundComponent);
+					
+				}else if(PlayerInteractionData.LastFocusedComponent && CompDistance > FoundComponent->InteractionDistance)
+				{
+					NoNewInteractionComponent();
+				}
+				return;
+			}
+		}
+		NoNewInteractionComponent();
+		
+	}
+}
+
+void ADefaultPlayerCharacter::InteractableFound(UInteractionComponent* FoundComp)
+{
+	FoundComp->BeginFocus(this);
+	PlayerInteractionData.LastFocusedComponent = FoundComp;
+}
+
+void ADefaultPlayerCharacter::NoNewInteractionComponent()
+{
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->EndFocus(this);
+		PlayerInteractionData.LastFocusedComponent = nullptr;
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//Check the interactable:
+	CheckForInteractable();
+	
 }
 
 // Called to bind functionality to input
