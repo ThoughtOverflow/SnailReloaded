@@ -92,7 +92,7 @@ public:
 
 
 	UFUNCTION(BlueprintCallable)
-	FDamageResponse ChangeObjectHealth(FDamageRequest& DamageRequest);
+	FDamageResponse ChangeObjectHealth(const FDamageRequest& DamageRequest);
 
 	UFUNCTION(BlueprintCallable)
 	bool PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EItemIdentifier ItemIdentifier);

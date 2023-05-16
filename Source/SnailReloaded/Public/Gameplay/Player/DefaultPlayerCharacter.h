@@ -9,11 +9,13 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/InteractionComponent.h"
 #include "Components/PlayerHeaderComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
 #include "DefaultPlayerCharacter.generated.h"
 
 
+class UInteractionComponent;
 struct FShieldProperties;
 struct FDamageResponse;
 class ACombatPlayerController;
@@ -53,6 +55,8 @@ public:
 	UInputAction* ToggleBuyMenu;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* PlantBomb;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* InteractAction;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -80,6 +84,13 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UPlayerHeaderComponent* PlayerHeader;
+
+	//Interacion:
+
+	UPROPERTY(BlueprintReadWrite)
+	FInteractionData PlayerInteractionData;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float InteractionCastDistance;
 
 	
 
@@ -121,6 +132,8 @@ protected:
 	void HandleToggleBuyMenu(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandlePlantBomb(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleInteract(const FInputActionInstance& Action);
 	
 	//Shooting
 	
@@ -191,6 +204,29 @@ protected:
 	float TimeOfLastShot;
 	UFUNCTION()
 	void CalculateWeaponRecoil(FVector& RayEndLocation);
+
+	//Interaction:
+
+	UFUNCTION()
+	void CheckForInteractable();
+	UFUNCTION()
+	void InteractableFound(UInteractionComponent* FoundComp);
+	UFUNCTION()
+	void NoNewInteractionComponent();
+
+	UFUNCTION()
+	void BeginInteract();
+	UFUNCTION()
+	void EndInteract();
+	UFUNCTION(Server, Reliable)
+	void Server_BeginInteract();
+	UFUNCTION(Server, Reliable)
+	void Server_EndInteract();
+
+	UPROPERTY()
+	FTimerHandle InteractionTimer;
+	UFUNCTION()
+	void InteractionTimerCallback();
 
 public:	
 	// Called every frame
@@ -326,6 +362,9 @@ public:
 	//Helper:
 	UFUNCTION(BlueprintCallable)
 	void ReloadPlayerBanner();
+
+	UFUNCTION(BlueprintPure)
+	float GetInteractionPercentage();
 	
 };
 
