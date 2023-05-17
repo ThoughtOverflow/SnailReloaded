@@ -52,6 +52,8 @@ void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ACombatPlayerState, PlayerDeathCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerKillCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerScore);
+	DOREPLIFETIME(ACombatPlayerState, PlayerPlantCount);
+	DOREPLIFETIME(ACombatPlayerState, PlayerDefuseCount);
 }
 
 void ACombatPlayerState::SetPlayerMoney(int32 NewMoney)
@@ -81,6 +83,7 @@ int32 ACombatPlayerState::AddKill()
 	if(HasAuthority())
 	{
 		PlayerKillCount++;
+		CalculateScore();
 		OnRep_ScoreUpdate();
 	}
 	
@@ -93,6 +96,7 @@ int32 ACombatPlayerState::AddDeath()
 	if(HasAuthority())
 	{
 		PlayerDeathCount++;
+		CalculateScore();
 		OnRep_ScoreUpdate();
 	}
 	return PlayerDeathCount;
@@ -103,9 +107,32 @@ int32 ACombatPlayerState::AddAssist()
 	if(HasAuthority())
 	{
 		PlayerAssistCount++;
+		CalculateScore();
 		OnRep_ScoreUpdate();
 	}
 	return PlayerAssistCount;
+}
+
+int32 ACombatPlayerState::AddPlant()
+{
+	if(HasAuthority())
+	{
+		PlayerPlantCount++;
+		CalculateScore();
+		OnRep_ScoreUpdate();
+	}
+	return PlayerPlantCount;
+}
+
+int32 ACombatPlayerState::AddDefuse()
+{
+	if(HasAuthority())
+	{
+		PlayerDefuseCount++;
+		CalculateScore();
+		OnRep_ScoreUpdate();
+	}
+	return PlayerDefuseCount;
 }
 
 int32 ACombatPlayerState::GetKills()
@@ -121,6 +148,27 @@ int32 ACombatPlayerState::GetDeaths()
 int32 ACombatPlayerState::GetAssists()
 {
 	return PlayerAssistCount;
+}
+
+int32 ACombatPlayerState::GetPlants()
+{
+	return PlayerPlantCount;
+}
+
+int32 ACombatPlayerState::GetDefuses()
+{
+	return PlayerDefuseCount;
+}
+
+int32 ACombatPlayerState::GetScores()
+{
+	return PlayerScore;
+}
+
+
+void ACombatPlayerState::CalculateScore()
+{
+	PlayerScore = 25-PlayerDeathCount*5+PlayerKillCount*30+PlayerAssistCount*15+(PlayerPlantCount+PlayerDefuseCount)*10;
 }
 
 EGameTeams ACombatPlayerState::GetTeam()

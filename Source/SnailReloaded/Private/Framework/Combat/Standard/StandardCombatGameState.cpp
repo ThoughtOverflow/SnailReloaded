@@ -304,6 +304,7 @@ void AStandardCombatGameState::OnBombPlanted()
 	{
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
+		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddPlant();
 		SelectNewPhase(EGamePhase::PostPlant);
 
 		//Minimap maker:
@@ -319,6 +320,7 @@ void AStandardCombatGameState::OnBombDefused()
 	{
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
+		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddDefuse();
 		if(PlantedBomb)
 		{
 			PlantedBomb->Destroy();
