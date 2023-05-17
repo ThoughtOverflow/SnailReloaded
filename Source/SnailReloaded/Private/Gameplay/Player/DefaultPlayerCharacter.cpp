@@ -32,7 +32,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerCamera"));
-	CameraComponent->SetupAttachment(GetMesh());
+	CameraComponent->SetupAttachment(GetMesh(), FName("head"));
 	CameraComponent->bUsePawnControlRotation = true;
 	CameraComponent->SetFieldOfView(90.f);
 
