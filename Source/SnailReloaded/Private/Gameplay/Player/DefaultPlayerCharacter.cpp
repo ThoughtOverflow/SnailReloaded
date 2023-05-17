@@ -717,9 +717,12 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = this;
-		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector(0.f, 0.f, 0.f), FRotator(0.f, 90.f, 0.f), SpawnParameters);
+		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector(0.f, 0.f, 0.f), FRotator(0.f, 0.f, 0.f), SpawnParameters);
 		Weapon->SetIsEquipped(false);
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("hand_r"));
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("weapon_socket"));
+		FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - Weapon->WeaponMesh->GetBoneLocation(FName("root"));
+		Weapon->AddActorLocalRotation(Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")));
+		Weapon->AddActorLocalOffset(-SocketLoc);
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
 		{
