@@ -47,6 +47,7 @@ AWeaponBase::AWeaponBase()
 	bCanSell = true;
 
 	Recoil_FiredShots = 0;
+	FireAnimationDelay = 1.f;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -277,4 +278,36 @@ FVector2D AWeaponBase::GetRecoilValue()
 	
 	UE_LOG(LogTemp, Warning, TEXT("Applied recoil X: %f, - Applied recoil Y: %f"), RecoilVector.X, RecoilVector.Y);
 	return RecoilVector;
+}
+
+UAnimMontage* AWeaponBase::GetRandomFireMontage()
+{
+	float TotalWeights = 0.f;
+	TArray<float> Vals;
+	FireAnimations.GenerateValueArray(Vals);
+	TArray<UAnimMontage*> Keys;
+	FireAnimations.GenerateKeyArray(Keys);
+	
+	for(auto& Val : Vals)
+	{
+		TotalWeights += Val;
+	}
+	float RandSelect = FMath::RandRange(0.f, TotalWeights);
+
+	for(auto& AnimMontage : Keys)
+	{
+		float foundVal = *FireAnimations.Find(AnimMontage);
+		if(RandSelect < foundVal)
+		{
+			return AnimMontage;
+		}
+		RandSelect -= foundVal;
+	}
+	return nullptr;
+	
+}
+
+void AWeaponBase::OnWeaponFireAnimationPlayed()
+{
+	
 }

@@ -50,10 +50,10 @@ enum class EItemIdentifier : uint8
 UENUM(BlueprintType)
 enum class EWeaponSlot : uint8
 {
-	None = 3,
-	Primary = 2,
-	Secondary = 1,
-	Melee = 0
+	None = 0,
+	Primary = 1,
+	Secondary = 2,
+	Melee = 3
 	
 };
 
@@ -134,6 +134,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* WeaponMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	TMap<UAnimMontage*, float> FireAnimations;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	float FireAnimationDelay;
+	
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnAmmoUpdated OnAmmoUpdated;
@@ -228,5 +233,11 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	FVector2D GetRecoilValue();
+
+	UFUNCTION(BlueprintCallable)
+	UAnimMontage* GetRandomFireMontage();
+
+	UFUNCTION()
+	virtual void OnWeaponFireAnimationPlayed();
 	
 };
