@@ -85,6 +85,7 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, SecondaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, CurrentlyEquippedWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, WeaponCastMaxDistance);
+	DOREPLIFETIME(ADefaultPlayerCharacter, MeleeWeaponCastMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
@@ -739,8 +740,9 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 		Weapon->SetIsEquipped(false);
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("weapon_socket"));
 		FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - Weapon->WeaponMesh->GetBoneLocation(FName("root"));
-		Weapon->AddActorLocalRotation(Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")));
-		Weapon->AddActorLocalOffset(-SocketLoc);
+		FRotator DeltaRot = Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")) - Weapon->WeaponMesh->GetSocketRotation(FName("root"));
+		Weapon->SetActorRelativeRotation(DeltaRot);
+		Weapon->AddActorWorldOffset(-SocketLoc);
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
 		{
