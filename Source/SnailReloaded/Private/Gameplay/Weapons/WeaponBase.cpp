@@ -306,3 +306,8 @@ UAnimMontage* AWeaponBase::GetRandomFireMontage()
 	return nullptr;
 	
 }
+
+void AWeaponBase::OnWeaponFireAnimationPlayed()
+{
+	
+}

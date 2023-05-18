@@ -236,5 +236,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	UAnimMontage* GetRandomFireMontage();
+
+	UFUNCTION()
+	virtual void OnWeaponFireAnimationPlayed();
 	
 };

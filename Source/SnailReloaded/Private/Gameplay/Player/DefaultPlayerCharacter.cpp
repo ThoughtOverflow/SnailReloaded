@@ -966,6 +966,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * WeaponCastMaxDistance;
 				float MinEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
+
+				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
+				
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
@@ -1032,6 +1035,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 
 				CalculateWeaponRecoil(TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
@@ -1113,6 +1117,7 @@ void ADefaultPlayerCharacter::Multi_PlayWeaponFireAnimation_Implementation(UAnim
 	if(AnimMontage)
 	{
 		PlayAnimMontage(AnimMontage);
+		GetCurrentlyEquippedWeapon()->OnWeaponFireAnimationPlayed();
 	}
 }
 
