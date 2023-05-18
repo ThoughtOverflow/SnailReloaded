@@ -50,10 +50,10 @@ enum class EItemIdentifier : uint8
 UENUM(BlueprintType)
 enum class EWeaponSlot : uint8
 {
-	None = 3,
-	Primary = 2,
-	Secondary = 1,
-	Melee = 0
+	None = 0,
+	Primary = 1,
+	Secondary = 2,
+	Melee = 3
 	
 };
 
