@@ -32,7 +32,7 @@ void UPlayerHeaderComponent::Reload()
 						//Check for the team:
 						if(ACombatPlayerController* OwningController = Cast<ACombatPlayerController>(GetUserWidgetObject()->GetOwningPlayer()))
 						{
-							if(OwningController->GetPlayerState<ACombatPlayerState>()->GetTeam() == Cast<ACombatPlayerState>(PlayerState)->GetTeam())
+							if(OwningController->GetPlayerState<ACombatPlayerState>()->GetTeam() == Cast<ACombatPlayerState>(PlayerState)->GetTeam() && PlayerHeaderWidget->GetOwningPlayer() != DefaultPlayerCharacter->GetController())
 							{
 								SetHiddenInGame(false);
 							}else

@@ -325,6 +325,14 @@ void ADefaultPlayerCharacter::HandleInteract(const FInputActionInstance& Action)
 	}
 }
 
+void ADefaultPlayerCharacter::HandleDropInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		
+	}
+}
+
 
 void ADefaultPlayerCharacter::OnReloadComplete()
 {
@@ -699,6 +707,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandlePlantBomb);
 	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleInteract);
 	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleInteract);
+	EnhancedInputComponent->BindAction(DropItemInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleDropInput);
 	
 }
 

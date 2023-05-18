@@ -57,6 +57,8 @@ public:
 	UInputAction* PlantBomb;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* InteractAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* DropItemInput;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -136,6 +138,8 @@ protected:
 	void HandlePlantBomb(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleInteract(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleDropInput(const FInputActionInstance& Action);
 	
 	//Shooting
 	
