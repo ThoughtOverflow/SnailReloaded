@@ -34,7 +34,7 @@ protected:
 	UFUNCTION()
 	void OnAsyncSaveGameFinished(const FString& SlotName, const int32 UserIndex, bool bSuccess);
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void LoadGameSettings();
 	
 public:
