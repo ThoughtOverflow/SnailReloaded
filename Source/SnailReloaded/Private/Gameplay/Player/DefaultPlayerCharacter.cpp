@@ -47,7 +47,8 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
 	MeleeWeapon = nullptr;
-	LineTraceMaxDistance = 20000.f;
+	WeaponCastMaxDistance = 20000.f;
+	MeleeWeaponCastMaxDistance = 180.f;
 	FiredRoundsPerShootingEvent = 0;
 	LastFireTime = 0.f;
 	bAllowAutoReload = true;
@@ -81,7 +82,7 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, PrimaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, SecondaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, CurrentlyEquippedWeapon);
-	DOREPLIFETIME(ADefaultPlayerCharacter, LineTraceMaxDistance);
+	DOREPLIFETIME(ADefaultPlayerCharacter, WeaponCastMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
@@ -553,8 +554,8 @@ void ADefaultPlayerCharacter::CalculateWeaponRecoil(FVector& RayEndLocation)
 
 		TimeOfLastShot = GetWorld()->GetTimeSeconds();
 		
-		FVector RecoilActualVector = RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * LineTraceMaxDistance +
-			UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * LineTraceMaxDistance;
+		FVector RecoilActualVector = RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * WeaponCastMaxDistance +
+			UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * WeaponCastMaxDistance;
 
 		RayEndLocation += RecoilActualVector;
 	}
@@ -893,31 +894,37 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 {
 	if (HasAuthority() && GetController() && !IsPendingKillPending())
 	{
-		FHitResult HitResult;
-		FVector TraceStartLoc = CameraComponent->GetComponentLocation();
-		FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * 100.f;
-		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(this);
+		
 		if(CanPlayerAttack())
 		{
 			FiredRoundsPerShootingEvent++;
+			//Play animation, then delay the fire event.
 			Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
-			
-			if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
-			{
-				Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
-				if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
-				{
-					if(!HealthComponent->bIsDead)
-					{
-						FDamageRequest DamageRequest = FDamageRequest();
-						DamageRequest.SourceActor = this;
-						DamageRequest.TargetActor = HitResult.GetActor();
-						DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
+			GetWorldTimerManager().SetTimer(MeleeWeaponDelayTimer, this, &ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback, GetCurrentlyEquippedWeapon()->FireAnimationDelay);
+		}
+	}
+}
 
-						Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
-					}
-				}
+void ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback()
+{
+	FHitResult HitResult;
+	FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+	FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * MeleeWeaponCastMaxDistance;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
+	{
+		Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
+		if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
+		{
+			if(!HealthComponent->bIsDead)
+			{
+				FDamageRequest DamageRequest = FDamageRequest();
+				DamageRequest.SourceActor = this;
+				DamageRequest.TargetActor = HitResult.GetActor();
+				DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
+
+				Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
 			}
 		}
 	}
@@ -956,13 +963,13 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				}
 				
 				float MaxEndDeviation = FMath::Tan(
-					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
+					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * WeaponCastMaxDistance;
 				float MinEndDeviation = FMath::Tan(
-					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * LineTraceMaxDistance;
+					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
-						LineTraceMaxDistance;
+						WeaponCastMaxDistance;
 
 
 					float DeviationDistance = FMath::RandRange(MinEndDeviation, MaxEndDeviation);
@@ -1013,7 +1020,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		}
 		else
 		{
-			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
+			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * WeaponCastMaxDistance;
 			
 			
 			//Can Shoot:

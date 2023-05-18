@@ -47,6 +47,7 @@ AWeaponBase::AWeaponBase()
 	bCanSell = true;
 
 	Recoil_FiredShots = 0;
+	FireAnimationDelay = 1.f;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);

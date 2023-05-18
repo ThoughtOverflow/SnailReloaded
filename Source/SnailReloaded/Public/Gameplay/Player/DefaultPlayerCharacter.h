@@ -72,7 +72,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* MeleeWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
-	float LineTraceMaxDistance;
+	float WeaponCastMaxDistance;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
+	float MeleeWeaponCastMaxDistance;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	int32 FiredRoundsPerShootingEvent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
@@ -228,6 +230,9 @@ protected:
 	UFUNCTION()
 	void InteractionTimerCallback();
 
+	UPROPERTY()
+	FTimerHandle MeleeWeaponDelayTimer;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -274,6 +279,8 @@ public:
 	void Server_EndShooting();
 	UFUNCTION(BlueprintCallable)
 	void UseMeleeWeapon();
+	UFUNCTION(BlueprintCallable)
+	void UseMeleeWeaponDelay_Callback();
 	UFUNCTION(BlueprintCallable)
 	void FireEquippedWeapon();
 	UFUNCTION(BlueprintPure)

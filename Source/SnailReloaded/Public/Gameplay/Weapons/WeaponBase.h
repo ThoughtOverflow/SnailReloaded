@@ -136,6 +136,8 @@ public:
 	USkeletalMeshComponent* WeaponMesh;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
 	TMap<UAnimMontage*, float> FireAnimations;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	float FireAnimationDelay;
 	
 	
 	UPROPERTY(BlueprintAssignable)
