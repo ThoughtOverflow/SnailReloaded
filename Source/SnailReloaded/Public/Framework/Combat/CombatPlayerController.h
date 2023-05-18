@@ -66,15 +66,17 @@ protected:
 
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void BeginPlay() override;
-	
-	virtual void CloseLastOpenMenu() override;
 
 	virtual void SetupInputComponent() override;
 
+	UFUNCTION()
+	void TryBlockPlayerInputs(bool bBlock);
+
+	virtual void ResetNonMenuInputMode() override;
+
 
 public:
-
-	virtual void ActivateUIInputHandler(bool bActivate) override;
+	
 	
 	//Player HUD
 	
@@ -135,6 +137,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleScoreboard(bool bShow);
+
+	//Pause menu when player exists
+	virtual void TogglePauseMenu(bool bOpen) override;
 	
 	
 

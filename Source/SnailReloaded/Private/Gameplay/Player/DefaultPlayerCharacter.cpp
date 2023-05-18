@@ -11,12 +11,14 @@
 #include "Engine/DamageEvents.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Framework/SnailGameInstance.h"
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
+#include "Framework/Savegames/SettingsSavegame.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -168,15 +170,21 @@ void ADefaultPlayerCharacter::Look(const FInputActionInstance& Action)
 {
 	FInputActionValue InputActionValue = Action.GetValue();
 	FVector2d LookVector = InputActionValue.Get<FVector2d>();
+
+	float SensMultiplier = 1.f;
+	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+	{
+		SensMultiplier = SnailGameInstance->SavedSettings->MouseSensitivity * GOLDEN_SENS;
+	}
 	
 	if(LookVector.X != 0.f)
 	{
-		AddControllerYawInput(LookVector.X);
+		AddControllerYawInput(LookVector.X * SensMultiplier);
 	}
 	
 	if(LookVector.Y != 0.f)
 	{
-		AddControllerPitchInput(LookVector.Y);	
+		AddControllerPitchInput(LookVector.Y * SensMultiplier);	
 	}
 }
 
