@@ -60,18 +60,6 @@ void ACombatPlayerController::BeginPlay()
 	
 }
 
-void ACombatPlayerController::CloseLastOpenMenu()
-{
-	//Last menu with cursor enabled
-	if(MenuWidgetsRef.Num() == 1)
-	{
-		SetShowMouseCursor(false);
-		SetInputMode(FInputModeGameOnly());
-		ActivateUIInputHandler(false);
-	}
-	Super::CloseLastOpenMenu();
-}
-
 void ACombatPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -89,18 +77,26 @@ void ACombatPlayerController::SetupInputComponent()
 	}
 }
 
-void ACombatPlayerController::ActivateUIInputHandler(bool bActivate)
+void ACombatPlayerController::TryBlockPlayerInputs(bool bBlock)
 {
-	Super::ActivateUIInputHandler(bActivate);
-	//Add player character input blocks as well.
-	if(bActivate)
+	if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(GetPawn()))
 	{
-		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(true);
+		DefaultPlayerCharacter->BlockPlayerInputs(bBlock);
+	}
+}
+
+void ACombatPlayerController::ResetNonMenuInputMode()
+{
+	//check for the team select menu:
+	if(TeamSelectionWidget->IsInViewport())
+	{
+		SetInputMode(FInputModeGameAndUI());
+		TryBlockPlayerInputs(true);
 	}else
 	{
-		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(false);
+		SetInputMode(FInputModeGameOnly());
+		TryBlockPlayerInputs(false);
 	}
-	
 }
 
 
@@ -171,21 +167,15 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 		{
 			if(bOpen)
 			{
-				BuyMenu->AddToViewport();
-				SetShowMouseCursor(true);
-				SetInputMode(FInputModeGameAndUI());
-				ActivateUIInputHandler(true);
-				MenuWidgetsRef.Add(BuyMenu);
+				ToggleMenuWidget(BuyMenu, true);
+				TryBlockPlayerInputs(true);
 				
 			}else
 			{
 				if(BuyMenu->IsInViewport())
 				{
-					BuyMenu->RemoveFromParent();
-					SetShowMouseCursor(false);
-					SetInputMode(FInputModeGameOnly());
-					ActivateUIInputHandler(false);
-					if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
+					ToggleMenuWidget(BuyMenu, false);
+					TryBlockPlayerInputs(false);
 				}
 			}
 		}
@@ -253,10 +243,12 @@ void ACombatPlayerController::ToggleTeamSelectionScreen(bool bOpen)
 		{
 			if(TeamSelectionWidget && !TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->AddToViewport();
 			SetShowMouseCursor(true);
+			SetInputMode(FInputModeGameAndUI());
 		}else
 		{
 			if(TeamSelectionWidget && TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->RemoveFromParent();
 			SetShowMouseCursor(false);
+			SetInputMode(FInputModeGameOnly());
 		}
 	}else
 	{
@@ -337,6 +329,12 @@ void ACombatPlayerController::ToggleScoreboard(bool bShow)
 			}
 		}
 	}
+}
+
+void ACombatPlayerController::TogglePauseMenu(bool bOpen)
+{
+	TryBlockPlayerInputs(bOpen);
+	Super::TogglePauseMenu(bOpen);
 }
 
 

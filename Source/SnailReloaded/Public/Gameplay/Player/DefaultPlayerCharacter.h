@@ -74,7 +74,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	AWeaponBase* MeleeWeapon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
-	float LineTraceMaxDistance;
+	float WeaponCastMaxDistance;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
+	float MeleeWeaponCastMaxDistance;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	int32 FiredRoundsPerShootingEvent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
@@ -232,6 +234,9 @@ protected:
 	UFUNCTION()
 	void InteractionTimerCallback();
 
+	UPROPERTY()
+	FTimerHandle MeleeWeaponDelayTimer;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -279,6 +284,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UseMeleeWeapon();
 	UFUNCTION(BlueprintCallable)
+	void UseMeleeWeaponDelay_Callback();
+	UFUNCTION(BlueprintCallable)
 	void FireEquippedWeapon();
 	UFUNCTION(BlueprintPure)
 	bool CanWeaponFireInMode();
@@ -288,6 +295,8 @@ public:
 	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayWeaponFireAnimation(UAnimMontage* AnimMontage);
 
 	UFUNCTION(BlueprintPure)
 	AWeaponBase* GetCurrentlyEquippedWeapon();
