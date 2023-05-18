@@ -60,17 +60,6 @@ void ACombatPlayerController::BeginPlay()
 	
 }
 
-void ACombatPlayerController::CloseLastOpenMenu()
-{
-	//Last menu with cursor enabled
-	if(MenuWidgetsRef.Num() == 1)
-	{
-		SetShowMouseCursor(false);
-		SetInputMode(FInputModeGameOnly());
-	}
-	Super::CloseLastOpenMenu();
-}
-
 void ACombatPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -93,6 +82,20 @@ void ACombatPlayerController::TryBlockPlayerInputs(bool bBlock)
 	if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(GetPawn()))
 	{
 		DefaultPlayerCharacter->BlockPlayerInputs(bBlock);
+	}
+}
+
+void ACombatPlayerController::ResetNonMenuInputMode()
+{
+	//check for the team select menu:
+	if(TeamSelectionWidget->IsInViewport())
+	{
+		SetInputMode(FInputModeGameAndUI());
+		TryBlockPlayerInputs(true);
+	}else
+	{
+		SetInputMode(FInputModeGameOnly());
+		TryBlockPlayerInputs(false);
 	}
 }
 
@@ -164,21 +167,15 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 		{
 			if(bOpen)
 			{
-				BuyMenu->AddToViewport();
-				SetShowMouseCursor(true);
-				SetInputMode(FInputModeGameAndUI());
+				ToggleMenuWidget(BuyMenu, true);
 				TryBlockPlayerInputs(true);
-				MenuWidgetsRef.Add(BuyMenu);
 				
 			}else
 			{
 				if(BuyMenu->IsInViewport())
 				{
-					BuyMenu->RemoveFromParent();
-					SetShowMouseCursor(false);
-					SetInputMode(FInputModeGameOnly());
+					ToggleMenuWidget(BuyMenu, false);
 					TryBlockPlayerInputs(false);
-					if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
 				}
 			}
 		}
@@ -246,10 +243,12 @@ void ACombatPlayerController::ToggleTeamSelectionScreen(bool bOpen)
 		{
 			if(TeamSelectionWidget && !TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->AddToViewport();
 			SetShowMouseCursor(true);
+			SetInputMode(FInputModeGameAndUI());
 		}else
 		{
 			if(TeamSelectionWidget && TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->RemoveFromParent();
 			SetShowMouseCursor(false);
+			SetInputMode(FInputModeGameOnly());
 		}
 	}else
 	{

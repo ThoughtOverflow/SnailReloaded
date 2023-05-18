@@ -10,8 +10,15 @@
 #include "Kismet/KismetStringLibrary.h"
 #include "Kismet/KismetTextLibrary.h"
 
+FMenuWidgetData::FMenuWidgetData()
+{
+	MenuWidget = nullptr;
+	bShowsMouseCursor = true;
+}
+
 ADefaultPlayerController::ADefaultPlayerController()
 {
+	bNonMenuCursorState = false;
 }
 
 
@@ -25,15 +32,23 @@ void ADefaultPlayerController::SetupInputComponent()
 		UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
 
 		EnhancedInputComponent->BindAction(EscInputAction, ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnCloseCurrentlyOpenMenu);
-		
 	}
 }
 
 void ADefaultPlayerController::CloseLastOpenMenu()
 {
-	UUserWidget* LastWidget = MenuWidgetsRef[MenuWidgetsRef.Num() - 1];
+	UUserWidget* LastWidget = MenuWidgetsRef[MenuWidgetsRef.Num() - 1].MenuWidget;
 	LastWidget->RemoveFromParent();
-	MenuWidgetsRef.Remove(LastWidget);
+	if(MenuWidgetsRef.Num() > 1)
+	{
+		SetShowMouseCursor(MenuWidgetsRef[MenuWidgetsRef.Num() - 2].bShowsMouseCursor);
+		SetInputMode(FInputModeGameAndUI());
+	}else
+	{
+		SetShowMouseCursor(bNonMenuCursorState);
+		ResetNonMenuInputMode();
+	}
+	MenuWidgetsRef.RemoveAt(MenuWidgetsRef.Num() - 1);
 }
 
 void ADefaultPlayerController::BeginPlay()
@@ -58,19 +73,13 @@ void ADefaultPlayerController::TogglePauseMenu(bool bOpen)
 			{
 				if(!PauseWidget->IsInViewport())
 				{
-					PauseWidget->AddToViewport();
-					SetShowMouseCursor(true);
-					SetInputMode(FInputModeGameAndUI());
-					MenuWidgetsRef.Add(PauseWidget);
+					ToggleMenuWidget(PauseWidget, true);
 				}
 			}else
 			{
 				if(PauseWidget->IsInViewport())
 				{
-					PauseWidget->RemoveFromParent();
-					SetShowMouseCursor(false);
-					SetInputMode(FInputModeGameOnly());
-					MenuWidgetsRef.Remove(PauseWidget);
+					ToggleMenuWidget(PauseWidget, false);
 				}
 			}
 		}
@@ -104,7 +113,7 @@ void ADefaultPlayerController::OnCloseCurrentlyOpenMenu(const FInputActionInstan
 {
 	if(InputActionInstance.GetValue().Get<bool>())
 	{
-		if(MenuWidgetsRef.Num() > 0)
+		if(MenuWidgetsRef.Num() >= 1)
 		{
 			CloseLastOpenMenu();	
 		}else
@@ -115,11 +124,16 @@ void ADefaultPlayerController::OnCloseCurrentlyOpenMenu(const FInputActionInstan
 	}
 }
 
+void ADefaultPlayerController::ResetNonMenuInputMode()
+{
+	SetInputMode(FInputModeUIOnly());
+}
+
 bool ADefaultPlayerController::IsAnyMenuOpen()
 {
-	for(auto& Widget : MenuWidgetsRef)
+	for(auto& WidgetData : MenuWidgetsRef)
 	{
-		if(Widget->IsInViewport())
+		if(WidgetData.MenuWidget->IsInViewport())
 		{
 			return true;
 		}
@@ -133,4 +147,43 @@ FText ADefaultPlayerController::FormatMatchTimer(float InSeconds)
 	FTimespan Timespan = FTimespan::FromSeconds(FMath::Floor(InSeconds));
 	FText SecondsText = UKismetTextLibrary::Conv_IntToText(Timespan.GetSeconds(), false, false, 2);
 	return  FText::FromString(FString::Printf(TEXT("%d:%s"), Timespan.GetMinutes(), *SecondsText.ToString()));
+}
+
+void ADefaultPlayerController::ToggleMenuWidget(UUserWidget* MenuWidget, bool bOn, bool bShowsCursor)
+{
+
+	if(MenuWidgetsRef.Num() == 0)
+	{
+		if(bOn)
+		{
+			//Store prev cursor state:
+			bNonMenuCursorState = bShowMouseCursor;
+		}
+	}
+	
+	SetShowMouseCursor(bOn);
+	FMenuWidgetData MenuWidgetData;
+	MenuWidgetData.MenuWidget = MenuWidget;
+	MenuWidgetData.bShowsMouseCursor = bShowsCursor;
+	if(bOn )
+	{
+		MenuWidget->AddToViewport();
+		SetInputMode(FInputModeGameAndUI());
+		MenuWidgetsRef.Add(MenuWidgetData);
+	}else
+	{
+		MenuWidget->RemoveFromParent();
+		SetInputMode(FInputModeGameOnly());
+		int32 indexToRemove = 0;
+		for(int i=0; i<MenuWidgetsRef.Num(); i++)
+		{
+			if(MenuWidgetsRef[i].MenuWidget == MenuWidget)
+			{
+				indexToRemove = i;
+				break;
+			}
+		}
+		MenuWidgetsRef.RemoveAt(indexToRemove);
+	}
+	
 }

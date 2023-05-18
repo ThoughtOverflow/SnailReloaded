@@ -8,6 +8,21 @@
 #include "GameFramework/PlayerController.h"
 #include "DefaultPlayerController.generated.h"
 
+USTRUCT(BlueprintType)
+struct FMenuWidgetData
+{
+	GENERATED_BODY()
+public:
+
+	FMenuWidgetData();
+
+	UPROPERTY()
+	UUserWidget* MenuWidget;
+	UPROPERTY()
+	bool bShowsMouseCursor;
+	
+};
+
 class UPauseWidget;
 /**
  * 
@@ -33,7 +48,7 @@ public:
 	
 
 	UPROPERTY(BlueprintReadWrite)
-	TArray<UUserWidget*> MenuWidgetsRef;
+	TArray<FMenuWidgetData> MenuWidgetsRef;
 
 	UFUNCTION(BlueprintCallable)
 	virtual void ActivateUIInputHandler(bool bActivate);
@@ -54,6 +69,12 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_TogglePauseMenu(bool bOpen);
 
+	UPROPERTY()
+	bool bNonMenuCursorState;
+
+	UFUNCTION()
+	virtual void ResetNonMenuInputMode();
+
 
 public:
 	
@@ -62,5 +83,8 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FText FormatMatchTimer(float InSeconds);
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleMenuWidget(UUserWidget* MenuWidget, bool bOn, bool bShowsCursor = true);
 	
 };
