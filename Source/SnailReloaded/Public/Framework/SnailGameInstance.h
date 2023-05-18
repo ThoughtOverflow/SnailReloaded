@@ -6,6 +6,8 @@
 #include "Engine/GameInstance.h"
 #include "SnailGameInstance.generated.h"
 
+#define GOLDEN_SENS (0.130975f);
+
 class USettingsSavegame;
 /**
  * 
