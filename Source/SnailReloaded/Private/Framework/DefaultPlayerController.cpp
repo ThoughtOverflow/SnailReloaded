@@ -97,15 +97,19 @@ void ADefaultPlayerController::Client_TogglePauseMenu_Implementation(bool bOpen)
 
 void ADefaultPlayerController::ActivateUIInputHandler(bool bActivate)
 {
-	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	if(IsLocalController())
+	{
+		UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	
-	if(bActivate)
-	{
-		EnhancedInputSubsystem->AddMappingContext(UIDefaultMappingContext, 0);
-	}else
-	{
-		EnhancedInputSubsystem->RemoveMappingContext(UIDefaultMappingContext);
+		if(bActivate)
+		{
+			EnhancedInputSubsystem->AddMappingContext(UIDefaultMappingContext, 0);
+		}else
+		{
+			EnhancedInputSubsystem->RemoveMappingContext(UIDefaultMappingContext);
+		}
 	}
+	
 }
 
 
@@ -183,7 +187,14 @@ void ADefaultPlayerController::ToggleMenuWidget(UUserWidget* MenuWidget, bool bO
 				break;
 			}
 		}
-		MenuWidgetsRef.RemoveAt(indexToRemove);
+		if(MenuWidgetsRef.Num() == 1)
+		{
+			//Last widget - Call the close operation, to reset the properties;
+			CloseLastOpenMenu();
+		}else
+		{
+			MenuWidgetsRef.RemoveAt(indexToRemove);
+		}
 	}
 	
 }
