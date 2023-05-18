@@ -67,7 +67,6 @@ void ACombatPlayerController::CloseLastOpenMenu()
 	{
 		SetShowMouseCursor(false);
 		SetInputMode(FInputModeGameOnly());
-		ActivateUIInputHandler(false);
 	}
 	Super::CloseLastOpenMenu();
 }
@@ -89,18 +88,12 @@ void ACombatPlayerController::SetupInputComponent()
 	}
 }
 
-void ACombatPlayerController::ActivateUIInputHandler(bool bActivate)
+void ACombatPlayerController::TryBlockPlayerInputs(bool bBlock)
 {
-	Super::ActivateUIInputHandler(bActivate);
-	//Add player character input blocks as well.
-	if(bActivate)
+	if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(GetPawn()))
 	{
-		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(true);
-	}else
-	{
-		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(false);
+		DefaultPlayerCharacter->BlockPlayerInputs(bBlock);
 	}
-	
 }
 
 
@@ -174,7 +167,7 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 				BuyMenu->AddToViewport();
 				SetShowMouseCursor(true);
 				SetInputMode(FInputModeGameAndUI());
-				ActivateUIInputHandler(true);
+				TryBlockPlayerInputs(true);
 				MenuWidgetsRef.Add(BuyMenu);
 				
 			}else
@@ -184,7 +177,7 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 					BuyMenu->RemoveFromParent();
 					SetShowMouseCursor(false);
 					SetInputMode(FInputModeGameOnly());
-					ActivateUIInputHandler(false);
+					TryBlockPlayerInputs(false);
 					if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
 				}
 			}
@@ -337,6 +330,12 @@ void ACombatPlayerController::ToggleScoreboard(bool bShow)
 			}
 		}
 	}
+}
+
+void ACombatPlayerController::TogglePauseMenu(bool bOpen)
+{
+	TryBlockPlayerInputs(bOpen);
+	Super::TogglePauseMenu(bOpen);
 }
 
 

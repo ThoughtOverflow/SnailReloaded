@@ -5,6 +5,7 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Gameplay/UI/PauseWidget.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "Kismet/KismetTextLibrary.h"
@@ -35,6 +36,56 @@ void ADefaultPlayerController::CloseLastOpenMenu()
 	MenuWidgetsRef.Remove(LastWidget);
 }
 
+void ADefaultPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	//Activate the esc handler by default.
+	ActivateUIInputHandler(true);
+}
+
+void ADefaultPlayerController::TogglePauseMenu(bool bOpen)
+{
+	if(IsLocalController())
+	{
+
+		if(!PauseWidget && PauseWidgetClass)
+		{
+			PauseWidget = CreateWidget<UPauseWidget>(this, PauseWidgetClass);
+		}
+		if(PauseWidget)
+		{
+			if(bOpen)
+			{
+				if(!PauseWidget->IsInViewport())
+				{
+					PauseWidget->AddToViewport();
+					SetShowMouseCursor(true);
+					SetInputMode(FInputModeGameAndUI());
+					MenuWidgetsRef.Add(PauseWidget);
+				}
+			}else
+			{
+				if(PauseWidget->IsInViewport())
+				{
+					PauseWidget->RemoveFromParent();
+					SetShowMouseCursor(false);
+					SetInputMode(FInputModeGameOnly());
+					MenuWidgetsRef.Remove(PauseWidget);
+				}
+			}
+		}
+		
+	}else
+	{
+		Client_TogglePauseMenu(bOpen);
+	}
+}
+
+void ADefaultPlayerController::Client_TogglePauseMenu_Implementation(bool bOpen)
+{
+	TogglePauseMenu(bOpen);
+}
+
 void ADefaultPlayerController::ActivateUIInputHandler(bool bActivate)
 {
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
@@ -51,9 +102,16 @@ void ADefaultPlayerController::ActivateUIInputHandler(bool bActivate)
 
 void ADefaultPlayerController::OnCloseCurrentlyOpenMenu(const FInputActionInstance& InputActionInstance)
 {
-	if(InputActionInstance.GetValue().Get<bool>() && MenuWidgetsRef.Num() > 0)
+	if(InputActionInstance.GetValue().Get<bool>())
 	{
-		CloseLastOpenMenu();
+		if(MenuWidgetsRef.Num() > 0)
+		{
+			CloseLastOpenMenu();	
+		}else
+		{
+			//Open pause menu.
+			TogglePauseMenu(true);
+		}
 	}
 }
 

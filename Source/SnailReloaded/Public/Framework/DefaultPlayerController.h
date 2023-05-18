@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "DefaultPlayerController.generated.h"
 
+class UPauseWidget;
 /**
  * 
  */
@@ -24,6 +25,11 @@ public:
 	UInputMappingContext* UIDefaultMappingContext;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI input settings")
 	UInputAction* EscInputAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UPauseWidget> PauseWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UPauseWidget* PauseWidget;
 	
 
 	UPROPERTY(BlueprintReadWrite)
@@ -40,6 +46,13 @@ protected:
 	virtual void SetupInputComponent() override;
 
 	virtual void CloseLastOpenMenu();
+
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual void TogglePauseMenu(bool bOpen);
+	UFUNCTION(Client, Reliable)
+	void Client_TogglePauseMenu(bool bOpen);
 
 
 public:
