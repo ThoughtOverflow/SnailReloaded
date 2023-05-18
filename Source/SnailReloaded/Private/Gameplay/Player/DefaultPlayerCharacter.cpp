@@ -901,6 +901,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 		if(CanPlayerAttack())
 		{
 			FiredRoundsPerShootingEvent++;
+			Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 			
 			if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
 			{
@@ -1098,6 +1099,14 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 bool ADefaultPlayerCharacter::WeaponHasAmmo()
 {
 	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
+}
+
+void ADefaultPlayerCharacter::Multi_PlayWeaponFireAnimation_Implementation(UAnimMontage* AnimMontage)
+{
+	if(AnimMontage)
+	{
+		PlayAnimMontage(AnimMontage);
+	}
 }
 
 AWeaponBase* ADefaultPlayerCharacter::GetCurrentlyEquippedWeapon()

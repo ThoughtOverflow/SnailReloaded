@@ -134,6 +134,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* WeaponMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	TMap<UAnimMontage*, float> FireAnimations;
+	
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnAmmoUpdated OnAmmoUpdated;
@@ -228,5 +231,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	FVector2D GetRecoilValue();
+
+	UFUNCTION(BlueprintCallable)
+	UAnimMontage* GetRandomFireMontage();
 	
 };
