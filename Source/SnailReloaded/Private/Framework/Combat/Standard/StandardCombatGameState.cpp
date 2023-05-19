@@ -417,16 +417,16 @@ void AStandardCombatGameState::NewRoundPayout()
 
 		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetWinningTeam()))
 		{
-			PlayerState->ChangePlayerMoney(3000);
+			PlayerState->ChangePlayerMoney(GetVictorReward());
 		}
 		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetLosingTeam()))
 		{
 			if(PlayerState->GetDeathState())
 			{
-				PlayerState->ChangePlayerMoney(2300);
+				PlayerState->ChangePlayerMoney(GetLoserDeadReward());
 			}else
 			{
-				PlayerState->ChangePlayerMoney(1000);
+				PlayerState->ChangePlayerMoney(GetLoserReward());
 			}
 			
 		}

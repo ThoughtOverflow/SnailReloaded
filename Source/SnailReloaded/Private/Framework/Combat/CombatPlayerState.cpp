@@ -168,7 +168,10 @@ int32 ACombatPlayerState::GetScores()
 
 void ACombatPlayerState::CalculateScore()
 {
-	PlayerScore = 25-PlayerDeathCount*5+PlayerKillCount*30+PlayerAssistCount*15+(PlayerPlantCount+PlayerDefuseCount)*10;
+	if(ACombatGameState* GameState = Cast<ACombatGameState>(GetWorld()->GetGameState()))
+	{
+		PlayerScore = GameState->GetBaseScore()-PlayerDeathCount*GameState->GetDeathValue()+PlayerKillCount*GameState->GetKillReward()+PlayerAssistCount*GameState->GetAssistValue()+(PlayerPlantCount+PlayerDefuseCount)*GameState->GetBombValue();
+	}
 }
 
 void ACombatPlayerState::YouDied()

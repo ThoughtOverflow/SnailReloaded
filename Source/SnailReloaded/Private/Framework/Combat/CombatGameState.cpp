@@ -10,11 +10,24 @@
 #include "World/Objects/OverviewCamera.h"
 #include "World/Objects/TeamPlayerStart.h"
 
+
+
 ACombatGameState::ACombatGameState()
 {
 	InitialPlayerMoney = 5000;
 	CurrentRound = 0;
+	BaseScore =25;
+	KillValue =30;
+	DeathValue=5;
+	BombValue =10;
+	KillReward =200;
+	PlantReward =300;
+	VictorReward =3000;
+	LoserReward =2300;
 }
+
+
+
 
 void ACombatGameState::OnRep_GamePhase()
 {
@@ -153,6 +166,8 @@ AMinimapDefinition* ACombatGameState::GetMinimapDefinition()
 {
 	return MinimapDefinition;
 }
+
+
 
 void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -316,4 +331,53 @@ TArray<ACombatPlayerState*> ACombatGameState::GetAllPlayersOfTeam(EGameTeams Tea
 		}
 	}
 	return Players;
+}
+
+int32 ACombatGameState::GetBaseScore() const
+{
+	return BaseScore;
+}
+
+int32 ACombatGameState::GetKillValue() const
+{
+	return KillValue;
+}
+
+int32 ACombatGameState::GetDeathValue() const
+{
+	return DeathValue;
+}
+
+int32 ACombatGameState::GetAssistValue() const
+{
+	return AssistValue;
+}
+
+int32 ACombatGameState::GetBombValue() const
+{
+	return BombValue;
+}
+
+int32 ACombatGameState::GetKillReward() const
+{
+	return KillReward;
+}
+
+int32 ACombatGameState::GetPlantReward() const
+{
+	return PlantReward;
+}
+
+int32 ACombatGameState::GetVictorReward() const
+{
+	return VictorReward;
+}
+int32 ACombatGameState::GetLoserReward() const
+{
+	return LoserReward;
+}
+
+int32 ACombatGameState::GetLoserDeadReward() const
+{
+	return LoserDeadReward;
 }

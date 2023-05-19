@@ -457,7 +457,8 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 			{
 				CombatPlayerState->AddKill();
 				//On kill payout
-				CombatPlayerState->ChangePlayerMoney(200);
+				CombatPlayerState->ChangePlayerMoney(Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld()))->GetKillReward());
+				
 			}	
 		}
 		GetCombatPlayerController()->ShowDeathScreen(true);
