@@ -119,6 +119,8 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* ImpactParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	UNiagaraSystem* BarrelParticleSystem;
 	
 	/**
 	 * @brief Maximum projectile deviation from barrel in degrees.
@@ -244,5 +246,7 @@ public:
 
 	UFUNCTION()
 	virtual void OnWeaponFireAnimationPlayed();
+	UFUNCTION()
+	virtual void SpawnBarrelParticles();
 	
 };

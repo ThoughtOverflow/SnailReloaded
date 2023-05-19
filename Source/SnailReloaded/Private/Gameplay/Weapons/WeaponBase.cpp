@@ -3,6 +3,7 @@
 
 #include "Gameplay/Weapons/WeaponBase.h"
 
+#include "NiagaraFunctionLibrary.h"
 #include "Curves/CurveVector.h"
 #include "Net/UnrealNetwork.h"
 
@@ -311,4 +312,12 @@ UAnimMontage* AWeaponBase::GetRandomFireMontage()
 void AWeaponBase::OnWeaponFireAnimationPlayed()
 {
 	
+}
+
+void AWeaponBase::SpawnBarrelParticles()
+{
+	if(BarrelParticleSystem)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(BarrelParticleSystem, WeaponMesh, FName("barrel_socket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+	}
 }

@@ -989,7 +989,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
 
 				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
-				
+				Multi_SpawnBarrelParticles();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
@@ -1056,6 +1056,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+				Multi_SpawnBarrelParticles();
 				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 
 				CalculateWeaponRecoil(TraceEndLoc);
@@ -1131,6 +1132,14 @@ bool ADefaultPlayerCharacter::CanWeaponFireInMode()
 bool ADefaultPlayerCharacter::WeaponHasAmmo()
 {
 	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
+}
+
+void ADefaultPlayerCharacter::Multi_SpawnBarrelParticles_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->SpawnBarrelParticles();
+	}
 }
 
 void ADefaultPlayerCharacter::Multi_PlayWeaponFireAnimation_Implementation(UAnimMontage* AnimMontage)
