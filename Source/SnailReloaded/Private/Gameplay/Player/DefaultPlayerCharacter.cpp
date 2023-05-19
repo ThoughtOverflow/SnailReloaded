@@ -738,10 +738,12 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 		SpawnParameters.Instigator = this;
 		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector(0.f, 0.f, 0.f), FRotator(0.f, 0.f, 0.f), SpawnParameters);
 		Weapon->SetIsEquipped(false);
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("weapon_socket"));
-		FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - Weapon->WeaponMesh->GetBoneLocation(FName("root"));
-		FRotator DeltaRot = Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")) - Weapon->WeaponMesh->GetSocketRotation(FName("root"));
-		Weapon->SetActorRelativeRotation(DeltaRot);
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, Weapon->HandMountSocketName);
+		// FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - Weapon->WeaponMesh->GetBoneLocation(FName("root"));
+		// FRotator DeltaRot = Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")) - Weapon->WeaponMesh->GetSocketRotation(FName("root"));
+		// Weapon->SetActorRelativeRotation(DeltaRot);
+		// Weapon->AddActorWorldOffset(-SocketLoc);
+		FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - GetMesh()->GetSocketLocation(Weapon->HandMountSocketName);
 		Weapon->AddActorWorldOffset(-SocketLoc);
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)

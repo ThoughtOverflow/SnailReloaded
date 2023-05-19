@@ -27,6 +27,7 @@ AWeaponBase::AWeaponBase()
 
 	ItemIdentifier = EItemIdentifier::None;
 	bShotgunSpread = false;
+	HandMountSocketName = FName("weapon_socket");
 	ConstantDamage = 10.f;
 	WeaponMode = EWeaponMode::Automatic;
 	WeaponSlot = EWeaponSlot::Primary;
