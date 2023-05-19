@@ -90,6 +90,14 @@ void AStandardCombatGameState::StartNewRound()
 		if(StandardCombatGameMode->IsMatchOver()) return;
 	}
 	
+	if(HasAuthority())
+	{
+		if(CurrentRound>1)
+		{
+			NewRoundPayout();
+		}
+		
+	}
 	//Reset win result;
 	RoundEndResult = ERoundEndResult::None;
 	RespawnPlayers();
@@ -350,6 +358,19 @@ EGameTeams AStandardCombatGameState::GetWinningTeam()
 	}
 	return EGameTeams::None;
 }
+EGameTeams AStandardCombatGameState::GetLosingTeam()
+{
+	if(RoundEndResult == ERoundEndResult::None) return EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		return GetTeamBySide(EBombTeam::Attacker);
+		
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		return  GetTeamBySide(EBombTeam::Defender);
+	}
+	return EGameTeams::None;
+}
 
 void AStandardCombatGameState::SetScoreForTeam(EGameTeams Team, int32 NewScore)
 {
@@ -386,6 +407,34 @@ int32 AStandardCombatGameState::GetScoreForTeam(EGameTeams Team)
 	case EGameTeams::TeamA: return TeamAScore;
 	case EGameTeams::TeamB: return TeamBScore;
 	default: return 0;
+	}
+}
+
+void AStandardCombatGameState::NewRoundPayout()
+{
+	if(HasAuthority())
+	{
+
+		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetWinningTeam()))
+		{
+			PlayerState->ChangePlayerMoney(3000);
+		}
+		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetLosingTeam()))
+		{
+			if(PlayerState->GetDeathState())
+			{
+				PlayerState->ChangePlayerMoney(2300);
+			}else
+			{
+				PlayerState->ChangePlayerMoney(1000);
+			}
+			
+		}
+		for (ACombatPlayerState*PlayerState:GetAllGamePlayers())
+		{
+			PlayerState->ResetDeathFlag();
+		}
+		
 	}
 }
 

@@ -171,6 +171,21 @@ void ACombatPlayerState::CalculateScore()
 	PlayerScore = 25-PlayerDeathCount*5+PlayerKillCount*30+PlayerAssistCount*15+(PlayerPlantCount+PlayerDefuseCount)*10;
 }
 
+void ACombatPlayerState::YouDied()
+{
+	IsDeadPreviousRound = true;
+}
+
+void ACombatPlayerState::ResetDeathFlag()
+{
+	IsDeadPreviousRound = false;
+}
+
+bool ACombatPlayerState::GetDeathState()
+{
+	return IsDeadPreviousRound;
+}
+
 EGameTeams ACombatPlayerState::GetTeam()
 {
 	return CurrentTeam;

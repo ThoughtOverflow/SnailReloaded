@@ -201,6 +201,13 @@ void ACombatGameState::StartNewRound()
 		{
 			CombatGameMode->StartRound();
 		}
+		if(CurrentRound ==1)
+		{
+			for(ACombatPlayerState* PlayerState:GetAllGamePlayers())
+			{
+				PlayerState->SetPlayerMoney(InitialPlayerMoney);
+			}
+		}
 	}
 }
 

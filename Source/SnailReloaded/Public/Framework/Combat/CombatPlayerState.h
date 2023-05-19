@@ -39,6 +39,9 @@ protected:
 	int32 PlayerDefuseCount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool IsDeadPreviousRound;
+	
 
 	UFUNCTION()
 	void OnRep_GameTeam();
@@ -82,6 +85,12 @@ public:
 	int32 GetScores();
 	UFUNCTION(BlueprintCallable)
 	void CalculateScore();
+	UFUNCTION(BlueprintCallable)
+	void YouDied();
+	UFUNCTION(BlueprintCallable)
+	void ResetDeathFlag();
+	UFUNCTION(BlueprintPure)
+	bool GetDeathState();
 	UFUNCTION(BlueprintPure)
 	EGameTeams GetTeam();
 	UFUNCTION(BlueprintCallable)

@@ -112,11 +112,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	EGameTeams GetWinningTeam();
 	UFUNCTION(BlueprintCallable)
+	EGameTeams GetLosingTeam();
+	UFUNCTION(BlueprintCallable)
 	void SetScoreForTeam(EGameTeams Team, int32 NewScore);
 	UFUNCTION(BlueprintCallable)
 	void ChangeScoreForTeam(EGameTeams Team, int32 DeltaScore);
 	UFUNCTION(BlueprintPure)
 	int32 GetScoreForTeam(EGameTeams Team);
+	UFUNCTION(BlueprintCallable)
+	void NewRoundPayout();
 	UFUNCTION()
 	void CheckForAlivePlayers();
 	UFUNCTION(BlueprintCallable)
