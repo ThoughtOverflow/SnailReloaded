@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+class USoundCue;
 USTRUCT(BlueprintType)
 struct FWeaponRecoil
 {
@@ -121,6 +122,10 @@ public:
 	UNiagaraSystem* ImpactParticleSystem;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* BarrelParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	USoundBase* FireSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	USoundBase* EquipSound;
 	
 	/**
 	 * @brief Maximum projectile deviation from barrel in degrees.
@@ -248,5 +253,9 @@ public:
 	virtual void OnWeaponFireAnimationPlayed();
 	UFUNCTION()
 	virtual void SpawnBarrelParticles();
+	UFUNCTION()
+	virtual void PlayFireSound();
+	UFUNCTION()
+	virtual void PlayEquipSound();
 	
 };

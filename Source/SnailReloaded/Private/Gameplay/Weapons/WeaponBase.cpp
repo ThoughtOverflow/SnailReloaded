@@ -5,6 +5,7 @@
 
 #include "NiagaraFunctionLibrary.h"
 #include "Curves/CurveVector.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -320,4 +321,14 @@ void AWeaponBase::SpawnBarrelParticles()
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAttached(BarrelParticleSystem, WeaponMesh, FName("barrel_socket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
 	}
+}
+
+void AWeaponBase::PlayFireSound()
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, WeaponMesh->GetSocketLocation(FName("barrel_socket")), FRotator::ZeroRotator);
+}
+
+void AWeaponBase::PlayEquipSound()
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EquipSound, WeaponMesh->GetSocketLocation(FName("barrel_socket")), FRotator::ZeroRotator);	
 }

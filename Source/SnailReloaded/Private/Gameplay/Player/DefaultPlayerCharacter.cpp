@@ -816,6 +816,7 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 			//EquipWeapon;
 			SetCurrentlyEqippedWeapon(GetWeaponAtSlot(Slot));
 			CurrentlyEquippedWeapon->SetIsEquipped(true);
+			Client_PlayEquipAudio();
 		}
 	}else
 	{
@@ -921,6 +922,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 			FiredRoundsPerShootingEvent++;
 			//Play animation, then delay the fire event.
 			Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
+			Client_PlayFireAudio();
 			GetWorldTimerManager().SetTimer(MeleeWeaponDelayTimer, this, &ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback, GetCurrentlyEquippedWeapon()->FireAnimationDelay);
 		}
 	}
@@ -990,6 +992,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 
 				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 				Multi_SpawnBarrelParticles();
+				Client_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
@@ -1057,6 +1060,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				Multi_SpawnBarrelParticles();
+				Client_PlayFireAudio();
 				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 
 				CalculateWeaponRecoil(TraceEndLoc);
@@ -1134,6 +1138,14 @@ bool ADefaultPlayerCharacter::WeaponHasAmmo()
 	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
 }
 
+void ADefaultPlayerCharacter::Client_PlayFireAudio_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->PlayFireSound();
+	}
+}
+
 void ADefaultPlayerCharacter::Multi_SpawnBarrelParticles_Implementation()
 {
 	if(GetCurrentlyEquippedWeapon())
@@ -1148,6 +1160,14 @@ void ADefaultPlayerCharacter::Multi_PlayWeaponFireAnimation_Implementation(UAnim
 	{
 		PlayAnimMontage(AnimMontage);
 		GetCurrentlyEquippedWeapon()->OnWeaponFireAnimationPlayed();
+	}
+}
+
+void ADefaultPlayerCharacter::Client_PlayEquipAudio_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->PlayEquipSound();
 	}
 }
 
