@@ -110,6 +110,8 @@ public:
 	UFUNCTION(BlueprintPure)
 	float GetBombActionTimeRemaining();
 	UFUNCTION(BlueprintCallable)
+	EGameTeams GetWinningTeam();
+	UFUNCTION(BlueprintCallable)
 	void SetScoreForTeam(EGameTeams Team, int32 NewScore);
 	UFUNCTION(BlueprintCallable)
 	void ChangeScoreForTeam(EGameTeams Team, int32 DeltaScore);

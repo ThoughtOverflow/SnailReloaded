@@ -246,15 +246,8 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 void AStandardCombatGameState::HandleTeamScoring()
 {
-	EGameTeams TeamToScore = EGameTeams::None;
-	if(RoundEndResult == ERoundEndResult::None) return;
-	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
-	{
-		TeamToScore = GetTeamBySide(EBombTeam::Defender);
-	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
-	{
-		TeamToScore = GetTeamBySide(EBombTeam::Attacker);
-	}
+	EGameTeams TeamToScore = GetWinningTeam();
+	
 	ChangeScoreForTeam(TeamToScore, 1);
 }
 
@@ -343,6 +336,19 @@ float AStandardCombatGameState::GetBombActionTimeRemaining()
 		return GetWorldTimerManager().GetTimerElapsed(DefuseTimer);
 	}
 	return 0.f;
+}
+
+EGameTeams AStandardCombatGameState::GetWinningTeam()
+{
+	if(RoundEndResult == ERoundEndResult::None) return EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		return  GetTeamBySide(EBombTeam::Defender);
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		return GetTeamBySide(EBombTeam::Attacker);
+	}
+	return EGameTeams::None;
 }
 
 void AStandardCombatGameState::SetScoreForTeam(EGameTeams Team, int32 NewScore)
