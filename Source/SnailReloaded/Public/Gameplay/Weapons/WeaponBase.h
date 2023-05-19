@@ -77,6 +77,8 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
+	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	EItemIdentifier ItemIdentifier;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
@@ -84,6 +86,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", meta = (ClampMin=0))
 	float MinimumFireDelay;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	FName HandMountSocketName;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	EWeaponMode WeaponMode;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
@@ -114,6 +119,8 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* ImpactParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	UNiagaraSystem* BarrelParticleSystem;
 	
 	/**
 	 * @brief Maximum projectile deviation from barrel in degrees.
@@ -239,5 +246,7 @@ public:
 
 	UFUNCTION()
 	virtual void OnWeaponFireAnimationPlayed();
+	UFUNCTION()
+	virtual void SpawnBarrelParticles();
 	
 };
