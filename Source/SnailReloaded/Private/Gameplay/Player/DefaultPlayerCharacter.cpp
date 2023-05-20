@@ -86,6 +86,7 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, SecondaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, CurrentlyEquippedWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, WeaponCastMaxDistance);
+	DOREPLIFETIME(ADefaultPlayerCharacter, MeleeWeaponCastMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
@@ -749,10 +750,13 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 		SpawnParameters.Instigator = this;
 		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector(0.f, 0.f, 0.f), FRotator(0.f, 0.f, 0.f), SpawnParameters);
 		Weapon->SetIsEquipped(false);
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("weapon_socket"));
-		FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - Weapon->WeaponMesh->GetBoneLocation(FName("root"));
-		Weapon->AddActorLocalRotation(Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")));
-		Weapon->AddActorLocalOffset(-SocketLoc);
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, Weapon->HandMountSocketName);
+		// FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - Weapon->WeaponMesh->GetBoneLocation(FName("root"));
+		// FRotator DeltaRot = Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")) - Weapon->WeaponMesh->GetSocketRotation(FName("root"));
+		// Weapon->SetActorRelativeRotation(DeltaRot);
+		// Weapon->AddActorWorldOffset(-SocketLoc);
+		FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - GetMesh()->GetSocketLocation(Weapon->HandMountSocketName);
+		Weapon->AddActorWorldOffset(-SocketLoc);
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
 		{
@@ -824,6 +828,7 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 			//EquipWeapon;
 			SetCurrentlyEqippedWeapon(GetWeaponAtSlot(Slot));
 			CurrentlyEquippedWeapon->SetIsEquipped(true);
+			Client_PlayEquipAudio();
 		}
 	}else
 	{
@@ -929,6 +934,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 			FiredRoundsPerShootingEvent++;
 			//Play animation, then delay the fire event.
 			Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
+			Client_PlayFireAudio();
 			GetWorldTimerManager().SetTimer(MeleeWeaponDelayTimer, this, &ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback, GetCurrentlyEquippedWeapon()->FireAnimationDelay);
 		}
 	}
@@ -997,7 +1003,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
 
 				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
-				
+				Multi_SpawnBarrelParticles();
+				Client_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
@@ -1064,6 +1071,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+				Multi_SpawnBarrelParticles();
+				Client_PlayFireAudio();
 				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 
 				CalculateWeaponRecoil(TraceEndLoc);
@@ -1141,12 +1150,36 @@ bool ADefaultPlayerCharacter::WeaponHasAmmo()
 	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
 }
 
+void ADefaultPlayerCharacter::Client_PlayFireAudio_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->PlayFireSound();
+	}
+}
+
+void ADefaultPlayerCharacter::Multi_SpawnBarrelParticles_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->SpawnBarrelParticles();
+	}
+}
+
 void ADefaultPlayerCharacter::Multi_PlayWeaponFireAnimation_Implementation(UAnimMontage* AnimMontage)
 {
 	if(AnimMontage)
 	{
 		PlayAnimMontage(AnimMontage);
 		GetCurrentlyEquippedWeapon()->OnWeaponFireAnimationPlayed();
+	}
+}
+
+void ADefaultPlayerCharacter::Client_PlayEquipAudio_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->PlayEquipSound();
 	}
 }
 
