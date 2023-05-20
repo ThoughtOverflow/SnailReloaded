@@ -302,7 +302,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayWeaponFireAnimation(UAnimMontage* AnimMontage);
+	void Multi_PlayMeleeAnimation(UAnimMontage* AnimMontage);
 
 	UFUNCTION(BlueprintPure)
 	AWeaponBase* GetCurrentlyEquippedWeapon();

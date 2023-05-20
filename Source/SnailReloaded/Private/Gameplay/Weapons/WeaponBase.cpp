@@ -99,7 +99,7 @@ void AWeaponBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 	if(PropertyName == GET_MEMBER_NAME_CHECKED(AWeaponBase, MinimumFireDelay))
 	{
-		if(WeaponSlot != EWeaponSlot::Melee && MinimumFireDelay>60.f / FireRate)
+		if(WeaponSlot != EWeaponSlot::Melee && WeaponMode != EWeaponMode::SemiAutomatic && MinimumFireDelay>60.f / FireRate)
 		{
 			MinimumFireDelay = 60.f/FireRate;
 		}
@@ -129,6 +129,7 @@ void AWeaponBase::OnRep_ClipAmmo()
 void AWeaponBase::OnRep_Equipped()
 {
 	SetActorHiddenInGame(!GetIsEquipped());
+	
 }
 
 void AWeaponBase::OnRep_Reloading()
@@ -137,6 +138,17 @@ void AWeaponBase::OnRep_Reloading()
 }
 
 void AWeaponBase::OnRep_CanSell()
+{
+	
+}
+
+void AWeaponBase::PlayFireAnimation()
+{
+	WeaponMesh->GetAnimInstance()->Montage_Play(GetRandomFireMontage());
+	OnFireAnimPlayed();
+}
+
+void AWeaponBase::OnFireAnimPlayed()
 {
 	
 }
@@ -236,6 +248,7 @@ void AWeaponBase::WeaponFired()
 	if(HasAuthority())
 	{
 		Recoil_FiredShots++;
+		Multi_OnWeaponFired();
 	}
 }
 
@@ -310,9 +323,13 @@ UAnimMontage* AWeaponBase::GetRandomFireMontage()
 	
 }
 
-void AWeaponBase::OnWeaponFireAnimationPlayed()
+void AWeaponBase::Multi_OnWeaponFired_Implementation()
 {
-	
+	//Trigger fire anim on every player:
+	if(WeaponSlot != EWeaponSlot::Melee)
+	{
+		PlayFireAnimation();
+	}
 }
 
 void AWeaponBase::SpawnBarrelParticles()
