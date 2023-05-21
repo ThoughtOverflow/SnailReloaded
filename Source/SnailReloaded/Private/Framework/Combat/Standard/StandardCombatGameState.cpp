@@ -42,6 +42,12 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 	{
 		//Timer ran out.
 		RoundEndResult = ERoundEndResult::OutOfTime;
+	}else if(ExpiredPhase == EGamePhase::PostPlant)
+	{
+		if(PlantedBomb)
+		{
+			ExplodeBomb();
+		}
 	}
 
 	switch (CurrentGamePhase.GamePhase) {
@@ -59,15 +65,35 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	Super::OnPhaseSelected(NewPhase);
 	if(NewPhase == EGamePhase::EndPhase)
 	{
-		
-		if(PlantedBomb)
+
+		for(auto& PlayerState : GetAllGamePlayers())
 		{
-			ExplodeBomb();
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				if(GetWinningTeam() == PlayerState->GetTeam())
+				{
+					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundWon);
+				}else
+				{
+					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundLost);
+				}
+			}
 		}
-		
 		//Do team scoring - round finished.
 		HandleTeamScoring();
 		
+	}
+	if (NewPhase == EGamePhase::PostPlant)
+	{
+		for (auto& PlayerState : GetAllGamePlayers())
+		{
+			if (ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(
+				PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::BombPlanted);
+			}
+		}
 	}
 	//Update plant hint graphic.
 	for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
@@ -89,9 +115,26 @@ void AStandardCombatGameState::StartNewRound()
 		if(StandardCombatGameMode->IsMatchOver()) return;
 	}
 	
+	if(HasAuthority())
+	{
+		if(CurrentRound>1)
+		{
+			NewRoundPayout();
+		}
+		
+	}
 	//Reset win result;
 	RoundEndResult = ERoundEndResult::None;
 	RespawnPlayers();
+
+	for(auto& PlayerState : GetAllGamePlayers())
+	{
+		//Add prep phase noti:
+		if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+		{
+			CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+		}
+	}
 	
 	//Give bomb to random player;
 	if(HasAuthority())
@@ -126,8 +169,13 @@ void AStandardCombatGameState::ExplodeBomb()
 {
 	if(PlantedBomb)
 	{
+		if(IsSomeoneDefusing() && IsPlayerDefusing(LatestBombInteractor))
+		{
+			LatestBombInteractor->TryStopPlanting();
+		}
 		PlantedBomb->ExplodeBomb();
 		PlantedBomb->Destroy();
+		GetMinimapDefinition()->SetShowPlantMarker(false);
 		PlantedBomb = nullptr;
 	}
 	//Set win type to check post-report;
@@ -179,9 +227,15 @@ void AStandardCombatGameState::PlantTimerCallback()
 void AStandardCombatGameState::DefuseTimerCallback()
 {
 	//defuse the bomb:
-	if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	if(HasAuthority())
 	{
-		CombatGameMode->DefuseBomb(LatestBombInteractor);
+		if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			StandardCombatGameMode->DefuseBomb(LatestBombInteractor);
+		}else
+		{
+			UE_LOG(LogTemp, Error, TEXT("YOMOM"));
+		}
 	}
 }
 
@@ -230,19 +284,13 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, TeamBSide);
 	DOREPLIFETIME(AStandardCombatGameState, TeamAScore);
 	DOREPLIFETIME(AStandardCombatGameState, TeamBScore);
+	DOREPLIFETIME(AStandardCombatGameState, PlantedBomb);
 }
 
 void AStandardCombatGameState::HandleTeamScoring()
 {
-	EGameTeams TeamToScore = EGameTeams::None;
-	if(RoundEndResult == ERoundEndResult::None) return;
-	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
-	{
-		TeamToScore = GetTeamBySide(EBombTeam::Defender);
-	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
-	{
-		TeamToScore = GetTeamBySide(EBombTeam::Attacker);
-	}
+	EGameTeams TeamToScore = GetWinningTeam();
+	
 	ChangeScoreForTeam(TeamToScore, 1);
 }
 
@@ -258,7 +306,7 @@ void AStandardCombatGameState::SetPlayerPlanting(ADefaultPlayerCharacter* Player
 
 void AStandardCombatGameState::SetPlayerDefusing(ADefaultPlayerCharacter* Player, bool bDefusing)
 {
-	if(HasAuthority() && bIsPlayerPlanting != bDefusing)
+	if(HasAuthority() && bIsPlayerDefusing != bDefusing)
 	{
 		LatestBombInteractor = Player;
 		bIsPlayerDefusing = bDefusing;
@@ -278,12 +326,12 @@ bool AStandardCombatGameState::IsSomeoneDefusing()
 
 bool AStandardCombatGameState::IsPlayerPlanting(ADefaultPlayerCharacter* Player)
 {
-	return bIsPlayerDefusing && LatestBombInteractor == Player;
+	return bIsPlayerPlanting && LatestBombInteractor == Player;
 }
 
 bool AStandardCombatGameState::IsPlayerDefusing(ADefaultPlayerCharacter* Player)
 {
-	return bIsPlayerPlanting && LatestBombInteractor == Player;
+	return bIsPlayerDefusing && LatestBombInteractor == Player;
 }
 
 void AStandardCombatGameState::OnBombPlanted()
@@ -292,7 +340,31 @@ void AStandardCombatGameState::OnBombPlanted()
 	{
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
+		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddPlant();
 		SelectNewPhase(EGamePhase::PostPlant);
+
+		//Minimap maker:
+		GetMinimapDefinition()->SetBombLocation(PlantedBomb->GetActorLocation());
+		GetMinimapDefinition()->SetShowPlantMarker(true);
+		
+	}
+}
+
+void AStandardCombatGameState::OnBombDefused()
+{
+	if(HasAuthority())
+	{
+		SetPlayerDefusing(LatestBombInteractor, false);
+		SetPlayerPlanting(LatestBombInteractor, false);
+		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddDefuse();
+		if(PlantedBomb)
+		{
+			PlantedBomb->Destroy();
+		}
+		RoundEndResult = ERoundEndResult::BombDefuse;
+		SelectNewPhase(EGamePhase::EndPhase);
+		//Minimap maker:
+		GetMinimapDefinition()->SetShowPlantMarker(false);
 	}
 }
 
@@ -307,6 +379,32 @@ float AStandardCombatGameState::GetBombActionTimeRemaining()
 		return GetWorldTimerManager().GetTimerElapsed(DefuseTimer);
 	}
 	return 0.f;
+}
+
+EGameTeams AStandardCombatGameState::GetWinningTeam()
+{
+	if(RoundEndResult == ERoundEndResult::None) return EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		return  GetTeamBySide(EBombTeam::Defender);
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		return GetTeamBySide(EBombTeam::Attacker);
+	}
+	return EGameTeams::None;
+}
+EGameTeams AStandardCombatGameState::GetLosingTeam()
+{
+	if(RoundEndResult == ERoundEndResult::None) return EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		return GetTeamBySide(EBombTeam::Attacker);
+		
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		return  GetTeamBySide(EBombTeam::Defender);
+	}
+	return EGameTeams::None;
 }
 
 void AStandardCombatGameState::SetScoreForTeam(EGameTeams Team, int32 NewScore)
@@ -344,6 +442,34 @@ int32 AStandardCombatGameState::GetScoreForTeam(EGameTeams Team)
 	case EGameTeams::TeamA: return TeamAScore;
 	case EGameTeams::TeamB: return TeamBScore;
 	default: return 0;
+	}
+}
+
+void AStandardCombatGameState::NewRoundPayout()
+{
+	if(HasAuthority())
+	{
+
+		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetWinningTeam()))
+		{
+			PlayerState->ChangePlayerMoney(GetVictorReward());
+		}
+		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetLosingTeam()))
+		{
+			if(PlayerState->GetDeathState())
+			{
+				PlayerState->ChangePlayerMoney(GetLoserDeadReward());
+			}else
+			{
+				PlayerState->ChangePlayerMoney(GetLoserReward());
+			}
+			
+		}
+		for (ACombatPlayerState*PlayerState:GetAllGamePlayers())
+		{
+			PlayerState->ResetDeathFlag();
+		}
+		
 	}
 }
 

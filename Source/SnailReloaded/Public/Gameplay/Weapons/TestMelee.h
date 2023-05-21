@@ -17,5 +17,12 @@ class SNAILRELOADED_API ATestMelee : public AWeaponBase
 public:
 	
 	ATestMelee();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UNiagaraComponent* TrailParticleComponent;
+
+public:
+
+	virtual void OnFireAnimPlayed() override;
 	
 };

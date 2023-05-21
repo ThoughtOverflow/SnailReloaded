@@ -106,6 +106,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool CanSell();
 
+	UFUNCTION(BlueprintCallable)
+	void ResetShieldHeath();
+	
 	virtual float GetDamageToKill() override;
 	
 };

@@ -3,8 +3,10 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
+#include "SourceControlHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/Overlay.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
@@ -20,6 +22,18 @@ ACombatPlayerController::ACombatPlayerController()
 	
 }
 
+void ACombatPlayerController::OnToggleScoreboardTriggered(const FInputActionInstance& InputActionInstance)
+{
+	if(InputActionInstance.GetValue().Get<bool>())
+	{
+		ToggleScoreboard(true);
+	}else
+	{
+		ToggleScoreboard(false);
+	}
+	
+}
+
 void ACombatPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -28,6 +42,7 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 	{
 		ToggleTeamSelectionScreen(false);
 		CreatePlayerHud();
+		PlayerCharacter->ReloadPlayerBanner();
 		PlayerCharacter->OnPlayerPossessed(this);
 		
 	}
@@ -47,32 +62,58 @@ void ACombatPlayerController::BeginPlay()
 	
 }
 
-void ACombatPlayerController::CloseLastOpenMenu()
+void ACombatPlayerController::SetupInputComponent()
 {
-	//Last menu with cursor enabled
-	if(MenuWidgetsRef.Num() == 1)
+	Super::SetupInputComponent();
+
+	if(InputComponent)
 	{
-		SetShowMouseCursor(false);
-		SetInputMode(FInputModeGameOnly());
-		ActivateUIInputHandler(false);
+		UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+		EnhancedInputSubsystem->AddMappingContext(CombatUIMappingContext, 0);
+		
+		UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+
+		EnhancedInputComponent->BindAction(ScoreboardToggleAction, ETriggerEvent::Triggered, this, &ACombatPlayerController::OnToggleScoreboardTriggered);
+		EnhancedInputComponent->BindAction(ScoreboardToggleAction, ETriggerEvent::Completed, this, &ACombatPlayerController::OnToggleScoreboardTriggered);
+		
 	}
-	Super::CloseLastOpenMenu();
 }
 
-void ACombatPlayerController::ActivateUIInputHandler(bool bActivate)
+void ACombatPlayerController::TryBlockPlayerInputs(bool bBlock)
 {
-	Super::ActivateUIInputHandler(bActivate);
-	//Add player character input blocks as well.
-	if(bActivate)
+	if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(GetPawn()))
 	{
-		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(true);
+		DefaultPlayerCharacter->BlockPlayerInputs(bBlock);
+	}
+}
+
+void ACombatPlayerController::ResetNonMenuInputMode()
+{
+	//check for the team select menu:
+	if(TeamSelectionWidget->IsInViewport())
+	{
+		SetInputMode(FInputModeGameAndUI());
+		TryBlockPlayerInputs(true);
 	}else
 	{
-		Cast<ADefaultPlayerCharacter>(GetPawn())->BlockPlayerInputs(false);
+		SetInputMode(FInputModeGameOnly());
+		TryBlockPlayerInputs(false);
 	}
-	
 }
 
+
+void ACombatPlayerController::NotificationTimer_Callback()
+{
+	if(IsLocalController() && PlayerHud && PlayerHud->NotificationWrapper)
+	{
+		CurrentNotification->RemoveFromParent();
+	}
+}
+
+void ACombatPlayerController::Client_TriggerGameNotification_Implementation(ENotificationType Notification)
+{
+	TriggerGameNotification(Notification);
+}
 
 void ACombatPlayerController::CreatePlayerHud()
 {
@@ -108,6 +149,7 @@ void ACombatPlayerController::UpdatePlayerHud(UHudData* HudData)
 		PlayerHud->PlayerShieldHealth = HudData->GetPlayerShieldHealth();
 		PlayerHud->bIsReloading = HudData->GetIsReloading();
 		PlayerHud->bShowPlantHint = HudData->GetShowPlantHint();
+		PlayerHud->bShowDefuseHint = HudData->GetShowDefuseHint();
 	}
 }
 
@@ -122,9 +164,83 @@ UHudData* ACombatPlayerController::GetHudData()
 		SetPlayerHealthPercentage(PlayerHud->PlayerHealthPercentage)->
 		SetPlayerShieldHealth(PlayerHud->PlayerShieldHealth)->
 		SetReloading(PlayerHud->bIsReloading)->
-		SetShowPlantHint(PlayerHud->bShowPlantHint);
+		SetShowPlantHint(PlayerHud->bShowPlantHint)->
+		SetShowDefuseHint(PlayerHud->bShowDefuseHint);
 	}
 	return HudData;
+}
+
+void ACombatPlayerController::AddDamageIndicator(AActor* Source)
+{
+	if(IsLocalController())
+	{
+		int index = -1;
+		for(int i=0; i<DamageIndicatorWidgets.Num(); i++)
+		{
+			if(DamageIndicatorWidgets[i]->SourceActor == Source)
+			{
+				DamageIndicatorWidgets[i]->RemoveFromParent();
+				index = i;
+				break;
+			}
+		}
+		if(index != -1)
+		{
+			DamageIndicatorWidgets.RemoveAt(index);
+		}
+		
+		UDamageIndicatorWidget* DamageIndicatorWidget = CreateWidget<UDamageIndicatorWidget>(this, DamageIndicatorClass);
+		DamageIndicatorWidget->SourceActor = Source;
+		DamageIndicatorWidget->InitialSourceLocation = Source->GetActorLocation();
+		DamageIndicatorWidget->Angle=GetUpdatedAngleForDamageIndicator(Source->GetActorLocation());
+		DamageIndicatorWidget->AddToViewport();
+		DamageIndicatorWidgets.Add(DamageIndicatorWidget);
+		
+	}else
+	{
+		Client_AddDamageIndicator(Source);
+	}
+}
+
+void ACombatPlayerController::RemoveDamageIndicator(AActor* Source)
+{
+	int index = -1;
+	for(int i=0; i<DamageIndicatorWidgets.Num(); i++)
+	{
+		if(DamageIndicatorWidgets[i]->SourceActor == Source)
+		{
+			DamageIndicatorWidgets[i]->RemoveFromParent();
+			index = i;
+			break;
+		}
+	}
+	if(index != -1)
+	{
+		DamageIndicatorWidgets.RemoveAt(index);
+	}
+}
+
+
+void ACombatPlayerController::Client_AddDamageIndicator_Implementation(AActor* Source)
+{
+	AddDamageIndicator(Source);
+}
+
+
+float ACombatPlayerController::GetUpdatedAngleForDamageIndicator(FVector InitialSourceloc)
+{
+	if(!GetPawn()) return 0.f;
+	FVector ForwardVector = (InitialSourceloc-GetPawn()->GetActorLocation())*FVector(1.f, 1.f, 0.f);
+	ForwardVector.Normalize();
+	float DotX = ForwardVector.Dot(GetPawn()->GetActorRightVector());
+	float DotY = ForwardVector.Dot(GetPawn()->GetActorForwardVector());
+
+	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotX));
+	if(DotY < 0.f)
+	{
+		Angle = 360.f - Angle;
+	}
+	return Angle;
 }
 
 void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
@@ -139,21 +255,15 @@ void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
 		{
 			if(bOpen)
 			{
-				BuyMenu->AddToViewport();
-				SetShowMouseCursor(true);
-				SetInputMode(FInputModeGameAndUI());
-				ActivateUIInputHandler(true);
-				MenuWidgetsRef.Add(BuyMenu);
+				ToggleMenuWidget(BuyMenu, true);
+				TryBlockPlayerInputs(true);
 				
 			}else
 			{
 				if(BuyMenu->IsInViewport())
 				{
-					BuyMenu->RemoveFromParent();
-					SetShowMouseCursor(false);
-					SetInputMode(FInputModeGameOnly());
-					ActivateUIInputHandler(false);
-					if(MenuWidgetsRef.Contains(BuyMenu)) MenuWidgetsRef.Remove(BuyMenu);
+					ToggleMenuWidget(BuyMenu, false);
+					TryBlockPlayerInputs(false);
 				}
 			}
 		}
@@ -221,10 +331,12 @@ void ACombatPlayerController::ToggleTeamSelectionScreen(bool bOpen)
 		{
 			if(TeamSelectionWidget && !TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->AddToViewport();
 			SetShowMouseCursor(true);
+			SetInputMode(FInputModeGameAndUI());
 		}else
 		{
 			if(TeamSelectionWidget && TeamSelectionWidget->IsInViewport()) TeamSelectionWidget->RemoveFromParent();
 			SetShowMouseCursor(false);
+			SetInputMode(FInputModeGameOnly());
 		}
 	}else
 	{
@@ -287,6 +399,53 @@ int32 ACombatPlayerController::GetEnemyTeamScore()
 	}
 	return 0;
 }
+
+void ACombatPlayerController::ToggleScoreboard(bool bShow)
+{
+	if(IsLocalController())
+	{
+		if(ScoreBoardClass && !ScoreBoardWidget) ScoreBoardWidget = CreateWidget<UUserWidget>(this, ScoreBoardClass);
+
+		if(ScoreBoardWidget)
+		{
+			if(bShow)
+			{
+				if(!ScoreBoardWidget->IsInViewport()) ScoreBoardWidget->AddToViewport();
+			}else
+			{
+				if(ScoreBoardWidget->IsInViewport()) ScoreBoardWidget->RemoveFromParent();
+			}
+		}
+	}
+}
+
+void ACombatPlayerController::TogglePauseMenu(bool bOpen)
+{
+	TryBlockPlayerInputs(bOpen);
+	Super::TogglePauseMenu(bOpen);
+}
+
+void ACombatPlayerController::TriggerGameNotification(ENotificationType Notification)
+{
+	if(IsLocalController())
+	{
+		TSubclassOf<UGameNotification> NotificationClass = *NotificationWidgetClasses.Find(Notification);
+		if(CurrentNotification)
+		{
+			CurrentNotification->RemoveFromParent();
+		}
+		CurrentNotification = CreateWidget<UGameNotification>(this, NotificationClass);
+		if(PlayerHud && PlayerHud->NotificationWrapper)
+		{
+			PlayerHud->NotificationWrapper->AddChildToOverlay(CurrentNotification);
+		}
+		GetWorldTimerManager().SetTimer(NotificationTimer, this, &ACombatPlayerController::NotificationTimer_Callback, CurrentNotification->NotificationTime);
+	}else
+	{
+		Client_TriggerGameNotification(Notification);
+	}
+}
+
 
 void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)
 {

@@ -5,24 +5,26 @@
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "ThumbnailHelpers.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Framework/SnailGameInstance.h"
 #include "Framework/Combat/CombatGameMode.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
+#include "Framework/Savegames/SettingsSavegame.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Logging/LogMacros.h"
 #include "Net/UnrealNetwork.h"
-
+#include "World/Objects/Pickup.h"
 
 
 // Sets default values
@@ -33,7 +35,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerCamera"));
-	CameraComponent->SetupAttachment(GetMesh());
+	CameraComponent->SetupAttachment(GetMesh(), FName("head"));
 	CameraComponent->bUsePawnControlRotation = true;
 	CameraComponent->SetFieldOfView(90.f);
 
@@ -48,15 +50,27 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	PrimaryWeapon = nullptr;
 	SecondaryWeapon = nullptr;
 	MeleeWeapon = nullptr;
-	LineTraceMaxDistance = 20000.f;
+	WeaponCastMaxDistance = 20000.f;
+	MeleeWeaponCastMaxDistance = 180.f;
 	FiredRoundsPerShootingEvent = 0;
 	LastFireTime = 0.f;
 	bAllowAutoReload = true;
 
 	bHasBomb = false;
 	bIsInPlantZone = false;
-
 	TimeOfLastShot = 0.f;
+
+	PlayerHeader = CreateDefaultSubobject<UPlayerHeaderComponent>(TEXT("PlayerHeader"));
+	PlayerHeader->SetupAttachment(GetCapsuleComponent());
+
+	InteractionCastDistance = 1000.f;
+	PlayerInteractionData = FInteractionData();
+	
+	
+}
+
+void ADefaultPlayerCharacter::OnRep_BombEquipped()
+{
 	
 }
 
@@ -76,12 +90,16 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, PrimaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, SecondaryWeapon);
 	DOREPLIFETIME(ADefaultPlayerCharacter, CurrentlyEquippedWeapon);
-	DOREPLIFETIME(ADefaultPlayerCharacter, LineTraceMaxDistance);
+	DOREPLIFETIME(ADefaultPlayerCharacter, WeaponCastMaxDistance);
+	DOREPLIFETIME(ADefaultPlayerCharacter, MeleeWeaponCastMaxDistance);
 	DOREPLIFETIME(ADefaultPlayerCharacter, FiredRoundsPerShootingEvent);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowAutoReload);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowPlant);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bHasBomb);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInDefuseRadius);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowDefuse);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsBombEquipped);
 }
 
 EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
@@ -160,15 +178,21 @@ void ADefaultPlayerCharacter::Look(const FInputActionInstance& Action)
 {
 	FInputActionValue InputActionValue = Action.GetValue();
 	FVector2d LookVector = InputActionValue.Get<FVector2d>();
+
+	float SensMultiplier = 1.f;
+	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+	{
+		SensMultiplier = SnailGameInstance->SavedSettings->MouseSensitivity * GOLDEN_SENS;
+	}
 	
 	if(LookVector.X != 0.f)
 	{
-		AddControllerYawInput(LookVector.X);
+		AddControllerYawInput(LookVector.X * SensMultiplier);
 	}
 	
 	if(LookVector.Y != 0.f)
 	{
-		AddControllerPitchInput(LookVector.Y);	
+		AddControllerPitchInput(LookVector.Y * SensMultiplier);	
 	}
 }
 
@@ -290,7 +314,14 @@ void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action
 {
 	if(Action.GetValue().Get<bool>())
 	{
-		TryStartPlanting();
+		if(bIsInPlantZone)
+		{
+			TryStartPlanting();	
+		}else
+		{
+			TryEquipBomb();
+		}
+		
 		
 	}else
 	{
@@ -298,7 +329,24 @@ void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action
 	}
 }
 
+void ADefaultPlayerCharacter::HandleInteract(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		BeginInteract();
+	}else
+	{
+		EndInteract();
+	}
+}
 
+void ADefaultPlayerCharacter::HandleDropInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		DropCurrentWeapon();
+	}
+}
 
 
 void ADefaultPlayerCharacter::OnReloadComplete()
@@ -397,6 +445,7 @@ void ADefaultPlayerCharacter::OnHealthChanged(const FDamageResponse& DamageRespo
 			SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth())->
 			Submit();
 		}
+		
 	}
 }
 
@@ -413,6 +462,21 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(PrimaryWeapon) PrimaryWeapon->Destroy();
 		if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
+		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
+		{
+			CombatPlayerState->AddDeath();
+			CombatPlayerState->YouDied();
+		}
+		if(ADefaultPlayerCharacter* Source = Cast<ADefaultPlayerCharacter>(DamageResponse.SourceActor))
+		{
+			if(ACombatPlayerState* CombatPlayerState = Source->GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
+			{
+				CombatPlayerState->AddKill();
+				//On kill payout
+				CombatPlayerState->ChangePlayerMoney(Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld()))->GetKillReward());
+				
+			}	
+		}
 		GetCombatPlayerController()->ShowDeathScreen(true);
 		GetCombatPlayerController()->SelectOverviewCamera();
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
@@ -488,6 +552,31 @@ bool ADefaultPlayerCharacter::CanPlayerAttack()
 	return bCanShoot;
 }
 
+void ADefaultPlayerCharacter::DropCurrentWeapon()
+{
+	FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+	if(GetCurrentlyEquippedWeapon())
+	{
+		
+		
+		
+		APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+		Pickup->WeaponClass = GetCurrentlyEquippedWeapon()->GetClass();
+		Pickup->SkeletalMesh->SetSkeletalMesh(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSkeletalMeshAsset(), false);
+		Pickup->SkeletalMesh->SetRelativeScale3D(CurrentlyEquippedWeapon->WeaponMesh->GetRelativeScale3D() * Pickup->PickupGlobalScale);
+		Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
+		Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
+		Pickup->SetWidgetWeaponName(GetCurrentlyEquippedWeapon()->WeaponName);
+		RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
+	}else if(bIsBombEquipped && HasBomb())
+	{
+		//Spawn bomb:
+		ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
+		TryUnequipBomb();
+		SetHasBomb(false);
+	}
+}
+
 void ADefaultPlayerCharacter::OnRep_AllowPlant()
 {
 	//Show plant message:
@@ -500,6 +589,15 @@ void ADefaultPlayerCharacter::OnRep_AllowPlant()
 void ADefaultPlayerCharacter::OnRep_HasBomb()
 {
 	
+}
+
+void ADefaultPlayerCharacter::OnRep_AllowDefuse()
+{
+	//Show defuse message:
+	if(GetCombatPlayerController())
+	{
+		GetCombatPlayerController()->GetHudData()->SetShowDefuseHint(bAllowDefuse)->Submit();
+	}
 }
 
 
@@ -517,10 +615,106 @@ void ADefaultPlayerCharacter::CalculateWeaponRecoil(FVector& RayEndLocation)
 
 		TimeOfLastShot = GetWorld()->GetTimeSeconds();
 		
-		FVector RecoilActualVector = RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * LineTraceMaxDistance +
-			UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * LineTraceMaxDistance;
+		FVector RecoilActualVector = RecoilActualVector = UKismetMathLibrary::GetRightVector(GetController()->GetControlRotation()) * RecoilUnitVector.X * WeaponCastMaxDistance +
+			UKismetMathLibrary::GetUpVector(GetController()->GetControlRotation()) * RecoilUnitVector.Y * WeaponCastMaxDistance;
 
 		RayEndLocation += RecoilActualVector;
+	}
+}
+
+void ADefaultPlayerCharacter::CheckForInteractable()
+{
+	if(GetWorld() && GetCombatPlayerController() && !IsPendingKillPending())
+	{
+		FHitResult HitResult;
+		FVector TraceStartLocation = CameraComponent->GetComponentLocation();
+		FVector TraceEndLocation = TraceStartLocation + GetCombatPlayerController()->GetControlRotation().Vector() * InteractionCastDistance;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+
+		if(GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLocation, TraceEndLocation, ECC_Visibility, QueryParams))
+		{
+			if(UInteractionComponent* FoundComponent = Cast<UInteractionComponent>(HitResult.GetActor()->GetComponentByClass(UInteractionComponent::StaticClass())))
+			{
+				float CompDistance = (HitResult.GetActor()->GetActorLocation() - TraceStartLocation).Length();
+				if(FoundComponent != PlayerInteractionData.LastFocusedComponent && CompDistance <= FoundComponent->InteractionDistance)
+				{
+					InteractableFound(FoundComponent);
+					
+				}else if(PlayerInteractionData.LastFocusedComponent && CompDistance > FoundComponent->InteractionDistance)
+				{
+					NoNewInteractionComponent();
+				}
+				return;
+			}
+		}
+		NoNewInteractionComponent();
+		
+	}
+}
+
+void ADefaultPlayerCharacter::InteractableFound(UInteractionComponent* FoundComp)
+{
+	FoundComp->BeginFocus(this);
+	PlayerInteractionData.LastFocusedComponent = FoundComp;
+}
+
+void ADefaultPlayerCharacter::NoNewInteractionComponent()
+{
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->EndFocus(this);
+		PlayerInteractionData.LastFocusedComponent = nullptr;
+	}
+}
+
+void ADefaultPlayerCharacter::BeginInteract()
+{
+	if(!HasAuthority())
+	{
+		Server_BeginInteract();
+	}
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->BeginInteract(this);
+		if(FMath::IsNearlyZero(PlayerInteractionData.LastFocusedComponent->InteractionTime))
+		{
+			PlayerInteractionData.LastFocusedComponent->Interact(this);
+		}else
+		{
+			GetWorldTimerManager().SetTimer(InteractionTimer, this, &ADefaultPlayerCharacter::InteractionTimerCallback, PlayerInteractionData.LastFocusedComponent->InteractionTime);
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::EndInteract()
+{
+	if(!HasAuthority())
+	{
+		Server_EndInteract();
+	}
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->EndInteract(this);
+		GetWorldTimerManager().ClearTimer(InteractionTimer);
+	}
+}
+
+void ADefaultPlayerCharacter::Server_BeginInteract_Implementation()
+{
+	BeginInteract();
+}
+
+void ADefaultPlayerCharacter::Server_EndInteract_Implementation()
+{
+	EndInteract();
+}
+
+void ADefaultPlayerCharacter::InteractionTimerCallback()
+{
+	if(PlayerInteractionData.LastFocusedComponent)
+	{
+		PlayerInteractionData.LastFocusedComponent->Interact(this);
 	}
 }
 
@@ -529,6 +723,9 @@ void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//Check the interactable:
+	CheckForInteractable();
+	
 }
 
 // Called to bind functionality to input
@@ -553,6 +750,9 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(ToggleBuyMenu, ETriggerEvent::Started, this, &ADefaultPlayerCharacter::HandleToggleBuyMenu);
 	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandlePlantBomb);
 	EnhancedInputComponent->BindAction(PlantBomb, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandlePlantBomb);
+	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleInteract);
+	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleInteract);
+	EnhancedInputComponent->BindAction(DropItemInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleDropInput);
 	
 }
 
@@ -563,7 +763,7 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 		//Add wpn after possessing
 		if(TestWpn)
 		{
-			AssignWeapon(TestWpn);
+			AssignWeapon(TestWpn, EEquipCondition::EquipAlways);
 		}
 
 		//Load Default hud for player UI
@@ -573,16 +773,22 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 }
 
 
-AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
+AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition)
 {
 	if(HasAuthority())
 	{
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = this;
-		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector(0.f, 0.f, 0.f), FRotator(0.f, 90.f, 0.f), SpawnParameters);
+		AWeaponBase* Weapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector(0.f, 0.f, 0.f), FRotator(0.f, 0.f, 0.f), SpawnParameters);
 		Weapon->SetIsEquipped(false);
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("hand_r"));
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, Weapon->HandMountSocketName);
+		// FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - Weapon->WeaponMesh->GetBoneLocation(FName("root"));
+		// FRotator DeltaRot = Weapon->WeaponMesh->GetSocketRotation(FName("grip_socket")) - Weapon->WeaponMesh->GetSocketRotation(FName("root"));
+		// Weapon->SetActorRelativeRotation(DeltaRot);
+		// Weapon->AddActorWorldOffset(-SocketLoc);
+		FVector SocketLoc = Weapon->WeaponMesh->GetSocketLocation(FName("grip_socket")) - GetMesh()->GetSocketLocation(Weapon->HandMountSocketName);
+		Weapon->AddActorWorldOffset(-SocketLoc);
 		 AWeaponBase* PrevWpn = GetWeaponAtSlot(Weapon->WeaponSlot);
 		if(PrevWpn)
 		{
@@ -592,12 +798,34 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 		case EWeaponSlot::Primary: PrimaryWeapon=Weapon; break;
 		case EWeaponSlot::Secondary: SecondaryWeapon=Weapon; break;
 		case EWeaponSlot::Melee: MeleeWeapon=Weapon; break;
-		default:;
+		default: break;
 		}
+
+		if(EquipCondition == EEquipCondition::EquipAlways)
+		{
+			EquipWeapon(Weapon->WeaponSlot);
+		}else if(EquipCondition == EEquipCondition::EquipIfStronger)
+		{
+			if(GetCurrentlyEquippedWeapon())
+			{
+				if(CurrentlyEquippedWeapon->WeaponSlot != EWeaponSlot::None && Weapon->WeaponSlot != EWeaponSlot::None)
+				{
+					if((uint8)CurrentlyEquippedWeapon->WeaponSlot>(uint8)Weapon->WeaponSlot)
+					{
+						EquipWeapon(Weapon->WeaponSlot);
+					}
+				}
+				
+			}else
+			{
+				EquipWeapon(Weapon->WeaponSlot);
+			}
+		}
+		
 		return Weapon;
 	}else
 	{
-		Server_AssignWeapon(WeaponClass);
+		Server_AssignWeapon(WeaponClass, EquipCondition);
 	}
 	return nullptr;
 }
@@ -636,9 +864,9 @@ void ADefaultPlayerCharacter::Server_RemoveWeapon_Implementation(EWeaponSlot Slo
 }
 
 
-void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
+void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition)
 {
-	AssignWeapon(WeaponClass);
+	AssignWeapon(WeaponClass, EquipCondition);
 }
 
 AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
@@ -651,9 +879,14 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 			{
 				UnequipWeapon();
 			}
+			if(bIsBombEquipped)
+			{
+				TryUnequipBomb();
+			}
 			//EquipWeapon;
 			SetCurrentlyEqippedWeapon(GetWeaponAtSlot(Slot));
 			CurrentlyEquippedWeapon->SetIsEquipped(true);
+			Client_PlayEquipAudio();
 		}
 	}else
 	{
@@ -753,30 +986,38 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 {
 	if (HasAuthority() && GetController() && !IsPendingKillPending())
 	{
-		FHitResult HitResult;
-		FVector TraceStartLoc = CameraComponent->GetComponentLocation();
-		FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * 100.f;
-		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(this);
+		
 		if(CanPlayerAttack())
 		{
 			FiredRoundsPerShootingEvent++;
-			
-			if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
-			{
-				Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
-				if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
-				{
-					if(!HealthComponent->bIsDead)
-					{
-						FDamageRequest DamageRequest = FDamageRequest();
-						DamageRequest.SourceActor = this;
-						DamageRequest.TargetActor = HitResult.GetActor();
-						DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
+			//Play animation, then delay the fire event.
+			Multi_PlayMeleeAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
+			Multi_PlayFireAudio();
+			GetWorldTimerManager().SetTimer(MeleeWeaponDelayTimer, this, &ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback, GetCurrentlyEquippedWeapon()->FireAnimationDelay);
+		}
+	}
+}
 
-						Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
-					}
-				}
+void ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback()
+{
+	FHitResult HitResult;
+	FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+	FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * MeleeWeaponCastMaxDistance;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
+	{
+		Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
+		if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
+		{
+			if(!HealthComponent->bIsDead)
+			{
+				FDamageRequest DamageRequest = FDamageRequest();
+				DamageRequest.SourceActor = this;
+				DamageRequest.TargetActor = HitResult.GetActor();
+				DamageRequest.DeltaDamage = -GetCurrentlyEquippedWeapon()->ConstantDamage;
+
+				Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
 			}
 		}
 	}
@@ -815,13 +1056,16 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				}
 				
 				float MaxEndDeviation = FMath::Tan(
-					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * LineTraceMaxDistance;
+					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * WeaponCastMaxDistance;
 				float MinEndDeviation = FMath::Tan(
-					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * LineTraceMaxDistance;
+					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
+				
+				Multi_SpawnBarrelParticles();
+				Multi_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
-						LineTraceMaxDistance;
+						WeaponCastMaxDistance;
 
 
 					float DeviationDistance = FMath::RandRange(MinEndDeviation, MaxEndDeviation);
@@ -872,7 +1116,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		}
 		else
 		{
-			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * LineTraceMaxDistance;
+			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * WeaponCastMaxDistance;
 			
 			
 			//Can Shoot:
@@ -884,6 +1128,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
+				Multi_SpawnBarrelParticles();
+				Multi_PlayFireAudio();
 
 				CalculateWeaponRecoil(TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
@@ -960,6 +1206,39 @@ bool ADefaultPlayerCharacter::WeaponHasAmmo()
 	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
 }
 
+void ADefaultPlayerCharacter::Multi_PlayFireAudio_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->PlayFireSound();
+	}
+}
+
+void ADefaultPlayerCharacter::Multi_SpawnBarrelParticles_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->SpawnBarrelParticles();
+	}
+}
+
+void ADefaultPlayerCharacter::Multi_PlayMeleeAnimation_Implementation(UAnimMontage* AnimMontage)
+{
+	if(AnimMontage)
+	{
+		PlayAnimMontage(AnimMontage);
+		GetCurrentlyEquippedWeapon()->OnFireAnimPlayed();
+	}
+}
+
+void ADefaultPlayerCharacter::Client_PlayEquipAudio_Implementation()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		GetCurrentlyEquippedWeapon()->PlayEquipSound();
+	}
+}
+
 AWeaponBase* ADefaultPlayerCharacter::GetCurrentlyEquippedWeapon()
 {
 	return CurrentlyEquippedWeapon;
@@ -996,7 +1275,10 @@ AWeaponBase* ADefaultPlayerCharacter::EquipStrongestWeapon()
 	{
 		StrongestWeapon = MeleeWeapon;
 	}
-	EquipWeapon(StrongestWeapon->WeaponSlot);
+	if(StrongestWeapon)
+	{
+		EquipWeapon(StrongestWeapon->WeaponSlot);	
+	}
 	return StrongestWeapon;
 }
 
@@ -1175,6 +1457,11 @@ bool ADefaultPlayerCharacter::IsPlantAllowed() const
 	return bAllowPlant;
 }
 
+bool ADefaultPlayerCharacter::IsDefuseAllowed()
+{
+	return bAllowDefuse;
+}
+
 void ADefaultPlayerCharacter::SetIsInPlantZone(bool bIs)
 {
 	if(HasAuthority())
@@ -1202,6 +1489,7 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 		if(AStandardCombatGameState* CombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
 		{
 			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
+			bAllowPlant &= !CombatGameState->IsSomeonePlanting();
 			//cancel plant if somehow it became false;
 			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
 			{
@@ -1212,19 +1500,62 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 	}
 }
 
+void ADefaultPlayerCharacter::CheckDefuseRequirements()
+{
+	if(HasAuthority())
+	{
+		bAllowDefuse = true;
+		if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			if(ACombatPlayerController* CombatPlayerController = GetCombatPlayerController())
+			{
+				bAllowDefuse &= StandardCombatGameState->GetSideByTeam(CombatPlayerController->GetPlayerState<ACombatPlayerState>()->GetTeam()) == EBombTeam::Defender;
+				bAllowDefuse &= !StandardCombatGameState->IsSomeoneDefusing();
+				bAllowDefuse &= bIsInDefuseRadius;
+			}
+		}
+		OnRep_AllowDefuse();
+	}
+
+}
+
 void ADefaultPlayerCharacter::TryStartPlanting()
 {
 	if(HasAuthority())
 	{
-		CheckPlantRequirements();
-		if(IsPlantAllowed())
+
+		if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
 		{
-			if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+			if(StandardCombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::PostPlant)
 			{
-				CancelReload();
-				CombatGameMode->BeginPlanting(this);
+				//Defuse:
+				if(ACombatPlayerController* CombatPlayerController = GetCombatPlayerController())
+				{
+					if(IsDefuseAllowed())
+					{
+						if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+						{
+							CancelReload();
+							CombatGameMode->BeginDefuse(this);
+						}
+					}
+				}
+				
+			}else
+			{
+				//Plant:
+				CheckPlantRequirements();
+				if(IsPlantAllowed())
+				{
+					if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+					{
+						CancelReload();
+						CombatGameMode->BeginPlanting(this);
+					}
+				}
 			}
 		}
+
 		
 		
 	}else
@@ -1246,12 +1577,88 @@ void ADefaultPlayerCharacter::TryStopPlanting()
 		if(AStandardCombatGameMode* CombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			CombatGameMode->EndPlanting(this);
+			CombatGameMode->EndDefuse(this);
 		}
 		
 	}else
 	{
 		Server_TryStopPlanting();
 	}
+}
+
+void ADefaultPlayerCharacter::SetIsInDefuseRadius(bool bIn)
+{
+	if(HasAuthority())
+	{
+		bIsInDefuseRadius = bIn;
+		CheckDefuseRequirements();
+	}
+}
+
+bool ADefaultPlayerCharacter::IsInDefuseRadius()
+{
+	return bIsInDefuseRadius;
+}
+
+void ADefaultPlayerCharacter::ReloadPlayerBanner()
+{
+	PlayerHeader->Reload();
+}
+
+float ADefaultPlayerCharacter::GetInteractionPercentage()
+{
+	if(GetWorldTimerManager().IsTimerActive(InteractionTimer) && PlayerInteractionData.LastFocusedComponent)
+	{
+		return GetWorldTimerManager().GetTimerElapsed(InteractionTimer) / PlayerInteractionData.LastFocusedComponent->InteractionTime;
+	}
+	return 0.f;
+}
+
+void ADefaultPlayerCharacter::TryEquipBomb()
+{
+	if(HasAuthority())
+	{
+
+		if(HasBomb() && bIsBombEquipped == false)
+		{
+			UnequipWeapon();
+			bIsBombEquipped = true;
+			OnRep_BombEquipped();
+			BombInHandActor = GetWorld()->SpawnActor<AActor>(HeldBombClass, FVector::ZeroVector, FRotator::ZeroRotator);
+			BombInHandActor->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,  FName("hand_r"));
+		}
+		
+	}else
+	{
+		Server_TryEquipBomb();
+	}
+}
+
+void ADefaultPlayerCharacter::TryUnequipBomb()
+{
+	if(HasAuthority())
+	{
+		if(HasBomb() && bIsBombEquipped == true)
+		{
+			bIsBombEquipped = false;
+			OnRep_BombEquipped();
+			BombInHandActor->Destroy();
+			BombInHandActor = nullptr;
+		}
+	}else
+	{
+		Server_TryUnequipBomb();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryEquipBomb_Implementation()
+{
+	TryEquipBomb();
+}
+
+void ADefaultPlayerCharacter::Server_TryUnequipBomb_Implementation()
+{
+	TryUnequipBomb();
 }
 
 void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()

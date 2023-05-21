@@ -5,9 +5,12 @@
 #include "CoreMinimal.h"
 #include "Components/HealthComponent.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Gameplay/UI/DamageIndicatorWidget.h"
+#include "Gameplay/UI/GameNotification.h"
 #include "Gameplay/UI/TeamSelectionWidget.h"
 #include "CombatPlayerController.generated.h"
 
+enum class ENotificationType : uint8;
 struct FInputActionInstance;
 class UInputMappingContext;
 class UInputAction;
@@ -48,19 +51,53 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	UTeamSelectionWidget* TeamSelectionWidget;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
+	TSubclassOf<UUserWidget> ScoreBoardClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* ScoreBoardWidget;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
+	TSubclassOf<UDamageIndicatorWidget> DamageIndicatorClass;
+	UPROPERTY(BlueprintReadWrite)
+	TArray<UDamageIndicatorWidget*> DamageIndicatorWidgets;
 	
 
 protected:
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UInputMappingContext* CombatUIMappingContext;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UInputAction* ScoreboardToggleAction;
+
+	UFUNCTION()
+	void OnToggleScoreboardTriggered(const FInputActionInstance& InputActionInstance);
+
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void BeginPlay() override;
+
+	virtual void SetupInputComponent() override;
+
+	UFUNCTION()
+	void TryBlockPlayerInputs(bool bBlock);
+
+	virtual void ResetNonMenuInputMode() override;
+
+	//Notification classes.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TMap<ENotificationType, TSubclassOf<UGameNotification>> NotificationWidgetClasses;
+	UPROPERTY()
+	UGameNotification* CurrentNotification;
+	UPROPERTY()
+	FTimerHandle NotificationTimer;
+	UFUNCTION()
+	void NotificationTimer_Callback();
+	UFUNCTION(Client, Reliable)
+	void Client_TriggerGameNotification(ENotificationType Notification);
 	
-	virtual void CloseLastOpenMenu() override;
 
 
 public:
-
-	virtual void ActivateUIInputHandler(bool bActivate) override;
+	
 	
 	//Player HUD
 	
@@ -72,6 +109,15 @@ public:
 	void UpdatePlayerHud(UHudData* HudData);
 	UFUNCTION(BlueprintPure)
 	UHudData* GetHudData();
+	UFUNCTION()
+	void AddDamageIndicator(AActor* Source);
+	UFUNCTION(BlueprintCallable)
+	void RemoveDamageIndicator(AActor* Source);
+	UFUNCTION(Client, Reliable)
+	void Client_AddDamageIndicator(AActor* Source);
+	UFUNCTION(BlueprintPure)
+	float GetUpdatedAngleForDamageIndicator(FVector InitialSourceloc);
+	
 
 	//Buy menu:
 
@@ -116,6 +162,18 @@ public:
 	int32 GetAllyTeamScore();
 	UFUNCTION(BlueprintPure)
 	int32 GetEnemyTeamScore();
+
+	//Scoreboard:
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleScoreboard(bool bShow);
+
+	//Pause menu when player exists
+	virtual void TogglePauseMenu(bool bOpen) override;
+
+	//Game Notifications:
+	void TriggerGameNotification(ENotificationType Notification);
+	
 	
 
 	

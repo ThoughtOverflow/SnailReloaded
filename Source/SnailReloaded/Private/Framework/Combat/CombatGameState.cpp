@@ -5,16 +5,30 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "World/Objects/OverviewCamera.h"
 #include "World/Objects/TeamPlayerStart.h"
 
+
+
 ACombatGameState::ACombatGameState()
 {
 	InitialPlayerMoney = 5000;
 	CurrentRound = 0;
+	BaseScore =25;
+	KillValue =30;
+	DeathValue=5;
+	BombValue =10;
+	KillReward =200;
+	PlantReward =300;
+	VictorReward =3000;
+	LoserReward =2300;
 }
+
+
+
 
 void ACombatGameState::OnRep_GamePhase()
 {
@@ -32,7 +46,11 @@ void ACombatGameState::BeginPlay()
 	{
 		LevelOverviewCamera = OverviewCamera;
 	}
-	
+	if(AMinimapDefinition* MapDef = Cast<AMinimapDefinition>(UGameplayStatics::GetActorOfClass(GetWorld(), AMinimapDefinition::StaticClass())))
+	{
+		MinimapDefinition = MapDef;
+	}
+	checkf(MinimapDefinition, TEXT("No minimap definition found in level!"));
 }
 
 void ACombatGameState::OnRep_MatchPause()
@@ -79,7 +97,17 @@ void ACombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 
 void ACombatGameState:: OnPhaseSelected(EGamePhase NewPhase)
 {
-	
+	if(NewPhase == EGamePhase::PostPlant)
+	{
+		for(auto& PlayerState : GetAllGamePlayers())
+		{
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+			}
+		}
+	}
 }
 
 void ACombatGameState::SetPhaseTimer()
@@ -145,6 +173,13 @@ void ACombatGameState::UnpauseMatch()
 	}
 }
 
+AMinimapDefinition* ACombatGameState::GetMinimapDefinition()
+{
+	return MinimapDefinition;
+}
+
+
+
 void ACombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -192,6 +227,26 @@ void ACombatGameState::StartNewRound()
 		{
 			CombatGameMode->StartRound();
 		}
+		for(ACombatPlayerState* PlayerState:GetAllGamePlayers())
+		{
+			if(CurrentRound == 1)
+			{
+				PlayerState->SetPlayerMoney(InitialPlayerMoney);
+			}
+			//Reset HP and Shield.
+			if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				DefaultPlayerCharacter->PlayerHealthComponent->ResetHealth();
+				DefaultPlayerCharacter->PlayerHealthComponent->ResetShieldHeath();
+			}
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+			}
+			
+		}
+		
 	}
 }
 
@@ -300,4 +355,53 @@ TArray<ACombatPlayerState*> ACombatGameState::GetAllPlayersOfTeam(EGameTeams Tea
 		}
 	}
 	return Players;
+}
+
+int32 ACombatGameState::GetBaseScore() const
+{
+	return BaseScore;
+}
+
+int32 ACombatGameState::GetKillValue() const
+{
+	return KillValue;
+}
+
+int32 ACombatGameState::GetDeathValue() const
+{
+	return DeathValue;
+}
+
+int32 ACombatGameState::GetAssistValue() const
+{
+	return AssistValue;
+}
+
+int32 ACombatGameState::GetBombValue() const
+{
+	return BombValue;
+}
+
+int32 ACombatGameState::GetKillReward() const
+{
+	return KillReward;
+}
+
+int32 ACombatGameState::GetPlantReward() const
+{
+	return PlantReward;
+}
+
+int32 ACombatGameState::GetVictorReward() const
+{
+	return VictorReward;
+}
+int32 ACombatGameState::GetLoserReward() const
+{
+	return LoserReward;
+}
+
+int32 ACombatGameState::GetLoserDeadReward() const
+{
+	return LoserDeadReward;
 }

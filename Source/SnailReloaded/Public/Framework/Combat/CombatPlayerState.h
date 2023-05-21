@@ -25,14 +25,31 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerMoney)
 	int32 PlayerMoney;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerKillCount;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerDeathCount;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerAssistCount;
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
+	int32 PlayerScore;
+	UPROPERTY(Replicated=OnRep_ScoreUpdate)
+	int32 PlayerPlantCount;
+	UPROPERTY(Replicated=OnRep_ScoreUpdate)
+	int32 PlayerDefuseCount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool IsDeadPreviousRound;
+	
 
 	UFUNCTION()
 	void OnRep_GameTeam();
-
+	
 	UFUNCTION()
 	void OnRep_PlayerMoney();
+	UFUNCTION()
+	void OnRep_ScoreUpdate();
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
 
@@ -44,6 +61,36 @@ public:
 	void ChangePlayerMoney(int32 DeltaMoney);
 	UFUNCTION(BlueprintPure)
 	int32 GetPlayerMoney();
+	UFUNCTION(BlueprintCallable)
+	int32 AddKill();
+	UFUNCTION(BlueprintCallable)
+	int32 AddDeath();
+	UFUNCTION(BlueprintCallable)
+	int32 AddAssist();
+	UFUNCTION(BlueprintCallable)
+	int32 AddPlant();
+	UFUNCTION(BlueprintCallable)
+	int32 AddDefuse();
+	UFUNCTION(BlueprintPure)
+	int32 GetKills();
+	UFUNCTION(BlueprintPure)
+	int32 GetDeaths();
+	UFUNCTION(BlueprintPure)
+	int32 GetAssists();
+	UFUNCTION(BlueprintPure)
+	int32 GetPlants();
+	UFUNCTION(BlueprintPure)
+	int32 GetDefuses();
+	UFUNCTION(BlueprintPure)
+	int32 GetScores();
+	UFUNCTION(BlueprintCallable)
+	void CalculateScore();
+	UFUNCTION(BlueprintCallable)
+	void YouDied();
+	UFUNCTION(BlueprintCallable)
+	void ResetDeathFlag();
+	UFUNCTION(BlueprintPure)
+	bool GetDeathState();
 	UFUNCTION(BlueprintPure)
 	EGameTeams GetTeam();
 	UFUNCTION(BlueprintCallable)

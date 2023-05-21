@@ -6,6 +6,7 @@
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/HealthComponent.h"
 #include "Framework/Combat/CombatGameState.h"
+#include "Framework/Combat/CombatPlayerController.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 
@@ -52,7 +53,7 @@ void ACombatGameMode::Logout(AController* Exiting)
 	}
 }
 
-FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest& DamageRequest)
+FDamageResponse ACombatGameMode::ChangeObjectHealth(const FDamageRequest& DamageRequest)
 {
 	if(DamageRequest.SourceActor)
 	{
@@ -60,8 +61,18 @@ FDamageResponse ACombatGameMode::ChangeObjectHealth(FDamageRequest& DamageReques
 		{
 			if(UHealthComponent* SourceHealthComponent = Cast<UHealthComponent>(DamageRequest.SourceActor->GetComponentByClass(UHealthComponent::StaticClass())))
 			{
-				DamageRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
-				const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(DamageRequest);
+				FDamageRequest ModifiedRequest = DamageRequest;
+				if(DamageRequest.DeltaDamage < 0.f)
+				{
+					//Only apply modifiers for damage, not heal.
+					ModifiedRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
+
+					if(ADefaultPlayerCharacter* TargetPlayer = Cast<ADefaultPlayerCharacter>(DamageRequest.TargetActor))
+					{
+						Cast<ACombatPlayerController>(TargetPlayer->GetController())->AddDamageIndicator(DamageRequest.SourceActor);
+					}
+				}
+				const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(ModifiedRequest);
 				return Response;
 			}
 		}
@@ -89,6 +100,7 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 							//Raw buy
 							CombatPlayerState->ChangePlayerMoney(-ItemPrice);
 							PlayerCharacter->UpdateShieldProperties(*ShieldData);
+							PlayerCharacter->StoreCurrentShieldData();
 							PlayerCharacter->SetCanSellCurrentShield(true);
 						}
 					}else
@@ -125,9 +137,8 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 					{
 						if(!PlayerCharacter->GetWeaponAtSlot(WeaponClass.GetDefaultObject()->WeaponSlot))
 						{
-							if(AWeaponBase* Weapon = PlayerCharacter->AssignWeapon(WeaponClass))
+							if(AWeaponBase* Weapon = PlayerCharacter->AssignWeapon(WeaponClass, EEquipCondition::EquipIfStronger))
 							{
-								PlayerCharacter->EquipStrongestWeapon();
 								//Remove monkey:
 								CombatPlayerState->ChangePlayerMoney(-ItemPrice);
 								return true;
@@ -252,7 +263,7 @@ void ACombatGameMode::StartRound()
 			if (CombatGameState->GetCurrentRound() < MaxRounds && !bMatchEnded)
 			{
 				CombatGameState->SetCurrentRound(CombatGameState->GetCurrentRound() + 1);
-				CombatGameState->SetCurrentGamePhase(GamePhases[0]);	
+				CombatGameState->SetCurrentGamePhase(GamePhases[0]);
 			}else
 			{
 				if(bAllowOvertime)

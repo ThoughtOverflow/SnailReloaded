@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+class USoundCue;
 USTRUCT(BlueprintType)
 struct FWeaponRecoil
 {
@@ -44,16 +45,18 @@ enum class EItemIdentifier : uint8
 	DefaultMelee = 3,
 	DefaultAR = 4,
 	DefaultShotgun = 5,
-	NullShield = 6
+	NullShield = 6,
+	VoltyShorty = 7,
+	Triad = 8
 };
 
 UENUM(BlueprintType)
 enum class EWeaponSlot : uint8
 {
-	None = 3,
-	Primary = 2,
-	Secondary = 1,
-	Melee = 0
+	None = 0,
+	Primary = 1,
+	Secondary = 2,
+	Melee = 3
 	
 };
 
@@ -77,6 +80,8 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
+	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	EItemIdentifier ItemIdentifier;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
@@ -84,6 +89,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", meta = (ClampMin=0))
 	float MinimumFireDelay;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	FName HandMountSocketName;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	EWeaponMode WeaponMode;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
@@ -114,6 +122,12 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* ImpactParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	UNiagaraSystem* BarrelParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	USoundBase* FireSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	USoundBase* EquipSound;
 	
 	/**
 	 * @brief Maximum projectile deviation from barrel in degrees.
@@ -134,6 +148,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* WeaponMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	TMap<UAnimMontage*, float> FireAnimations;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	float FireAnimationDelay;
+	
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnAmmoUpdated OnAmmoUpdated;
@@ -178,6 +197,15 @@ protected:
 	void OnRep_Reloading();
 	UFUNCTION()
 	void OnRep_CanSell();
+
+	//Anim functions:
+
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnWeaponFired();
+
+	UFUNCTION()
+	virtual void PlayFireAnimation();
 
 #if WITH_EDITOR
 
@@ -228,5 +256,18 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	FVector2D GetRecoilValue();
+
+	UFUNCTION(BlueprintCallable)
+	UAnimMontage* GetRandomFireMontage();
+	
+	UFUNCTION()
+	virtual void SpawnBarrelParticles();
+	UFUNCTION()
+	virtual void PlayFireSound();
+	UFUNCTION()
+	virtual void PlayEquipSound();
+
+	UFUNCTION()
+	virtual void OnFireAnimPlayed();
 	
 };

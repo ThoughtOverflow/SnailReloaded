@@ -3,6 +3,8 @@
 
 #include "Gameplay/Weapons/TestMelee.h"
 
+#include "NiagaraComponent.h"
+
 ATestMelee::ATestMelee()
 {
 	WeaponName = NSLOCTEXT("WeaponNames", "StandardMelee", "Knife");
@@ -10,4 +12,18 @@ ATestMelee::ATestMelee()
 	bUseConstantDamage = true;
 	ConstantDamage = 50.f;
 	MinimumFireDelay = 2.f;
+
+	TrailParticleComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TrailParticle"));
+	TrailParticleComponent->SetupAttachment(WeaponMesh);
+	
+}
+
+void ATestMelee::OnFireAnimPlayed()
+{
+	Super::OnFireAnimPlayed();
+
+	if(TrailParticleComponent)
+	{
+		TrailParticleComponent->ActivateSystem(true);
+	}
 }

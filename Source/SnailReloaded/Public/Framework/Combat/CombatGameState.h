@@ -6,6 +6,7 @@
 #include "CombatGameMode.h"
 #include "CombatPlayerState.h"
 #include "Framework/DefaultGameState.h"
+#include "World/Objects/MinimapDefinition.h"
 #include "World/Objects/OverviewCamera.h"
 #include "CombatGameState.generated.h"
 
@@ -28,6 +29,10 @@ struct FGamePhase;
 UCLASS()
 class SNAILRELOADED_API ACombatGameState : public ADefaultGameState
 {
+public:
+
+
+private:
 	GENERATED_BODY()
 
 public:
@@ -44,6 +49,28 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnGamePlayersUpdated OnGamePlayersUpdated;
 
+	UPROPERTY(BlueprintReadWrite)
+	int32 BaseScore;
+	UPROPERTY(BlueprintReadWrite)
+	int32 KillValue;
+	UPROPERTY(BlueprintReadWrite)
+	int32 DeathValue;
+	UPROPERTY(BlueprintReadWrite)
+	int32 AssistValue;
+	UPROPERTY(BlueprintReadWrite)
+	int32 BombValue;
+	UPROPERTY(BlueprintReadWrite)
+	int32 KillReward;
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlantReward;
+	UPROPERTY(BlueprintReadWrite)
+	int32 VictorReward;
+	UPROPERTY(BlueprintReadWrite)
+	int32 LoserReward;
+	UPROPERTY(BlueprintReadWrite)
+	int32 LoserDeadReward;
+
+
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_MatchPause)
@@ -59,11 +86,15 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 	AOverviewCamera* LevelOverviewCamera;
+	UPROPERTY()
+	AMinimapDefinition* MinimapDefinition;
 	
 	FTimerHandle PhaseTimer;
 
 	UPROPERTY(ReplicatedUsing=OnRep_GamePlayers)
 	TArray<ACombatPlayerState*> GamePlayers;
+
+	
 
 	UFUNCTION()
 	void PhaseTimerCallback();
@@ -127,6 +158,31 @@ public:
 	void PauseMatch();
 	UFUNCTION(BlueprintCallable)
 	void UnpauseMatch();
+
+	UFUNCTION(BlueprintPure)
+	AMinimapDefinition* GetMinimapDefinition();
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetBaseScore() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetKillValue() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetDeathValue() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetAssistValue() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetBombValue() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetKillReward() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetPlantReward() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetVictorReward() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetLoserReward() const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetLoserDeadReward() const;
+
 
 	
 	

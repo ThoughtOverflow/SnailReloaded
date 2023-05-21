@@ -158,5 +158,7 @@ public:
 	EGameTeams GetOwnerTeam();
 	UFUNCTION(BlueprintPure)
 	virtual float GetDamageToKill();
+	UFUNCTION(BlueprintCallable)
+	void ResetHealth();
 		
 };
