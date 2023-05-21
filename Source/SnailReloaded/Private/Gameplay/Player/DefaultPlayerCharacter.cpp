@@ -990,7 +990,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 			FiredRoundsPerShootingEvent++;
 			//Play animation, then delay the fire event.
 			Multi_PlayMeleeAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
-			Client_PlayFireAudio();
+			Multi_PlayFireAudio();
 			GetWorldTimerManager().SetTimer(MeleeWeaponDelayTimer, this, &ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback, GetCurrentlyEquippedWeapon()->FireAnimationDelay);
 		}
 	}
@@ -1059,7 +1059,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
 				
 				Multi_SpawnBarrelParticles();
-				Client_PlayFireAudio();
+				Multi_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
@@ -1127,7 +1127,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				Multi_SpawnBarrelParticles();
-				Client_PlayFireAudio();
+				Multi_PlayFireAudio();
 
 				CalculateWeaponRecoil(TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
@@ -1204,7 +1204,7 @@ bool ADefaultPlayerCharacter::WeaponHasAmmo()
 	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
 }
 
-void ADefaultPlayerCharacter::Client_PlayFireAudio_Implementation()
+void ADefaultPlayerCharacter::Multi_PlayFireAudio_Implementation()
 {
 	if(GetCurrentlyEquippedWeapon())
 	{
