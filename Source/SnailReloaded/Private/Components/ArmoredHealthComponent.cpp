@@ -188,6 +188,14 @@ bool UArmoredHealthComponent::CanSell()
 	return bCanSell;
 }
 
+void UArmoredHealthComponent::ResetShieldHeath()
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		UpdateShieldProperties(FShieldProperties(GetShieldHealth(), GetShieldMaxHealth(), GetShieldDamageReduction(), ShieldIdentifier));	
+	}
+}
+
 float UArmoredHealthComponent::GetDamageToKill()
 {
 	// The current object's health should be equal to the damage taken by the object itself, aka the damage * 1 minus the Shield's reduction rate.

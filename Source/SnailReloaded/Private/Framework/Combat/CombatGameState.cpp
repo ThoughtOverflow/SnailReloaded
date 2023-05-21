@@ -5,6 +5,7 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "World/Objects/OverviewCamera.h"
@@ -216,13 +217,21 @@ void ACombatGameState::StartNewRound()
 		{
 			CombatGameMode->StartRound();
 		}
-		if(CurrentRound ==1)
+		for(ACombatPlayerState* PlayerState:GetAllGamePlayers())
 		{
-			for(ACombatPlayerState* PlayerState:GetAllGamePlayers())
+			if(CurrentRound == 1)
 			{
 				PlayerState->SetPlayerMoney(InitialPlayerMoney);
 			}
+			//Reset HP and Shield.
+			if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				DefaultPlayerCharacter->PlayerHealthComponent->ResetHealth();
+				DefaultPlayerCharacter->PlayerHealthComponent->ResetShieldHeath();
+			}
+			
 		}
+		
 	}
 }
 
