@@ -141,6 +141,7 @@ void AStandardCombatGameState::ExplodeBomb()
 		}
 		PlantedBomb->ExplodeBomb();
 		PlantedBomb->Destroy();
+		GetMinimapDefinition()->SetShowPlantMarker(false);
 		PlantedBomb = nullptr;
 	}
 	//Set win type to check post-report;
