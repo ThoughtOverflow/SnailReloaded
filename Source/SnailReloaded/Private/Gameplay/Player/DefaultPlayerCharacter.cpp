@@ -1490,11 +1490,6 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 		{
 			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
 			bAllowPlant &= !CombatGameState->IsSomeonePlanting();
-			//cancel plant if somehow it became false;
-			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
-			{
-				CombatGameState->SetPlayerPlanting(this, false);
-			}
 		}
 		OnRep_AllowPlant();
 	}
