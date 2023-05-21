@@ -451,12 +451,16 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
 		{
 			CombatPlayerState->AddDeath();
+			CombatPlayerState->YouDied();
 		}
 		if(ADefaultPlayerCharacter* Source = Cast<ADefaultPlayerCharacter>(DamageResponse.SourceActor))
 		{
 			if(ACombatPlayerState* CombatPlayerState = Source->GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
 			{
 				CombatPlayerState->AddKill();
+				//On kill payout
+				CombatPlayerState->ChangePlayerMoney(Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld()))->GetKillReward());
+				
 			}	
 		}
 		GetCombatPlayerController()->ShowDeathScreen(true);

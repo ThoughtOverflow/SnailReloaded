@@ -257,7 +257,7 @@ void ACombatGameMode::StartRound()
 			if (CombatGameState->GetCurrentRound() < MaxRounds && !bMatchEnded)
 			{
 				CombatGameState->SetCurrentRound(CombatGameState->GetCurrentRound() + 1);
-				CombatGameState->SetCurrentGamePhase(GamePhases[0]);	
+				CombatGameState->SetCurrentGamePhase(GamePhases[0]);
 			}else
 			{
 				if(bAllowOvertime)

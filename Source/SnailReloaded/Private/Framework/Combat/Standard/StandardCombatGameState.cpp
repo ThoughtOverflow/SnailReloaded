@@ -90,6 +90,14 @@ void AStandardCombatGameState::StartNewRound()
 		if(StandardCombatGameMode->IsMatchOver()) return;
 	}
 	
+	if(HasAuthority())
+	{
+		if(CurrentRound>1)
+		{
+			NewRoundPayout();
+		}
+		
+	}
 	//Reset win result;
 	RoundEndResult = ERoundEndResult::None;
 	RespawnPlayers();
@@ -246,15 +254,8 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 void AStandardCombatGameState::HandleTeamScoring()
 {
-	EGameTeams TeamToScore = EGameTeams::None;
-	if(RoundEndResult == ERoundEndResult::None) return;
-	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
-	{
-		TeamToScore = GetTeamBySide(EBombTeam::Defender);
-	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
-	{
-		TeamToScore = GetTeamBySide(EBombTeam::Attacker);
-	}
+	EGameTeams TeamToScore = GetWinningTeam();
+	
 	ChangeScoreForTeam(TeamToScore, 1);
 }
 
@@ -345,6 +346,32 @@ float AStandardCombatGameState::GetBombActionTimeRemaining()
 	return 0.f;
 }
 
+EGameTeams AStandardCombatGameState::GetWinningTeam()
+{
+	if(RoundEndResult == ERoundEndResult::None) return EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		return  GetTeamBySide(EBombTeam::Defender);
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		return GetTeamBySide(EBombTeam::Attacker);
+	}
+	return EGameTeams::None;
+}
+EGameTeams AStandardCombatGameState::GetLosingTeam()
+{
+	if(RoundEndResult == ERoundEndResult::None) return EGameTeams::None;
+	if(RoundEndResult == ERoundEndResult::AttackersKilled || RoundEndResult == ERoundEndResult::BombDefuse || RoundEndResult == ERoundEndResult::OutOfTime)
+	{
+		return GetTeamBySide(EBombTeam::Attacker);
+		
+	}else if(RoundEndResult == ERoundEndResult::DefendersKilled || RoundEndResult == ERoundEndResult::BombExplode)
+	{
+		return  GetTeamBySide(EBombTeam::Defender);
+	}
+	return EGameTeams::None;
+}
+
 void AStandardCombatGameState::SetScoreForTeam(EGameTeams Team, int32 NewScore)
 {
 	if(HasAuthority())
@@ -380,6 +407,34 @@ int32 AStandardCombatGameState::GetScoreForTeam(EGameTeams Team)
 	case EGameTeams::TeamA: return TeamAScore;
 	case EGameTeams::TeamB: return TeamBScore;
 	default: return 0;
+	}
+}
+
+void AStandardCombatGameState::NewRoundPayout()
+{
+	if(HasAuthority())
+	{
+
+		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetWinningTeam()))
+		{
+			PlayerState->ChangePlayerMoney(GetVictorReward());
+		}
+		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetLosingTeam()))
+		{
+			if(PlayerState->GetDeathState())
+			{
+				PlayerState->ChangePlayerMoney(GetLoserDeadReward());
+			}else
+			{
+				PlayerState->ChangePlayerMoney(GetLoserReward());
+			}
+			
+		}
+		for (ACombatPlayerState*PlayerState:GetAllGamePlayers())
+		{
+			PlayerState->ResetDeathFlag();
+		}
+		
 	}
 }
 
