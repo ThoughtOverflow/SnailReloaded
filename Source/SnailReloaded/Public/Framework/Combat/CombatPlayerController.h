@@ -59,9 +59,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
 	TSubclassOf<UDamageIndicatorWidget> DamageIndicatorClass;
 	UPROPERTY(BlueprintReadWrite)
-	UDamageIndicatorWidget* DamageIndicatorWidget;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float DamageAngle;
+	TArray<UDamageIndicatorWidget*> DamageIndicatorWidgets;
 	
 
 protected:
@@ -115,6 +113,8 @@ public:
 	void AddDamageIndicator(AActor* Source);
 	UFUNCTION(Client, Reliable)
 	void Client_AddDamageIndicator(AActor* Source);
+	UFUNCTION(BlueprintPure)
+	float GetUpdatedAngleForDamageIndicator(FVector InitialSourceloc);
 	
 
 	//Buy menu:

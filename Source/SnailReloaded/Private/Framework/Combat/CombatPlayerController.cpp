@@ -174,22 +174,27 @@ void ACombatPlayerController::AddDamageIndicator(AActor* Source)
 {
 	if(IsLocalController())
 	{
-		FVector ForwardVector = (Source->GetActorLocation()-GetPawn()->GetActorLocation())*FVector(1.f, 1.f, 0.f);
-		ForwardVector.Normalize();
-		float DotX = ForwardVector.Dot(GetPawn()->GetActorRightVector());
-		float DotY = ForwardVector.Dot(GetPawn()->GetActorForwardVector());
-
-		float Angle = FMath::RadiansToDegrees(FMath::Acos(DotX));
-		if(DotY < 0.f)
+		int index = -1;
+		for(int i=0; i<DamageIndicatorWidgets.Num(); i++)
 		{
-			Angle = 360.f - Angle;
+			if(DamageIndicatorWidgets[i]->SourceActor == Source)
+			{
+				DamageIndicatorWidgets[i]->RemoveFromParent();
+				index = i;
+				break;
+			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("%f"),Angle)
+		if(index != -1)
+		{
+			DamageIndicatorWidgets.RemoveAt(index);
+		}
 		
-		
-		DamageIndicatorWidget = CreateWidget<UDamageIndicatorWidget>(this, DamageIndicatorClass);
-		DamageIndicatorWidget->Angle=Angle;
+		UDamageIndicatorWidget* DamageIndicatorWidget = CreateWidget<UDamageIndicatorWidget>(this, DamageIndicatorClass);
+		DamageIndicatorWidget->SourceActor = Source;
+		DamageIndicatorWidget->InitialSourceLocation = Source->GetActorLocation();
+		DamageIndicatorWidget->Angle=GetUpdatedAngleForDamageIndicator(Source->GetActorLocation());
 		DamageIndicatorWidget->AddToViewport();
+		DamageIndicatorWidgets.Add(DamageIndicatorWidget);
 		
 	}else
 	{
@@ -201,6 +206,23 @@ void ACombatPlayerController::AddDamageIndicator(AActor* Source)
 void ACombatPlayerController::Client_AddDamageIndicator_Implementation(AActor* Source)
 {
 	AddDamageIndicator(Source);
+}
+
+
+float ACombatPlayerController::GetUpdatedAngleForDamageIndicator(FVector InitialSourceloc)
+{
+	if(!GetPawn()) return 0.f;
+	FVector ForwardVector = (InitialSourceloc-GetPawn()->GetActorLocation())*FVector(1.f, 1.f, 0.f);
+	ForwardVector.Normalize();
+	float DotX = ForwardVector.Dot(GetPawn()->GetActorRightVector());
+	float DotY = ForwardVector.Dot(GetPawn()->GetActorForwardVector());
+
+	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotX));
+	if(DotY < 0.f)
+	{
+		Angle = 360.f - Angle;
+	}
+	return Angle;
 }
 
 void ACombatPlayerController::ToggleBuyMenu(bool bOpen)
