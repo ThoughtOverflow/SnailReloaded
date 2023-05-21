@@ -3,6 +3,8 @@
 
 #include "World/Objects/Pickup.h"
 
+#include "Components/BoxComponent.h"
+
 // Sets default values
 APickup::APickup()
 {
@@ -11,10 +13,18 @@ APickup::APickup()
 
 	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("PickupInteraction"));
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
+	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision"));
 
-	SetRootComponent(SkeletalMesh);
-	InteractionComponent->SetupAttachment(SkeletalMesh);
-	SkeletalMesh->SetSimulatePhysics(true);
+	SetRootComponent(BoxCollision);
+	InteractionComponent->SetupAttachment(BoxCollision);
+	SkeletalMesh->SetupAttachment(GetRootComponent());
+	SkeletalMesh->SetCollisionResponseToAllChannels(ECR_Overlap);
+	
+	BoxCollision->SetSimulatePhysics(true);
+	BoxCollision->SetEnableGravity(true);
+	BoxCollision->SetCollisionResponseToAllChannels(ECR_Block);
+	BoxCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+
 
 }
 

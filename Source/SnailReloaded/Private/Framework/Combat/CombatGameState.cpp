@@ -97,7 +97,17 @@ void ACombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 
 void ACombatGameState:: OnPhaseSelected(EGamePhase NewPhase)
 {
-	
+	if(NewPhase == EGamePhase::PostPlant)
+	{
+		for(auto& PlayerState : GetAllGamePlayers())
+		{
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+			}
+		}
+	}
 }
 
 void ACombatGameState::SetPhaseTimer()

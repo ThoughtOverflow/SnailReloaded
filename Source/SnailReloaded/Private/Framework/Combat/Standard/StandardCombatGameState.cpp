@@ -65,21 +65,33 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	Super::OnPhaseSelected(NewPhase);
 	if(NewPhase == EGamePhase::EndPhase)
 	{
-		
+
+		for(auto& PlayerState : GetAllGamePlayers())
+		{
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				if(GetWinningTeam() == PlayerState->GetTeam())
+				{
+					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundWon);
+				}else
+				{
+					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundLost);
+				}
+			}
+		}
 		//Do team scoring - round finished.
 		HandleTeamScoring();
 		
 	}
-	if(NewPhase == EGamePhase::PostPlant)
+	if (NewPhase == EGamePhase::PostPlant)
 	{
-		if(NewPhase == EGamePhase::Preparation)
+		for (auto& PlayerState : GetAllGamePlayers())
 		{
-			for(auto& PlayerState : GetAllGamePlayers())
+			if (ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(
+				PlayerState->GetPlayerController()))
 			{
-				if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
-				{
-					CombatPlayerController->TriggerGameNotification(ENotificationType::BombPlanted);
-				}
+				CombatPlayerController->TriggerGameNotification(ENotificationType::BombPlanted);
 			}
 		}
 	}

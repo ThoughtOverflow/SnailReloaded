@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "Pickup.generated.h"
 
+class UBoxComponent;
 UCLASS()
 class SNAILRELOADED_API APickup : public AActor
 {
@@ -20,6 +21,8 @@ public:
 	UInteractionComponent* InteractionComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* SkeletalMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UBoxComponent* BoxCollision;
 
 protected:
 	// Called when the game starts or when spawned
