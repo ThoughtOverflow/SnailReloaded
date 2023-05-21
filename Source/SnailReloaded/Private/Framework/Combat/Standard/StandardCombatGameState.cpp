@@ -491,6 +491,10 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 					bAttackersDead = false;
 					break;
 				}
+			}else
+			{
+				bAttackersDead = false;
+				break;
 			}
 		}
 		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Defender)))
@@ -502,6 +506,10 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 					bDefendersDead = false;
 					break;
 				}
+			}else
+			{
+				bDefendersDead = false;
+				break;
 			}
 		}
 		if(bAttackersDead || bDefendersDead)
