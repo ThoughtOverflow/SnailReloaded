@@ -545,7 +545,12 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 		
 		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
 		
-		GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+		APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+		Pickup->WeaponClass = GetCurrentlyEquippedWeapon()->GetClass();
+		Pickup->SkeletalMesh->SetSkeletalMesh(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSkeletalMeshAsset(), false);
+		Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
+		Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
+		RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
 	}
 }
 
@@ -770,8 +775,9 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 		case EWeaponSlot::Primary: PrimaryWeapon=Weapon; break;
 		case EWeaponSlot::Secondary: SecondaryWeapon=Weapon; break;
 		case EWeaponSlot::Melee: MeleeWeapon=Weapon; break;
-		default:;
+		default: break;
 		}
+		EquipStrongestWeapon();
 		return Weapon;
 	}else
 	{
@@ -1221,7 +1227,10 @@ AWeaponBase* ADefaultPlayerCharacter::EquipStrongestWeapon()
 	{
 		StrongestWeapon = MeleeWeapon;
 	}
-	EquipWeapon(StrongestWeapon->WeaponSlot);
+	if(StrongestWeapon)
+	{
+		EquipWeapon(StrongestWeapon->WeaponSlot);	
+	}
 	return StrongestWeapon;
 }
 
