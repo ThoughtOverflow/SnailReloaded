@@ -17,7 +17,7 @@ APickup::APickup()
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 
 	SetRootComponent(BoxCollision);
-	InteractionComponent->SetupAttachment(GetRootComponent());
+	InteractionComponent->SetupAttachment(SkeletalMesh);
 	SkeletalMesh->SetupAttachment(GetRootComponent());
 	SkeletalMesh->SetCollisionResponseToAllChannels(ECR_Overlap);
 	
@@ -54,7 +54,7 @@ void APickup::OnPickupInteract(APawn* Interactor)
 	{
 		if(DefaultPlayerCharacter->HasAuthority())
 		{
-			AWeaponBase* NewWpn = DefaultPlayerCharacter->AssignWeapon(WeaponClass);
+			AWeaponBase* NewWpn = DefaultPlayerCharacter->AssignWeapon(WeaponClass, EEquipCondition::EquipIfStronger);
 			NewWpn->SetCurrentClipAmmo(CurrentWeaponClipAmmo);
 			NewWpn->SetCurrentTotalAmmo(CurrentWeaponTotalAmmo);
 			Destroy();

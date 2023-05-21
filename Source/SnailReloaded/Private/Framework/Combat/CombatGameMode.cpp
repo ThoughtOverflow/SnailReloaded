@@ -131,9 +131,8 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 					{
 						if(!PlayerCharacter->GetWeaponAtSlot(WeaponClass.GetDefaultObject()->WeaponSlot))
 						{
-							if(AWeaponBase* Weapon = PlayerCharacter->AssignWeapon(WeaponClass))
+							if(AWeaponBase* Weapon = PlayerCharacter->AssignWeapon(WeaponClass, EEquipCondition::EquipIfStronger))
 							{
-								PlayerCharacter->EquipStrongestWeapon();
 								//Remove monkey:
 								CombatPlayerState->ChangePlayerMoney(-ItemPrice);
 								return true;

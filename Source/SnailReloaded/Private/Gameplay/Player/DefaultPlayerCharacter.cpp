@@ -740,7 +740,7 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 		//Add wpn after possessing
 		if(TestWpn)
 		{
-			AssignWeapon(TestWpn);
+			AssignWeapon(TestWpn, EEquipCondition::EquipAlways);
 		}
 
 		//Load Default hud for player UI
@@ -750,7 +750,7 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 }
 
 
-AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass)
+AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition)
 {
 	if(HasAuthority())
 	{
@@ -777,11 +777,32 @@ AWeaponBase* ADefaultPlayerCharacter::AssignWeapon(TSubclassOf<AWeaponBase> Weap
 		case EWeaponSlot::Melee: MeleeWeapon=Weapon; break;
 		default: break;
 		}
-		EquipStrongestWeapon();
+
+		if(EquipCondition == EEquipCondition::EquipAlways)
+		{
+			EquipWeapon(Weapon->WeaponSlot);
+		}else if(EquipCondition == EEquipCondition::EquipIfStronger)
+		{
+			if(GetCurrentlyEquippedWeapon())
+			{
+				if(CurrentlyEquippedWeapon->WeaponSlot != EWeaponSlot::None && Weapon->WeaponSlot != EWeaponSlot::None)
+				{
+					if((uint8)CurrentlyEquippedWeapon->WeaponSlot>(uint8)Weapon->WeaponSlot)
+					{
+						EquipWeapon(Weapon->WeaponSlot);
+					}
+				}
+				
+			}else
+			{
+				EquipWeapon(Weapon->WeaponSlot);
+			}
+		}
+		
 		return Weapon;
 	}else
 	{
-		Server_AssignWeapon(WeaponClass);
+		Server_AssignWeapon(WeaponClass, EquipCondition);
 	}
 	return nullptr;
 }
@@ -820,9 +841,9 @@ void ADefaultPlayerCharacter::Server_RemoveWeapon_Implementation(EWeaponSlot Slo
 }
 
 
-void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
+void ADefaultPlayerCharacter::Server_AssignWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition)
 {
-	AssignWeapon(WeaponClass);
+	AssignWeapon(WeaponClass, EquipCondition);
 }
 
 AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
