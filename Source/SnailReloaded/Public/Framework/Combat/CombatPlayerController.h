@@ -111,6 +111,8 @@ public:
 	UHudData* GetHudData();
 	UFUNCTION()
 	void AddDamageIndicator(AActor* Source);
+	UFUNCTION(BlueprintCallable)
+	void RemoveDamageIndicator(AActor* Source);
 	UFUNCTION(Client, Reliable)
 	void Client_AddDamageIndicator(AActor* Source);
 	UFUNCTION(BlueprintPure)

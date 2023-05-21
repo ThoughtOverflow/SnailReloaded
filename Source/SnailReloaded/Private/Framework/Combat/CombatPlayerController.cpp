@@ -202,6 +202,24 @@ void ACombatPlayerController::AddDamageIndicator(AActor* Source)
 	}
 }
 
+void ACombatPlayerController::RemoveDamageIndicator(AActor* Source)
+{
+	int index = -1;
+	for(int i=0; i<DamageIndicatorWidgets.Num(); i++)
+	{
+		if(DamageIndicatorWidgets[i]->SourceActor == Source)
+		{
+			DamageIndicatorWidgets[i]->RemoveFromParent();
+			index = i;
+			break;
+		}
+	}
+	if(index != -1)
+	{
+		DamageIndicatorWidgets.RemoveAt(index);
+	}
+}
+
 
 void ACombatPlayerController::Client_AddDamageIndicator_Implementation(AActor* Source)
 {
