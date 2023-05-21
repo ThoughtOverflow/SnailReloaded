@@ -45,7 +45,9 @@ enum class EItemIdentifier : uint8
 	DefaultMelee = 3,
 	DefaultAR = 4,
 	DefaultShotgun = 5,
-	NullShield = 6
+	NullShield = 6,
+	VoltyShorty = 7,
+	Triad = 8
 };
 
 UENUM(BlueprintType)
@@ -196,6 +198,15 @@ protected:
 	UFUNCTION()
 	void OnRep_CanSell();
 
+	//Anim functions:
+
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnWeaponFired();
+
+	UFUNCTION()
+	virtual void PlayFireAnimation();
+
 #if WITH_EDITOR
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -248,14 +259,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	UAnimMontage* GetRandomFireMontage();
-
-	UFUNCTION()
-	virtual void OnWeaponFireAnimationPlayed();
+	
 	UFUNCTION()
 	virtual void SpawnBarrelParticles();
 	UFUNCTION()
 	virtual void PlayFireSound();
 	UFUNCTION()
 	virtual void PlayEquipSound();
+
+	UFUNCTION()
+	virtual void OnFireAnimPlayed();
 	
 };

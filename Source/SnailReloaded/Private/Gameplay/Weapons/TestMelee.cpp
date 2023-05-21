@@ -18,14 +18,12 @@ ATestMelee::ATestMelee()
 	
 }
 
-void ATestMelee::OnWeaponFireAnimationPlayed()
+void ATestMelee::OnFireAnimPlayed()
 {
-	Super::OnWeaponFireAnimationPlayed();
+	Super::OnFireAnimPlayed();
 
 	if(TrailParticleComponent)
 	{
 		TrailParticleComponent->ActivateSystem(true);
 	}
-	
-	
 }

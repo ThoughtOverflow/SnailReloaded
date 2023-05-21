@@ -921,7 +921,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 		{
 			FiredRoundsPerShootingEvent++;
 			//Play animation, then delay the fire event.
-			Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
+			Multi_PlayMeleeAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 			Client_PlayFireAudio();
 			GetWorldTimerManager().SetTimer(MeleeWeaponDelayTimer, this, &ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback, GetCurrentlyEquippedWeapon()->FireAnimationDelay);
 		}
@@ -989,8 +989,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMaxDeviation / 2)) * WeaponCastMaxDistance;
 				float MinEndDeviation = FMath::Tan(
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
-
-				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
+				
 				Multi_SpawnBarrelParticles();
 				Client_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
@@ -1061,7 +1060,6 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				Multi_SpawnBarrelParticles();
 				Client_PlayFireAudio();
-				Multi_PlayWeaponFireAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
 
 				CalculateWeaponRecoil(TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
@@ -1154,12 +1152,12 @@ void ADefaultPlayerCharacter::Multi_SpawnBarrelParticles_Implementation()
 	}
 }
 
-void ADefaultPlayerCharacter::Multi_PlayWeaponFireAnimation_Implementation(UAnimMontage* AnimMontage)
+void ADefaultPlayerCharacter::Multi_PlayMeleeAnimation_Implementation(UAnimMontage* AnimMontage)
 {
 	if(AnimMontage)
 	{
 		PlayAnimMontage(AnimMontage);
-		GetCurrentlyEquippedWeapon()->OnWeaponFireAnimationPlayed();
+		GetCurrentlyEquippedWeapon()->OnFireAnimPlayed();
 	}
 }
 

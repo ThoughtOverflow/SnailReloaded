@@ -23,6 +23,6 @@ public:
 
 public:
 
-	virtual void OnWeaponFireAnimationPlayed() override;
+	virtual void OnFireAnimPlayed() override;
 	
 };
