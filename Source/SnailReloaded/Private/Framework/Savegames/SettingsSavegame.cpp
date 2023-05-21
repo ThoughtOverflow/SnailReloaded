@@ -7,4 +7,5 @@ USettingsSavegame::USettingsSavegame()
 {
 	MouseSensitivity = 1.f;
 	FpsCap = 60;
+	ActiveLanguage = TEXT("en");
 }

@@ -6,6 +6,7 @@
 #include "Framework/Savegames/SettingsSavegame.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetInternationalizationLibrary.h"
 
 USnailGameInstance::USnailGameInstance()
 {
@@ -76,5 +77,6 @@ void USnailGameInstance::LoadGameSettings()
 	{
 		GameUserSettings->SetFrameRateLimit(SavedSettings->FpsCap);
 		GameUserSettings->ApplySettings(false);
+		UKismetInternationalizationLibrary::SetCurrentLanguageAndLocale(SavedSettings->ActiveLanguage, true);
 	}
 }
