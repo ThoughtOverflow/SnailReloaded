@@ -445,6 +445,7 @@ void ADefaultPlayerCharacter::OnHealthChanged(const FDamageResponse& DamageRespo
 			SetPlayerShieldHealth(PlayerHealthComponent->GetShieldHealth())->
 			Submit();
 		}
+		
 	}
 }
 

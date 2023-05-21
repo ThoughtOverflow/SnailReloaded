@@ -6,6 +6,7 @@
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/HealthComponent.h"
 #include "Framework/Combat/CombatGameState.h"
+#include "Framework/Combat/CombatPlayerController.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 
@@ -65,6 +66,11 @@ FDamageResponse ACombatGameMode::ChangeObjectHealth(const FDamageRequest& Damage
 				{
 					//Only apply modifiers for damage, not heal.
 					ModifiedRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
+
+					if(ADefaultPlayerCharacter* TargetPlayer = Cast<ADefaultPlayerCharacter>(DamageRequest.TargetActor))
+					{
+						Cast<ACombatPlayerController>(TargetPlayer->GetController())->AddDamageIndicator(DamageRequest.SourceActor);
+					}
 				}
 				const FDamageResponse Response = TargetHealthComponent->ChangeObjectHealth(ModifiedRequest);
 				return Response;
