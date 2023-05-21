@@ -69,6 +69,11 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	
 }
 
+void ADefaultPlayerCharacter::OnRep_BombEquipped()
+{
+	
+}
+
 // Called when the game starts or when spawned
 void ADefaultPlayerCharacter::BeginPlay()
 {
@@ -94,6 +99,7 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInPlantZone);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInDefuseRadius);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowDefuse);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsBombEquipped);
 }
 
 EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
@@ -308,7 +314,14 @@ void ADefaultPlayerCharacter::HandlePlantBomb(const FInputActionInstance& Action
 {
 	if(Action.GetValue().Get<bool>())
 	{
-		TryStartPlanting();
+		if(bIsInPlantZone)
+		{
+			TryStartPlanting();	
+		}else
+		{
+			TryEquipBomb();
+		}
+		
 		
 	}else
 	{
@@ -540,10 +553,11 @@ bool ADefaultPlayerCharacter::CanPlayerAttack()
 
 void ADefaultPlayerCharacter::DropCurrentWeapon()
 {
+	FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
 	if(GetCurrentlyEquippedWeapon())
 	{
 		
-		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+		
 		
 		APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
 		Pickup->WeaponClass = GetCurrentlyEquippedWeapon()->GetClass();
@@ -552,6 +566,12 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 		Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
 		Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
 		RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
+	}else if(bIsBombEquipped && HasBomb())
+	{
+		//Spawn bomb:
+		ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
+		TryUnequipBomb();
+		SetHasBomb(false);
 	}
 }
 
@@ -566,7 +586,7 @@ void ADefaultPlayerCharacter::OnRep_AllowPlant()
 
 void ADefaultPlayerCharacter::OnRep_HasBomb()
 {
-
+	
 }
 
 void ADefaultPlayerCharacter::OnRep_AllowDefuse()
@@ -857,6 +877,10 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 			{
 				UnequipWeapon();
 			}
+			if(bIsBombEquipped)
+			{
+				TryUnequipBomb();
+			}
 			//EquipWeapon;
 			SetCurrentlyEqippedWeapon(GetWeaponAtSlot(Slot));
 			CurrentlyEquippedWeapon->SetIsEquipped(true);
@@ -966,7 +990,7 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 			FiredRoundsPerShootingEvent++;
 			//Play animation, then delay the fire event.
 			Multi_PlayMeleeAnimation(GetCurrentlyEquippedWeapon()->GetRandomFireMontage());
-			Client_PlayFireAudio();
+			Multi_PlayFireAudio();
 			GetWorldTimerManager().SetTimer(MeleeWeaponDelayTimer, this, &ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback, GetCurrentlyEquippedWeapon()->FireAnimationDelay);
 		}
 	}
@@ -1035,7 +1059,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					FMath::DegreesToRadians(CurrentlyEquippedWeapon->BarrelMinDeviation / 2)) * WeaponCastMaxDistance;
 				
 				Multi_SpawnBarrelParticles();
-				Client_PlayFireAudio();
+				Multi_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
 					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
@@ -1103,7 +1127,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				Multi_SpawnBarrelParticles();
-				Client_PlayFireAudio();
+				Multi_PlayFireAudio();
 
 				CalculateWeaponRecoil(TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
@@ -1180,7 +1204,7 @@ bool ADefaultPlayerCharacter::WeaponHasAmmo()
 	return CurrentlyEquippedWeapon != nullptr ? CurrentlyEquippedWeapon->GetCurrentClipAmmo() > 0 : false;
 }
 
-void ADefaultPlayerCharacter::Client_PlayFireAudio_Implementation()
+void ADefaultPlayerCharacter::Multi_PlayFireAudio_Implementation()
 {
 	if(GetCurrentlyEquippedWeapon())
 	{
@@ -1586,6 +1610,53 @@ float ADefaultPlayerCharacter::GetInteractionPercentage()
 		return GetWorldTimerManager().GetTimerElapsed(InteractionTimer) / PlayerInteractionData.LastFocusedComponent->InteractionTime;
 	}
 	return 0.f;
+}
+
+void ADefaultPlayerCharacter::TryEquipBomb()
+{
+	if(HasAuthority())
+	{
+
+		if(HasBomb() && bIsBombEquipped == false)
+		{
+			UnequipWeapon();
+			bIsBombEquipped = true;
+			OnRep_BombEquipped();
+			BombInHandActor = GetWorld()->SpawnActor<AActor>(HeldBombClass, FVector::ZeroVector, FRotator::ZeroRotator);
+			BombInHandActor->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,  FName("hand_r"));
+		}
+		
+	}else
+	{
+		Server_TryEquipBomb();
+	}
+}
+
+void ADefaultPlayerCharacter::TryUnequipBomb()
+{
+	if(HasAuthority())
+	{
+		if(HasBomb() && bIsBombEquipped == true)
+		{
+			bIsBombEquipped = false;
+			OnRep_BombEquipped();
+			BombInHandActor->Destroy();
+			BombInHandActor = nullptr;
+		}
+	}else
+	{
+		Server_TryUnequipBomb();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_TryEquipBomb_Implementation()
+{
+	TryEquipBomb();
+}
+
+void ADefaultPlayerCharacter::Server_TryUnequipBomb_Implementation()
+{
+	TryUnequipBomb();
 }
 
 void ADefaultPlayerCharacter::Server_TryStopPlanting_Implementation()

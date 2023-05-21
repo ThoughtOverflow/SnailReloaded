@@ -12,6 +12,7 @@
 #include "Components/InteractionComponent.h"
 #include "Components/PlayerHeaderComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
+#include "World/Objects/BombPickup.h"
 #include "World/Objects/Pickup.h"
 #include "DefaultPlayerCharacter.generated.h"
 
@@ -95,7 +96,13 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<APickup> PickupClass;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<ABombPickup> BombPickupClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<AActor> HeldBombClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	AActor* BombInHandActor;
+	
 	//Player header;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
@@ -108,7 +115,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float InteractionCastDistance;
 
-	
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_BombEquipped)
+	bool bIsBombEquipped;
+
+	UFUNCTION()
+	void OnRep_BombEquipped();
 
 protected:
 	// Called when the game starts or when spawned
@@ -309,8 +320,8 @@ public:
 	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnBarrelParticles();
-	UFUNCTION(Client, Reliable)
-	void Client_PlayFireAudio();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayFireAudio();
 	UFUNCTION(Client, Reliable)
 	void Client_PlayEquipAudio();
 	UFUNCTION(NetMulticast, Reliable)
@@ -398,6 +409,18 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	float GetInteractionPercentage();
+
+	//Bomb equip:
+
+	UFUNCTION(BlueprintCallable)
+	void TryEquipBomb();
+	UFUNCTION(BlueprintCallable)
+	void TryUnequipBomb();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_TryEquipBomb();
+	UFUNCTION(Server, Reliable)
+	void Server_TryUnequipBomb();
 	
 };
 
