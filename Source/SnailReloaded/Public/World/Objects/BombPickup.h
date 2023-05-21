@@ -20,9 +20,14 @@ public:
 	ABombPickup();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	UBombPickupInteraction* InteractionComponent;
+	UInteractionComponent* InteractionComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* SkeletalMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UBoxComponent* BoxCollision;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float PickupGlobalScale;
 	
 
 protected:
@@ -33,6 +38,10 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	
+	UFUNCTION()
+	void OnPickupInteract(APawn* Interactor);
 
 };
 	
