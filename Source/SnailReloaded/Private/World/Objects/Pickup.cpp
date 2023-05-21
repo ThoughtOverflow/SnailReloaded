@@ -14,6 +14,7 @@ APickup::APickup()
 
 	SetRootComponent(SkeletalMesh);
 	InteractionComponent->SetupAttachment(SkeletalMesh);
+	SkeletalMesh->SetSimulatePhysics(true);
 
 }
 

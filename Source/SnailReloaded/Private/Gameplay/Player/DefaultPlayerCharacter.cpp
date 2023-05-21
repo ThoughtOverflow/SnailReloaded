@@ -22,8 +22,9 @@
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Logging/LogMacros.h"
 #include "Net/UnrealNetwork.h"
-
+#include "World/Objects/Pickup.h"
 
 
 // Sets default values
@@ -330,7 +331,7 @@ void ADefaultPlayerCharacter::HandleDropInput(const FInputActionInstance& Action
 {
 	if(Action.GetValue().Get<bool>())
 	{
-		
+		DropCurrentWeapon();
 	}
 }
 
@@ -531,6 +532,17 @@ bool ADefaultPlayerCharacter::CanPlayerAttack()
 	}
 	bCanShoot &= CanWeaponFireInMode();
 	return bCanShoot;
+}
+
+void ADefaultPlayerCharacter::DropCurrentWeapon()
+{
+	if(GetCurrentlyEquippedWeapon())
+	{
+		
+		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+		
+		GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+	}
 }
 
 void ADefaultPlayerCharacter::OnRep_AllowPlant()

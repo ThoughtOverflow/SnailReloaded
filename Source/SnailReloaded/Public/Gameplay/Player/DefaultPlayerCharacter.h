@@ -12,6 +12,7 @@
 #include "Components/InteractionComponent.h"
 #include "Components/PlayerHeaderComponent.h"
 #include "Gameplay/Weapons/WeaponBase.h"
+#include "World/Objects/Pickup.h"
 #include "DefaultPlayerCharacter.generated.h"
 
 
@@ -83,6 +84,9 @@ public:
 	bool bAllowAutoReload;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
 	UNiagaraSystem* NiagaraSystem;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<APickup> PickupClass;
 
 	//Player header;
 
@@ -174,6 +178,8 @@ protected:
 	bool CanPlayerReload();
 	UFUNCTION(BlueprintCallable)
 	bool CanPlayerAttack();
+	UFUNCTION(BlueprintCallable)
+	void DropCurrentWeapon();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
