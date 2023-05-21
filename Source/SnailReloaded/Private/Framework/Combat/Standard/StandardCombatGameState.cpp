@@ -66,17 +66,20 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	if(NewPhase == EGamePhase::EndPhase)
 	{
 
-		for(auto& PlayerState : GetAllGamePlayers())
+		if(HasAuthority())
 		{
-			//Add prep phase noti:
-			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			for(auto& PlayerState : GetAllGamePlayers())
 			{
-				if(GetWinningTeam() == PlayerState->GetTeam())
+				//Add prep phase noti:
+				if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
 				{
-					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundWon);
-				}else
-				{
-					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundLost);
+					if(GetWinningTeam() == PlayerState->GetTeam())
+					{
+						CombatPlayerController->TriggerGameNotification(ENotificationType::RoundWon);
+					}else
+					{
+						CombatPlayerController->TriggerGameNotification(ENotificationType::RoundLost);
+					}
 				}
 			}
 		}

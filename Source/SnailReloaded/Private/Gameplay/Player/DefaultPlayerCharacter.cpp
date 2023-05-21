@@ -462,6 +462,7 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(PrimaryWeapon) PrimaryWeapon->Destroy();
 		if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
+		TryStopPlanting();
 		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
 		{
 			CombatPlayerState->AddDeath();
