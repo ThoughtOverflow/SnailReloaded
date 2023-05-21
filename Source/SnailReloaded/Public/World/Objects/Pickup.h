@@ -25,6 +25,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UBoxComponent* BoxCollision;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float PickupGlobalScale;
+
 	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<AWeaponBase> WeaponClass;
 	UPROPERTY(BlueprintReadWrite)
