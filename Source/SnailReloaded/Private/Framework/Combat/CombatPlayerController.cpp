@@ -5,6 +5,7 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/Overlay.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerState.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
@@ -102,7 +103,7 @@ void ACombatPlayerController::ResetNonMenuInputMode()
 
 void ACombatPlayerController::NotificationTimer_Callback()
 {
-	if(IsLocalController() && CurrentNotification)
+	if(IsLocalController() && PlayerHud && PlayerHud->NotificationWrapper)
 	{
 		CurrentNotification->RemoveFromParent();
 	}
@@ -360,7 +361,10 @@ void ACombatPlayerController::TriggerGameNotification(ENotificationType Notifica
 			CurrentNotification->RemoveFromParent();
 		}
 		CurrentNotification = CreateWidget<UGameNotification>(this, NotificationClass);
-		CurrentNotification->AddToViewport();
+		if(PlayerHud && PlayerHud->NotificationWrapper)
+		{
+			PlayerHud->NotificationWrapper->AddChildToOverlay(CurrentNotification);
+		}
 		GetWorldTimerManager().SetTimer(NotificationTimer, this, &ACombatPlayerController::NotificationTimer_Callback, CurrentNotification->NotificationTime);
 	}else
 	{

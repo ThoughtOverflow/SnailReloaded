@@ -70,6 +70,19 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 		HandleTeamScoring();
 		
 	}
+	if(NewPhase == EGamePhase::PostPlant)
+	{
+		if(NewPhase == EGamePhase::Preparation)
+		{
+			for(auto& PlayerState : GetAllGamePlayers())
+			{
+				if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+				{
+					CombatPlayerController->TriggerGameNotification(ENotificationType::BombPlanted);
+				}
+			}
+		}
+	}
 	//Update plant hint graphic.
 	for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
 	{
@@ -101,6 +114,15 @@ void AStandardCombatGameState::StartNewRound()
 	//Reset win result;
 	RoundEndResult = ERoundEndResult::None;
 	RespawnPlayers();
+
+	for(auto& PlayerState : GetAllGamePlayers())
+	{
+		//Add prep phase noti:
+		if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+		{
+			CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+		}
+	}
 	
 	//Give bomb to random player;
 	if(HasAuthority())

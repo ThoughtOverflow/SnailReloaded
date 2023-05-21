@@ -229,6 +229,11 @@ void ACombatGameState::StartNewRound()
 				DefaultPlayerCharacter->PlayerHealthComponent->ResetHealth();
 				DefaultPlayerCharacter->PlayerHealthComponent->ResetShieldHeath();
 			}
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+			}
 			
 		}
 		
