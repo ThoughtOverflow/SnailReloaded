@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "Components/HealthComponent.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Gameplay/UI/GameNotification.h"
 #include "Gameplay/UI/TeamSelectionWidget.h"
 #include "CombatPlayerController.generated.h"
 
+enum class ENotificationType : uint8;
 struct FInputActionInstance;
 class UInputMappingContext;
 class UInputAction;
@@ -73,6 +75,19 @@ protected:
 	void TryBlockPlayerInputs(bool bBlock);
 
 	virtual void ResetNonMenuInputMode() override;
+
+	//Notification classes.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TMap<ENotificationType, TSubclassOf<UGameNotification>> NotificationWidgetClasses;
+	UPROPERTY()
+	UGameNotification* CurrentNotification;
+	UPROPERTY()
+	FTimerHandle NotificationTimer;
+	UFUNCTION()
+	void NotificationTimer_Callback();
+	UFUNCTION(Client, Reliable)
+	void Client_TriggerGameNotification(ENotificationType Notification);
+	
 
 
 public:
@@ -140,6 +155,9 @@ public:
 
 	//Pause menu when player exists
 	virtual void TogglePauseMenu(bool bOpen) override;
+
+	//Game Notifications:
+	void TriggerGameNotification(ENotificationType Notification);
 	
 	
 

@@ -81,7 +81,7 @@ UHealthComponent::UHealthComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
-	DefaultObjectHealth = 50.f;
+	DefaultObjectHealth = 100.f;
 	ObjectMaxHealth = 100.f;
 	ObjectHealth = DefaultObjectHealth;
 	LatestDamage = FDamageResponse();
@@ -222,4 +222,16 @@ EGameTeams UHealthComponent::GetOwnerTeam()
 float UHealthComponent::GetDamageToKill()
 {
 	return -GetObjectHealth();
+}
+
+void UHealthComponent::ResetHealth()
+{
+	if(GetOwner() && GetOwner()->HasAuthority())
+	{
+		FDamageRequest req = FDamageRequest();
+		req.DeltaDamage = DefaultObjectHealth - GetObjectHealth();
+		req.SourceActor = GetOwner();
+		req.TargetActor = GetOwner();
+		SetObjectHealth(req, DefaultObjectHealth);
+	}
 }

@@ -13,6 +13,7 @@ AMinimapDefinition::AMinimapDefinition()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 	MinimapArea = CreateDefaultSubobject<UBoxComponent>(TEXT("MinimapArea"));
+	MinimapArea->SetGenerateOverlapEvents(false);
 	
 }
 

@@ -65,10 +65,35 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	Super::OnPhaseSelected(NewPhase);
 	if(NewPhase == EGamePhase::EndPhase)
 	{
-		
+
+		for(auto& PlayerState : GetAllGamePlayers())
+		{
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				if(GetWinningTeam() == PlayerState->GetTeam())
+				{
+					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundWon);
+				}else
+				{
+					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundLost);
+				}
+			}
+		}
 		//Do team scoring - round finished.
 		HandleTeamScoring();
 		
+	}
+	if (NewPhase == EGamePhase::PostPlant)
+	{
+		for (auto& PlayerState : GetAllGamePlayers())
+		{
+			if (ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(
+				PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::BombPlanted);
+			}
+		}
 	}
 	//Update plant hint graphic.
 	for(TObjectPtr<APlayerState> PlayerState : PlayerArray)
@@ -101,6 +126,15 @@ void AStandardCombatGameState::StartNewRound()
 	//Reset win result;
 	RoundEndResult = ERoundEndResult::None;
 	RespawnPlayers();
+
+	for(auto& PlayerState : GetAllGamePlayers())
+	{
+		//Add prep phase noti:
+		if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+		{
+			CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+		}
+	}
 	
 	//Give bomb to random player;
 	if(HasAuthority())
@@ -141,6 +175,7 @@ void AStandardCombatGameState::ExplodeBomb()
 		}
 		PlantedBomb->ExplodeBomb();
 		PlantedBomb->Destroy();
+		GetMinimapDefinition()->SetShowPlantMarker(false);
 		PlantedBomb = nullptr;
 	}
 	//Set win type to check post-report;

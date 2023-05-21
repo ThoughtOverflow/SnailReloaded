@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Overlay.h"
 #include "PlayerHud.generated.h"
 
 /**
@@ -37,4 +38,9 @@ public:
 	bool bShowPlantHint;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Planting")
 	bool bShowDefuseHint;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+	UOverlay* NotificationWrapper;
+	
+	
 };

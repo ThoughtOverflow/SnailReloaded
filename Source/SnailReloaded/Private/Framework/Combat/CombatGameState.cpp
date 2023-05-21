@@ -5,6 +5,7 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "World/Objects/OverviewCamera.h"
@@ -96,7 +97,17 @@ void ACombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 
 void ACombatGameState:: OnPhaseSelected(EGamePhase NewPhase)
 {
-	
+	if(NewPhase == EGamePhase::PostPlant)
+	{
+		for(auto& PlayerState : GetAllGamePlayers())
+		{
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+			}
+		}
+	}
 }
 
 void ACombatGameState::SetPhaseTimer()
@@ -216,13 +227,26 @@ void ACombatGameState::StartNewRound()
 		{
 			CombatGameMode->StartRound();
 		}
-		if(CurrentRound ==1)
+		for(ACombatPlayerState* PlayerState:GetAllGamePlayers())
 		{
-			for(ACombatPlayerState* PlayerState:GetAllGamePlayers())
+			if(CurrentRound == 1)
 			{
 				PlayerState->SetPlayerMoney(InitialPlayerMoney);
 			}
+			//Reset HP and Shield.
+			if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
+			{
+				DefaultPlayerCharacter->PlayerHealthComponent->ResetHealth();
+				DefaultPlayerCharacter->PlayerHealthComponent->ResetShieldHeath();
+			}
+			//Add prep phase noti:
+			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			{
+				CombatPlayerController->TriggerGameNotification(ENotificationType::PrepPhase);
+			}
+			
 		}
+		
 	}
 }
 

@@ -16,6 +16,14 @@
 #include "DefaultPlayerCharacter.generated.h"
 
 
+UENUM()
+enum class EEquipCondition : uint8
+{
+	DontEquip = 0,
+	EquipIfStronger = 1,
+	EquipAlways = 2
+};
+
 class UInteractionComponent;
 struct FShieldProperties;
 struct FDamageResponse;
@@ -254,9 +262,9 @@ public:
 	virtual void OnPlayerPossessed(ACombatPlayerController* PlayerController);
 
 	UFUNCTION(BlueprintCallable)
-	AWeaponBase* AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
+	AWeaponBase* AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition = EEquipCondition::DontEquip);
 	UFUNCTION(Server,Reliable)
-	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass);
+	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition);
 	UFUNCTION(BlueprintCallable)
 	bool RemoveWeapon(EWeaponSlot Slot);
 	UFUNCTION(Server,Reliable)

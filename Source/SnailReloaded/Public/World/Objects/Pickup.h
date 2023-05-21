@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/InteractionComponent.h"
 #include "GameFramework/Actor.h"
+#include "Gameplay/Weapons/WeaponBase.h"
 #include "Pickup.generated.h"
 
+class UBoxComponent;
 UCLASS()
 class SNAILRELOADED_API APickup : public AActor
 {
@@ -20,6 +22,18 @@ public:
 	UInteractionComponent* InteractionComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* SkeletalMesh;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UBoxComponent* BoxCollision;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float PickupGlobalScale;
+
+	UPROPERTY(BlueprintReadWrite)
+	TSubclassOf<AWeaponBase> WeaponClass;
+	UPROPERTY(BlueprintReadWrite)
+	int32 CurrentWeaponClipAmmo;
+	UPROPERTY(BlueprintReadWrite)
+	int32 CurrentWeaponTotalAmmo;
 
 protected:
 	// Called when the game starts or when spawned
@@ -28,5 +42,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION()
+	void OnPickupInteract(APawn* Interactor);
 
 };

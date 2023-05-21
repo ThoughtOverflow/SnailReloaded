@@ -22,5 +22,7 @@ public:
 	float MouseSensitivity;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	int32 FpsCap;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FString ActiveLanguage;
 	
 };
