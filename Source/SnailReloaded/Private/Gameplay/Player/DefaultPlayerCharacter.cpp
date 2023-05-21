@@ -1080,8 +1080,6 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					
 
 					TraceEndLoc += EndDeviation;
-					Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
-
 					CalculateWeaponRecoil(TraceEndLoc);
 					
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
@@ -1110,6 +1108,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 								
 							}
 						}
+						Multi_SpawnBulletParticles(TraceStartLoc, HitResult.GetActor() ? HitResult.ImpactPoint : TraceEndLoc);
 					}
 				}
 				GetCurrentlyEquippedWeapon()->WeaponFired();
@@ -1128,7 +1127,6 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
-				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				Multi_SpawnBarrelParticles();
 				Multi_PlayFireAudio();
 
@@ -1159,6 +1157,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							
 						}
 					}
+					Multi_SpawnBulletParticles(TraceStartLoc, HitResult.GetActor() ? HitResult.ImpactPoint : TraceEndLoc);
 					
 				}
 			}
