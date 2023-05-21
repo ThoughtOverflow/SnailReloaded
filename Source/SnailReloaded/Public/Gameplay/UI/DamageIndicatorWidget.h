@@ -18,6 +18,8 @@ public:
 	AActor* SourceActor;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float Angle;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FVector InitialSourceLocation;
 
 	
 	

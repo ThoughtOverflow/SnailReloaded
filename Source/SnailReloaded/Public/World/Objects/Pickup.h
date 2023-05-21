@@ -46,4 +46,7 @@ public:
 	UFUNCTION()
 	void OnPickupInteract(APawn* Interactor);
 
+	UFUNCTION(BlueprintCallable)
+	void SetWidgetWeaponName(const FText& Name);
+
 };

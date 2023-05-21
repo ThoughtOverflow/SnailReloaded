@@ -566,6 +566,7 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 		Pickup->SkeletalMesh->SetRelativeScale3D(CurrentlyEquippedWeapon->WeaponMesh->GetRelativeScale3D() * Pickup->PickupGlobalScale);
 		Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
 		Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
+		Pickup->SetWidgetWeaponName(GetCurrentlyEquippedWeapon()->WeaponName);
 		RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
 	}else if(bIsBombEquipped && HasBomb())
 	{

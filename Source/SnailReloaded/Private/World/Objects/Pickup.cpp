@@ -5,6 +5,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Gameplay/UI/WeaponPickupWidget.h"
 
 // Sets default values
 APickup::APickup()
@@ -61,6 +62,14 @@ void APickup::OnPickupInteract(APawn* Interactor)
 			NewWpn->SetCurrentTotalAmmo(CurrentWeaponTotalAmmo);
 			Destroy();
 		}
+	}
+}
+
+void APickup::SetWidgetWeaponName(const FText& Name)
+{
+	if(UWeaponPickupWidget* WeaponPickupWidget = Cast<UWeaponPickupWidget>(InteractionComponent->GetUserWidgetObject()))
+	{
+		WeaponPickupWidget->WeaponName = Name;
 	}
 }
 
