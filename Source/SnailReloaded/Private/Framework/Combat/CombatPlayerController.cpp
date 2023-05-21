@@ -100,6 +100,19 @@ void ACombatPlayerController::ResetNonMenuInputMode()
 }
 
 
+void ACombatPlayerController::NotificationTimer_Callback()
+{
+	if(IsLocalController() && CurrentNotification)
+	{
+		CurrentNotification->RemoveFromParent();
+	}
+}
+
+void ACombatPlayerController::Client_TriggerGameNotification_Implementation(ENotificationType Notification)
+{
+	TriggerGameNotification(Notification);
+}
+
 void ACombatPlayerController::CreatePlayerHud()
 {
 	if(IsLocalController())
@@ -335,6 +348,24 @@ void ACombatPlayerController::TogglePauseMenu(bool bOpen)
 {
 	TryBlockPlayerInputs(bOpen);
 	Super::TogglePauseMenu(bOpen);
+}
+
+void ACombatPlayerController::TriggerGameNotification(ENotificationType Notification)
+{
+	if(IsLocalController())
+	{
+		TSubclassOf<UGameNotification> NotificationClass = *NotificationWidgetClasses.Find(Notification);
+		if(CurrentNotification)
+		{
+			CurrentNotification->RemoveFromParent();
+		}
+		CurrentNotification = CreateWidget<UGameNotification>(this, NotificationClass);
+		CurrentNotification->AddToViewport();
+		GetWorldTimerManager().SetTimer(NotificationTimer, this, &ACombatPlayerController::NotificationTimer_Callback, CurrentNotification->NotificationTime);
+	}else
+	{
+		Client_TriggerGameNotification(Notification);
+	}
 }
 
 
