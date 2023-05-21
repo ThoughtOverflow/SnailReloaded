@@ -3,6 +3,7 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
+#include "SourceControlHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/Overlay.h"
@@ -167,6 +168,39 @@ UHudData* ACombatPlayerController::GetHudData()
 		SetShowDefuseHint(PlayerHud->bShowDefuseHint);
 	}
 	return HudData;
+}
+
+void ACombatPlayerController::AddDamageIndicator(AActor* Source)
+{
+	if(IsLocalController())
+	{
+		FVector ForwardVector = (Source->GetActorLocation()-GetPawn()->GetActorLocation())*FVector(1.f, 1.f, 0.f);
+		ForwardVector.Normalize();
+		float DotX = ForwardVector.Dot(GetPawn()->GetActorRightVector());
+		float DotY = ForwardVector.Dot(GetPawn()->GetActorForwardVector());
+
+		float Angle = FMath::RadiansToDegrees(FMath::Acos(DotX));
+		if(DotY < 0.f)
+		{
+			Angle = 360.f - Angle;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("%f"),Angle)
+		
+		
+		DamageIndicatorWidget = CreateWidget<UDamageIndicatorWidget>(this, DamageIndicatorClass);
+		DamageIndicatorWidget->Angle=Angle;
+		DamageIndicatorWidget->AddToViewport();
+		
+	}else
+	{
+		Client_AddDamageIndicator(Source);
+	}
+}
+
+
+void ACombatPlayerController::Client_AddDamageIndicator_Implementation(AActor* Source)
+{
+	AddDamageIndicator(Source);
 }
 
 void ACombatPlayerController::ToggleBuyMenu(bool bOpen)

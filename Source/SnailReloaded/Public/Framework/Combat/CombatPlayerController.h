@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/HealthComponent.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Gameplay/UI/DamageIndicatorWidget.h"
 #include "Gameplay/UI/GameNotification.h"
 #include "Gameplay/UI/TeamSelectionWidget.h"
 #include "CombatPlayerController.generated.h"
@@ -54,6 +55,13 @@ public:
 	TSubclassOf<UUserWidget> ScoreBoardClass;
 	UPROPERTY(BlueprintReadWrite)
 	UUserWidget* ScoreBoardWidget;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player UI")
+	TSubclassOf<UDamageIndicatorWidget> DamageIndicatorClass;
+	UPROPERTY(BlueprintReadWrite)
+	UDamageIndicatorWidget* DamageIndicatorWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float DamageAngle;
 	
 
 protected:
@@ -103,6 +111,11 @@ public:
 	void UpdatePlayerHud(UHudData* HudData);
 	UFUNCTION(BlueprintPure)
 	UHudData* GetHudData();
+	UFUNCTION()
+	void AddDamageIndicator(AActor* Source);
+	UFUNCTION(Client, Reliable)
+	void Client_AddDamageIndicator(AActor* Source);
+	
 
 	//Buy menu:
 
