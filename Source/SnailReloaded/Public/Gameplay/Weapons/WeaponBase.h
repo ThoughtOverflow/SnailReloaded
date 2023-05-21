@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+class USoundCue;
 USTRUCT(BlueprintType)
 struct FWeaponRecoil
 {
@@ -44,7 +45,9 @@ enum class EItemIdentifier : uint8
 	DefaultMelee = 3,
 	DefaultAR = 4,
 	DefaultShotgun = 5,
-	NullShield = 6
+	NullShield = 6,
+	VoltyShorty = 7,
+	Triad = 8
 };
 
 UENUM(BlueprintType)
@@ -77,6 +80,8 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
+	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	EItemIdentifier ItemIdentifier;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
@@ -84,6 +89,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", meta = (ClampMin=0))
 	float MinimumFireDelay;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	FName HandMountSocketName;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	EWeaponMode WeaponMode;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated)
@@ -114,6 +122,12 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* ImpactParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	UNiagaraSystem* BarrelParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	USoundBase* FireSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	USoundBase* EquipSound;
 	
 	/**
 	 * @brief Maximum projectile deviation from barrel in degrees.
@@ -184,6 +198,15 @@ protected:
 	UFUNCTION()
 	void OnRep_CanSell();
 
+	//Anim functions:
+
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnWeaponFired();
+
+	UFUNCTION()
+	virtual void PlayFireAnimation();
+
 #if WITH_EDITOR
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -236,8 +259,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	UAnimMontage* GetRandomFireMontage();
+	
+	UFUNCTION()
+	virtual void SpawnBarrelParticles();
+	UFUNCTION()
+	virtual void PlayFireSound();
+	UFUNCTION()
+	virtual void PlayEquipSound();
 
 	UFUNCTION()
-	virtual void OnWeaponFireAnimationPlayed();
+	virtual void OnFireAnimPlayed();
 	
 };

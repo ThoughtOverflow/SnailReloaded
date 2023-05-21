@@ -3,7 +3,9 @@
 
 #include "Gameplay/Weapons/WeaponBase.h"
 
+#include "NiagaraFunctionLibrary.h"
 #include "Curves/CurveVector.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -27,6 +29,7 @@ AWeaponBase::AWeaponBase()
 
 	ItemIdentifier = EItemIdentifier::None;
 	bShotgunSpread = false;
+	HandMountSocketName = FName("weapon_socket");
 	ConstantDamage = 10.f;
 	WeaponMode = EWeaponMode::Automatic;
 	WeaponSlot = EWeaponSlot::Primary;
@@ -96,7 +99,7 @@ void AWeaponBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 	if(PropertyName == GET_MEMBER_NAME_CHECKED(AWeaponBase, MinimumFireDelay))
 	{
-		if(WeaponSlot != EWeaponSlot::Melee && MinimumFireDelay>60.f / FireRate)
+		if(WeaponSlot != EWeaponSlot::Melee && WeaponMode != EWeaponMode::SemiAutomatic && MinimumFireDelay>60.f / FireRate)
 		{
 			MinimumFireDelay = 60.f/FireRate;
 		}
@@ -126,6 +129,7 @@ void AWeaponBase::OnRep_ClipAmmo()
 void AWeaponBase::OnRep_Equipped()
 {
 	SetActorHiddenInGame(!GetIsEquipped());
+	
 }
 
 void AWeaponBase::OnRep_Reloading()
@@ -134,6 +138,17 @@ void AWeaponBase::OnRep_Reloading()
 }
 
 void AWeaponBase::OnRep_CanSell()
+{
+	
+}
+
+void AWeaponBase::PlayFireAnimation()
+{
+	WeaponMesh->GetAnimInstance()->Montage_Play(GetRandomFireMontage());
+	OnFireAnimPlayed();
+}
+
+void AWeaponBase::OnFireAnimPlayed()
 {
 	
 }
@@ -233,6 +248,7 @@ void AWeaponBase::WeaponFired()
 	if(HasAuthority())
 	{
 		Recoil_FiredShots++;
+		Multi_OnWeaponFired();
 	}
 }
 
@@ -307,7 +323,29 @@ UAnimMontage* AWeaponBase::GetRandomFireMontage()
 	
 }
 
-void AWeaponBase::OnWeaponFireAnimationPlayed()
+void AWeaponBase::Multi_OnWeaponFired_Implementation()
 {
-	
+	//Trigger fire anim on every player:
+	if(WeaponSlot != EWeaponSlot::Melee)
+	{
+		PlayFireAnimation();
+	}
+}
+
+void AWeaponBase::SpawnBarrelParticles()
+{
+	if(BarrelParticleSystem)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(BarrelParticleSystem, WeaponMesh, FName("barrel_socket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+	}
+}
+
+void AWeaponBase::PlayFireSound()
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, WeaponMesh->GetSocketLocation(FName("barrel_socket")), FRotator::ZeroRotator);
+}
+
+void AWeaponBase::PlayEquipSound()
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EquipSound, WeaponMesh->GetSocketLocation(FName("barrel_socket")), FRotator::ZeroRotator);	
 }
