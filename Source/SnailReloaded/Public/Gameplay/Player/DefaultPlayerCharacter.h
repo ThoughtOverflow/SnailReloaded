@@ -91,8 +91,6 @@ public:
 	int32 FiredRoundsPerShootingEvent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	bool bAllowAutoReload;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
-	UNiagaraSystem* NiagaraSystem;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<APickup> PickupClass;
@@ -316,8 +314,8 @@ public:
 	bool CanWeaponFireInMode();
 	UFUNCTION(BlueprintPure)
 	bool WeaponHasAmmo();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
+	UFUNCTION(Client, Reliable)
+	void Client_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnBarrelParticles();
 	UFUNCTION(NetMulticast, Reliable)

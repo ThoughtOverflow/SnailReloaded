@@ -1081,7 +1081,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 
 					TraceEndLoc += EndDeviation;
 					CalculateWeaponRecoil(TraceEndLoc);
-					
+					Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
 						HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
 					{
@@ -1108,7 +1108,6 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 								
 							}
 						}
-						Multi_SpawnBulletParticles(TraceStartLoc, HitResult.GetActor() ? HitResult.ImpactPoint : TraceEndLoc);
 					}
 				}
 				GetCurrentlyEquippedWeapon()->WeaponFired();
@@ -1129,7 +1128,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBarrelParticles();
 				Multi_PlayFireAudio();
-
+				Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 				CalculateWeaponRecoil(TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
 				
@@ -1157,8 +1156,6 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							
 						}
 					}
-					Multi_SpawnBulletParticles(TraceStartLoc, HitResult.GetActor() ? HitResult.ImpactPoint : TraceEndLoc);
-					
 				}
 			}
 		}
@@ -1428,11 +1425,11 @@ void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector 
 	}
 }
 
-void ADefaultPlayerCharacter::Multi_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
+void ADefaultPlayerCharacter::Client_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
 {
-	if(NiagaraSystem)
+	if(GetCurrentlyEquippedWeapon() && GetCurrentlyEquippedWeapon()->TracerParticleSystem)
 	{
-		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, StartLoc, UKismetMathLibrary::FindLookAtRotation(StartLoc, EndLoc));	
+		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), GetCurrentlyEquippedWeapon()->TracerParticleSystem, StartLoc, UKismetMathLibrary::FindLookAtRotation(StartLoc, EndLoc));	
 	}
 }
 
