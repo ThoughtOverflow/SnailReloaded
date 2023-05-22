@@ -555,27 +555,39 @@ bool ADefaultPlayerCharacter::CanPlayerAttack()
 
 void ADefaultPlayerCharacter::DropCurrentWeapon()
 {
-	FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
-	if(GetCurrentlyEquippedWeapon())
+	if(HasAuthority())
 	{
+		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+		if(GetCurrentlyEquippedWeapon())
+		{
 		
 		
 		
-		APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
-		Pickup->WeaponClass = GetCurrentlyEquippedWeapon()->GetClass();
-		Pickup->SkeletalMesh->SetSkeletalMesh(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSkeletalMeshAsset(), false);
-		Pickup->SkeletalMesh->SetRelativeScale3D(CurrentlyEquippedWeapon->WeaponMesh->GetRelativeScale3D() * Pickup->PickupGlobalScale);
-		Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
-		Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
-		Pickup->SetWidgetWeaponName(GetCurrentlyEquippedWeapon()->WeaponName);
-		RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
-	}else if(bIsBombEquipped && HasBomb())
+			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+			Pickup->WeaponClass = GetCurrentlyEquippedWeapon()->GetClass();
+			Pickup->SkeletalMesh->SetSkeletalMesh(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSkeletalMeshAsset(), false);
+			Pickup->SkeletalMesh->SetRelativeScale3D(CurrentlyEquippedWeapon->WeaponMesh->GetRelativeScale3D() * Pickup->PickupGlobalScale);
+			Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
+			Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
+			Pickup->SetWidgetWeaponName(GetCurrentlyEquippedWeapon()->WeaponName);
+			RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
+		}else if(bIsBombEquipped && HasBomb())
+		{
+			//Spawn bomb:
+			ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
+			TryUnequipBomb();
+			SetHasBomb(false);
+		}
+	}else
 	{
-		//Spawn bomb:
-		ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
-		TryUnequipBomb();
-		SetHasBomb(false);
+		Server_DropCurrentWeapon();
 	}
+	
+}
+
+void ADefaultPlayerCharacter::Server_DropCurrentWeapon_Implementation()
+{
+	DropCurrentWeapon();
 }
 
 void ADefaultPlayerCharacter::OnRep_AllowPlant()

@@ -197,6 +197,8 @@ protected:
 	bool CanPlayerAttack();
 	UFUNCTION(BlueprintCallable)
 	void DropCurrentWeapon();
+	UFUNCTION(Server, Reliable)
+	void Server_DropCurrentWeapon();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
