@@ -462,6 +462,7 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(PrimaryWeapon) PrimaryWeapon->Destroy();
 		if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
+		TryStopPlanting();
 		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
 		{
 			CombatPlayerState->AddDeath();
@@ -1079,10 +1080,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					
 
 					TraceEndLoc += EndDeviation;
-					Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
-
 					CalculateWeaponRecoil(TraceEndLoc);
-					
+					Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
 						HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
 					{
@@ -1127,10 +1126,9 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
-				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				Multi_SpawnBarrelParticles();
 				Multi_PlayFireAudio();
-
+				Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 				CalculateWeaponRecoil(TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
 				
@@ -1158,7 +1156,6 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							
 						}
 					}
-					
 				}
 			}
 		}
@@ -1428,11 +1425,11 @@ void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector 
 	}
 }
 
-void ADefaultPlayerCharacter::Multi_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
+void ADefaultPlayerCharacter::Client_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
 {
-	if(NiagaraSystem)
+	if(GetCurrentlyEquippedWeapon() && GetCurrentlyEquippedWeapon()->TracerParticleSystem)
 	{
-		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, StartLoc, UKismetMathLibrary::FindLookAtRotation(StartLoc, EndLoc));	
+		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), GetCurrentlyEquippedWeapon()->TracerParticleSystem, StartLoc, UKismetMathLibrary::FindLookAtRotation(StartLoc, EndLoc));	
 	}
 }
 
@@ -1490,11 +1487,6 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 		{
 			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
 			bAllowPlant &= !CombatGameState->IsSomeonePlanting();
-			//cancel plant if somehow it became false;
-			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
-			{
-				CombatGameState->SetPlayerPlanting(this, false);
-			}
 		}
 		OnRep_AllowPlant();
 	}

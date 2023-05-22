@@ -65,7 +65,7 @@ void AStandardCombatGameMode::EndDefuse(ADefaultPlayerCharacter* PlantingPlayer)
 void AStandardCombatGameMode::PlantBomb(ADefaultPlayerCharacter* Planter)
 {
 	//plant bomb - change phases.
-	if(BombActor)
+	if(BombActor && Planter)
 	{
 		if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
 		{
@@ -83,11 +83,14 @@ void AStandardCombatGameMode::PlantBomb(ADefaultPlayerCharacter* Planter)
 void AStandardCombatGameMode::DefuseBomb(ADefaultPlayerCharacter* Defuser)
 {
 	//stop bomb - end game.
-	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	if(Defuser)
 	{
-		if(StandardCombatGameState->PlantedBomb)
+		if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
 		{
-			StandardCombatGameState->PlantedBomb->DefuseBomb();
+			if(StandardCombatGameState->PlantedBomb)
+			{
+				StandardCombatGameState->PlantedBomb->DefuseBomb();
+			}
 		}
 	}
 }
