@@ -14,6 +14,9 @@ APickup::APickup()
 	PrimaryActorTick.bCanEverTick = true;
 
 	PickupGlobalScale = 1.f;
+
+	bReplicates = true;
+	SetReplicateMovement(true);
 	
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
 	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("PickupInteraction"));
