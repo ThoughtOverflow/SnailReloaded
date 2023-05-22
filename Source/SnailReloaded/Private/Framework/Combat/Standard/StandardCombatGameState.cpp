@@ -48,6 +48,27 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 		{
 			ExplodeBomb();
 		}
+	}else if(ExpiredPhase == EGamePhase::EndPhase)
+	{
+		//Remove everything non static from the map. eg.: weapon pickups, bomb, etc
+		if(PlantedBomb)
+		{
+			PlantedBomb->Destroy();
+			PlantedBomb = nullptr;
+			//remove all pickups:
+			TArray<AActor*> RefPickups;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), RefPickups);
+			for(AActor* actor : RefPickups)
+			{
+				actor->Destroy();
+			}
+			//destroy bomb pickup.
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABombPickup::StaticClass(), RefPickups);
+			for(AActor* actor : RefPickups)
+			{
+				actor->Destroy();
+			}
+		}
 	}
 
 	switch (CurrentGamePhase.GamePhase) {
@@ -515,7 +536,16 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 		if(bAttackersDead || bDefendersDead)
 		{
 			RoundEndResult = bAttackersDead ? ERoundEndResult::AttackersKilled : ERoundEndResult::DefendersKilled;
+			//The one fckn unique case that will 100% happen - we are playing with bastards.
+			if(bAttackersDead && bDefendersDead && PlantedBomb)
+			{
+				RoundEndResult = ERoundEndResult::DefendersKilled;
+			}
+			
 			if(!PlantedBomb)
+			{
+				SelectNewPhase(EGamePhase::EndPhase);
+			}else if(bDefendersDead)
 			{
 				SelectNewPhase(EGamePhase::EndPhase);
 			}
