@@ -515,7 +515,16 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 		if(bAttackersDead || bDefendersDead)
 		{
 			RoundEndResult = bAttackersDead ? ERoundEndResult::AttackersKilled : ERoundEndResult::DefendersKilled;
+			//The one fckn unique case that will 100% happen - we are playing with bastards.
+			if(bAttackersDead && bDefendersDead && PlantedBomb)
+			{
+				RoundEndResult = ERoundEndResult::DefendersKilled;
+			}
+			
 			if(!PlantedBomb)
+			{
+				SelectNewPhase(EGamePhase::EndPhase);
+			}else if(bDefendersDead)
 			{
 				SelectNewPhase(EGamePhase::EndPhase);
 			}
