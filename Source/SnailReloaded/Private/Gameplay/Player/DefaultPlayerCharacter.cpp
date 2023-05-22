@@ -560,16 +560,8 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
 		if(GetCurrentlyEquippedWeapon())
 		{
-		
-		
-		
 			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
-			Pickup->WeaponClass = GetCurrentlyEquippedWeapon()->GetClass();
-			Pickup->SkeletalMesh->SetSkeletalMesh(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSkeletalMeshAsset(), false);
-			Pickup->SkeletalMesh->SetRelativeScale3D(CurrentlyEquippedWeapon->WeaponMesh->GetRelativeScale3D() * Pickup->PickupGlobalScale);
-			Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
-			Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
-			Pickup->SetWidgetWeaponName(GetCurrentlyEquippedWeapon()->WeaponName);
+			Pickup->SetWeaponReference(GetCurrentlyEquippedWeapon()->GetClass(), this);
 			RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
 		}else if(bIsBombEquipped && HasBomb())
 		{
