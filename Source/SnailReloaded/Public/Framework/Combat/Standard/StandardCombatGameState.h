@@ -88,6 +88,15 @@ protected:
 	EBombTeam TeamASide;
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	EBombTeam TeamBSide;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AWeaponBase> DefaultMelee;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AWeaponBase> DefaultPrimary;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AWeaponBase> DefaultSecondary;
+	
+
 	
 public:
 

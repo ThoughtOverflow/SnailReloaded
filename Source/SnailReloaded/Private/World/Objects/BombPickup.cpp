@@ -17,7 +17,7 @@ ABombPickup::ABombPickup()
 	SetReplicateMovement(true);
 	
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("PickupInteraction"));
+	InteractionComponent = CreateDefaultSubobject<UBombPickupInteraction>(TEXT("PickupInteraction"));
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 
 	SetRootComponent(BoxCollision);

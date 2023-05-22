@@ -560,6 +560,10 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
 		if(GetCurrentlyEquippedWeapon())
 		{
+			if(GetCurrentlyEquippedWeapon()->GetIsReloading())
+			{
+				CancelReload();
+			}
 			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
 			Pickup->SetWeaponReference(GetCurrentlyEquippedWeapon()->GetClass(), this);
 			RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
@@ -765,15 +769,8 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 {
 	if(PlayerController)
 	{
-		//Add wpn after possessing
-		if(TestWpn)
-		{
-			AssignWeapon(TestWpn, EEquipCondition::EquipAlways);
-		}
-
 		//Load Default hud for player UI
 		Client_LoadDefaultHudData();
-		
 	}
 }
 
@@ -861,6 +858,24 @@ bool ADefaultPlayerCharacter::RemoveWeapon(EWeaponSlot Slot)
 		Server_RemoveWeapon(Slot);
 	}
 	return false;
+}
+
+void ADefaultPlayerCharacter::RemoveAllWeapons()
+{
+	if(HasAuthority())
+	{
+		RemoveWeapon(EWeaponSlot::Melee);
+		RemoveWeapon(EWeaponSlot::Primary);
+		RemoveWeapon(EWeaponSlot::Secondary);
+	}else
+	{
+		Server_RemoveAllWeapons();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_RemoveAllWeapons_Implementation()
+{
+	RemoveAllWeapons();
 }
 
 void ADefaultPlayerCharacter::Server_RemoveWeapon_Implementation(EWeaponSlot Slot)
