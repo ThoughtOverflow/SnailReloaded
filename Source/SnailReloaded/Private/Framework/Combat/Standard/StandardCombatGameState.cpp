@@ -289,9 +289,35 @@ void AStandardCombatGameState::RespawnPlayers()
 						CurrentCharacter = GetWorld()->SpawnActor<ADefaultPlayerCharacter>(PlayerCharacterClass, RandStart->GetActorLocation(), RandStart->GetActorRotation());
 						PlayerController->Possess(CurrentCharacter);
 					}
+
+					//reset weapons:
+
+					if(!CurrentCharacter->GetWeaponAtSlot(EWeaponSlot::Melee) && DefaultMelee)
+					{
+						//assign new melee:
+						CurrentCharacter->AssignWeapon(DefaultMelee, EEquipCondition::EquipIfStronger);
+					}
+					if(AWeaponBase* Weapon = CurrentCharacter->GetWeaponAtSlot(EWeaponSlot::Primary))
+					{
+						Weapon->SetCurrentClipAmmo(Weapon->GetMaxClipAmmo());
+						Weapon->SetCurrentTotalAmmo(Weapon->GetMaxTotalAmmo());
+					}else if(DefaultPrimary)
+					{
+						CurrentCharacter->AssignWeapon(DefaultPrimary, EEquipCondition::EquipIfStronger);
+					}
+					if(AWeaponBase* Weapon = CurrentCharacter->GetWeaponAtSlot(EWeaponSlot::Secondary))
+					{
+						Weapon->SetCurrentClipAmmo(Weapon->GetMaxClipAmmo());
+						Weapon->SetCurrentTotalAmmo(Weapon->GetMaxTotalAmmo());
+					}else if(DefaultSecondary)
+					{
+						CurrentCharacter->AssignWeapon(DefaultSecondary, EEquipCondition::EquipIfStronger);
+					}
+					
 					CurrentCharacter->SetActorLocation(RandStart->GetActorLocation());
 					PlayerController->SetRespawnRotation(RandStart->GetActorRotation());
 					CurrentCharacter->BlockPlayerInputs(false);
+					
 				}
 			}
 		}

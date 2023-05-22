@@ -348,9 +348,6 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	float GetReloadProgress();
-	
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeaponBase> TestWpn;
 
 	//Buy system
 

@@ -769,15 +769,8 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 {
 	if(PlayerController)
 	{
-		//Add wpn after possessing
-		if(TestWpn)
-		{
-			AssignWeapon(TestWpn, EEquipCondition::EquipAlways);
-		}
-
 		//Load Default hud for player UI
 		Client_LoadDefaultHudData();
-		
 	}
 }
 
