@@ -860,6 +860,24 @@ bool ADefaultPlayerCharacter::RemoveWeapon(EWeaponSlot Slot)
 	return false;
 }
 
+void ADefaultPlayerCharacter::RemoveAllWeapons()
+{
+	if(HasAuthority())
+	{
+		RemoveWeapon(EWeaponSlot::Melee);
+		RemoveWeapon(EWeaponSlot::Primary);
+		RemoveWeapon(EWeaponSlot::Secondary);
+	}else
+	{
+		Server_RemoveAllWeapons();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_RemoveAllWeapons_Implementation()
+{
+	RemoveAllWeapons();
+}
+
 void ADefaultPlayerCharacter::Server_RemoveWeapon_Implementation(EWeaponSlot Slot)
 {
 	RemoveWeapon(Slot);

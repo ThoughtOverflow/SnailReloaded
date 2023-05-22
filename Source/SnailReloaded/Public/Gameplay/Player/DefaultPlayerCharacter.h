@@ -278,6 +278,10 @@ public:
 	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition);
 	UFUNCTION(BlueprintCallable)
 	bool RemoveWeapon(EWeaponSlot Slot);
+	UFUNCTION(BlueprintCallable)
+	void RemoveAllWeapons();
+	UFUNCTION(Server, Reliable)
+	void Server_RemoveAllWeapons();
 	UFUNCTION(Server,Reliable)
 	void Server_RemoveWeapon(EWeaponSlot Slot);
 	UFUNCTION(BlueprintCallable)
