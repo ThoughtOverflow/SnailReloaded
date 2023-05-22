@@ -48,6 +48,27 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 		{
 			ExplodeBomb();
 		}
+	}else if(ExpiredPhase == EGamePhase::EndPhase)
+	{
+		//Remove everything non static from the map. eg.: weapon pickups, bomb, etc
+		if(PlantedBomb)
+		{
+			PlantedBomb->Destroy();
+			PlantedBomb = nullptr;
+			//remove all pickups:
+			TArray<AActor*> RefPickups;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), RefPickups);
+			for(AActor* actor : RefPickups)
+			{
+				actor->Destroy();
+			}
+			//destroy bomb pickup.
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABombPickup::StaticClass(), RefPickups);
+			for(AActor* actor : RefPickups)
+			{
+				actor->Destroy();
+			}
+		}
 	}
 
 	switch (CurrentGamePhase.GamePhase) {
