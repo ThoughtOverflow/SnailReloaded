@@ -560,6 +560,10 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
 		if(GetCurrentlyEquippedWeapon())
 		{
+			if(GetCurrentlyEquippedWeapon()->GetIsReloading())
+			{
+				CancelReload();
+			}
 			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
 			Pickup->SetWeaponReference(GetCurrentlyEquippedWeapon()->GetClass(), this);
 			RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
