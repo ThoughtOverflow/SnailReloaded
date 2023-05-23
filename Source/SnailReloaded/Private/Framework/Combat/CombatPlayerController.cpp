@@ -446,7 +446,6 @@ void ACombatPlayerController::TriggerGameNotification(ENotificationType Notifica
 	}
 }
 
-
 void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)
 {
 	AssignPlayerToTeam(Team);

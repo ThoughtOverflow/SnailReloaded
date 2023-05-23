@@ -11,6 +11,7 @@
  * 
  */
 
+
 UENUM()
 enum class EPlayerColor : uint8
 {
@@ -35,6 +36,7 @@ public:
 
 	virtual void BeginPlay() override;
 
+
 protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerMoney)
@@ -53,12 +55,14 @@ protected:
 	int32 PlayerDefuseCount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_DiedPreviousRound)
 	bool IsDeadPreviousRound;
 	
 
 	UFUNCTION()
 	void OnRep_GameTeam();
+	UFUNCTION()
+	void OnRep_DiedPreviousRound();
 	
 	UFUNCTION()
 	void OnRep_PlayerMoney();
@@ -123,5 +127,11 @@ public:
 	void Server_SetPlayerColor(EPlayerColor Color);
 	UFUNCTION(BlueprintPure)
 	EPlayerColor GetPlayerColor();
+
+	UPROPERTY(EditDefaultsOnly)
+	TMap<EPlayerColor, FLinearColor> ColorMap;
+
+	UFUNCTION(BlueprintPure)
+	FLinearColor GetColorByEnum(EPlayerColor Color);
 	
 };

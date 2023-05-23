@@ -16,10 +16,6 @@ class SNAILRELOADED_API UTeamSelectionWidget : public UUserWidget
 
 public:
 	
-	UPROPERTY(EditDefaultsOnly)
-	TMap<EPlayerColor, FLinearColor> ColorMap;
 
-	UFUNCTION(BlueprintPure)
-	FLinearColor GetColorByEnum(EPlayerColor Color);
 	
 };

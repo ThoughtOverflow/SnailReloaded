@@ -42,6 +42,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
 	UOverlay* NotificationWrapper;
+
 	
 	
 	
