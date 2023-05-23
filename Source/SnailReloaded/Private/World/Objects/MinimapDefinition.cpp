@@ -34,6 +34,7 @@ void AMinimapDefinition::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AMinimapDefinition, bShowPlantedBomb);
+	DOREPLIFETIME(AMinimapDefinition, bShowDroppedBomb);
 	DOREPLIFETIME(AMinimapDefinition, BombLoc);
 }
 
@@ -85,6 +86,20 @@ void AMinimapDefinition::SetShowPlantMarker(bool bShow)
 bool AMinimapDefinition::ShouldShowPlantMarker()
 {
 	return bShowPlantedBomb;
+}
+
+void AMinimapDefinition::SetShowDroppedBombMarker(bool bShow)
+{
+	if(HasAuthority())
+	{
+		bShowDroppedBomb = bShow;
+		OnRep_MapMarkers();
+	}
+}
+
+bool AMinimapDefinition::ShouldShowDroppedBombMarker()
+{
+	return bShowDroppedBomb;
 }
 
 void AMinimapDefinition::SetBombLocation(FVector NewLoc)

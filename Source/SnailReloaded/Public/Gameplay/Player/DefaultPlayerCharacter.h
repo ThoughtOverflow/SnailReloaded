@@ -123,6 +123,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void FellOutOfWorld(const UDamageType& dmgType) override;
 
 	//Health Component:
 
@@ -422,6 +423,11 @@ public:
 	void Server_TryEquipBomb();
 	UFUNCTION(Server, Reliable)
 	void Server_TryUnequipBomb();
+
+	UFUNCTION(BlueprintCallable)
+	void DropWeaponAtSlot(EWeaponSlot Slot);
+	UFUNCTION()
+	void DropBomb();
 	
 };
 

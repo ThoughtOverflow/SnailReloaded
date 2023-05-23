@@ -33,6 +33,8 @@ APickup::APickup()
 	BoxCollision->SetEnableGravity(true);
 	BoxCollision->SetCollisionResponseToAllChannels(ECR_Block);
 	BoxCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	BoxCollision->SetNotifyRigidBodyCollision(true);
+	BoxCollision->OnComponentHit.AddDynamic(this, &APickup::OnBoxCollide);
 	
 	InteractionComponent->OnInteract.AddDynamic(this, &APickup::OnPickupInteract);
 
@@ -71,6 +73,18 @@ void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APickup, TotalAmmo);
 }
 
+void APickup::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
+{
+	NormalImpulse.Normalize();
+	float degZ = FMath::RadiansToDegrees(FMath::Acos(NormalImpulse.Dot(FVector(0.f, 0.f, 1.f))));
+	if(degZ <= 30.f)
+	{
+		BoxCollision->SetSimulatePhysics(false);
+		BoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
+}
+
 // Called every frame
 void APickup::Tick(float DeltaTime)
 {
@@ -84,6 +98,9 @@ void APickup::OnPickupInteract(APawn* Interactor)
 	{
 		if(DefaultPlayerCharacter->HasAuthority())
 		{
+			//Drop wpn first
+			DefaultPlayerCharacter->DropWeaponAtSlot(WeaponReference.GetDefaultObject()->WeaponSlot);
+			
 			AWeaponBase* NewWpn = DefaultPlayerCharacter->AssignWeapon(WeaponReference, EEquipCondition::EquipIfStronger);
 			NewWpn->SetCurrentClipAmmo(ClipAmmo);
 			NewWpn->SetCurrentTotalAmmo(TotalAmmo);
