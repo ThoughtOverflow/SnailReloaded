@@ -422,6 +422,11 @@ public:
 	void Server_TryEquipBomb();
 	UFUNCTION(Server, Reliable)
 	void Server_TryUnequipBomb();
+
+	UFUNCTION(BlueprintCallable)
+	void DropWeaponAtSlot(EWeaponSlot Slot);
+	UFUNCTION()
+	void DropBomb();
 	
 };
 

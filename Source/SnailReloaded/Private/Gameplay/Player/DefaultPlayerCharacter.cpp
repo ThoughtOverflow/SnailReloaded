@@ -557,22 +557,15 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 {
 	if(HasAuthority())
 	{
-		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
-		if(GetCurrentlyEquippedWeapon())
+		if(bIsBombEquipped && HasBomb())
 		{
-			if(GetCurrentlyEquippedWeapon()->GetIsReloading())
+			DropBomb();
+		}else
+		{
+			if(GetCurrentlyEquippedWeapon())
 			{
-				CancelReload();
+				DropWeaponAtSlot(GetCurrentlyEquippedWeapon()->WeaponSlot);
 			}
-			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
-			Pickup->SetWeaponReference(GetCurrentlyEquippedWeapon()->GetClass(), this);
-			RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
-		}else if(bIsBombEquipped && HasBomb())
-		{
-			//Spawn bomb:
-			ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
-			TryUnequipBomb();
-			SetHasBomb(false);
 		}
 	}else
 	{
@@ -580,6 +573,37 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 	}
 	
 }
+
+void ADefaultPlayerCharacter::DropWeaponAtSlot(EWeaponSlot Slot)
+{
+	if(HasAuthority())
+	{
+		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+		if(AWeaponBase* WeaponToDrop = GetWeaponAtSlot(Slot))
+		{
+			if(WeaponToDrop->GetIsReloading())
+			{
+				CancelReload();
+			}
+			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+			Pickup->SetWeaponReference(WeaponToDrop->GetClass(), this);
+			RemoveWeapon(WeaponToDrop->WeaponSlot);
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::DropBomb()
+{
+	FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+	if(HasBomb())
+	{
+		//Spawn bomb:
+		ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
+		TryUnequipBomb();
+		SetHasBomb(false);
+	}
+}
+
 
 void ADefaultPlayerCharacter::Server_DropCurrentWeapon_Implementation()
 {

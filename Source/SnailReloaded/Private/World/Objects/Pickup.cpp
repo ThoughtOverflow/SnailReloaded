@@ -84,6 +84,9 @@ void APickup::OnPickupInteract(APawn* Interactor)
 	{
 		if(DefaultPlayerCharacter->HasAuthority())
 		{
+			//Drop wpn first
+			DefaultPlayerCharacter->DropWeaponAtSlot(WeaponReference.GetDefaultObject()->WeaponSlot);
+			
 			AWeaponBase* NewWpn = DefaultPlayerCharacter->AssignWeapon(WeaponReference, EEquipCondition::EquipIfStronger);
 			NewWpn->SetCurrentClipAmmo(ClipAmmo);
 			NewWpn->SetCurrentTotalAmmo(TotalAmmo);

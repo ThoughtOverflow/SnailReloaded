@@ -166,6 +166,14 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 								}else
 								{
 									//Drop current, buy new one.
+
+									PlayerCharacter->DropWeaponAtSlot(Weapon->WeaponSlot);
+									
+									PlayerCharacter->AssignWeapon(WeaponClass);
+									PlayerCharacter->EquipStrongestWeapon();
+									//Remove monkey:
+									CombatPlayerState->ChangePlayerMoney(-ItemPrice);
+									return true;
 								}
 							}
 						}
