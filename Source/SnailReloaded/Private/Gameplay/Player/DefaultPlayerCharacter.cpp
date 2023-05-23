@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Engine/DamageEvents.h"
@@ -100,6 +101,18 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInDefuseRadius);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowDefuse);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsBombEquipped);
+}
+
+void ADefaultPlayerCharacter::FellOutOfWorld(const UDamageType& dmgType)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->ChangeObjectHealth(FDamageRequest::DeathDamage(this, this));
+		}
+	}
+	Super::FellOutOfWorld(dmgType);
 }
 
 EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
@@ -578,7 +591,7 @@ void ADefaultPlayerCharacter::DropWeaponAtSlot(EWeaponSlot Slot)
 {
 	if(HasAuthority())
 	{
-		FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+		FVector PlayerLocation = GetController()->GetControlRotation().Vector()+CameraComponent->GetComponentLocation();
 		if(AWeaponBase* WeaponToDrop = GetWeaponAtSlot(Slot))
 		{
 			if(WeaponToDrop->GetIsReloading())
@@ -586,6 +599,8 @@ void ADefaultPlayerCharacter::DropWeaponAtSlot(EWeaponSlot Slot)
 				CancelReload();
 			}
 			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+			//YEET:
+			Pickup->BoxCollision->AddImpulse(GetController()->GetControlRotation().Vector() * 350.f, NAME_None, true);
 			Pickup->SetWeaponReference(WeaponToDrop->GetClass(), this);
 			RemoveWeapon(WeaponToDrop->WeaponSlot);
 		}
@@ -594,11 +609,13 @@ void ADefaultPlayerCharacter::DropWeaponAtSlot(EWeaponSlot Slot)
 
 void ADefaultPlayerCharacter::DropBomb()
 {
-	FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
+	FVector PlayerLocation = GetController()->GetControlRotation().Vector()+CameraComponent->GetComponentLocation();
 	if(HasBomb())
 	{
 		//Spawn bomb:
 		ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
+		//YEET:
+		Pickup->BoxCollision->AddImpulse(GetController()->GetControlRotation().Vector() * 350.f, NAME_None, true);
 		TryUnequipBomb();
 		SetHasBomb(false);
 	}

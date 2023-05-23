@@ -33,6 +33,8 @@ APickup::APickup()
 	BoxCollision->SetEnableGravity(true);
 	BoxCollision->SetCollisionResponseToAllChannels(ECR_Block);
 	BoxCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	BoxCollision->SetNotifyRigidBodyCollision(true);
+	BoxCollision->OnComponentHit.AddDynamic(this, &APickup::OnBoxCollide);
 	
 	InteractionComponent->OnInteract.AddDynamic(this, &APickup::OnPickupInteract);
 
@@ -69,6 +71,18 @@ void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APickup, WeaponReference);
 	DOREPLIFETIME(APickup, ClipAmmo);
 	DOREPLIFETIME(APickup, TotalAmmo);
+}
+
+void APickup::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
+{
+	NormalImpulse.Normalize();
+	float degZ = FMath::RadiansToDegrees(FMath::Acos(NormalImpulse.Dot(FVector(0.f, 0.f, 1.f))));
+	if(degZ <= 30.f)
+	{
+		BoxCollision->SetSimulatePhysics(false);
+		BoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
 }
 
 // Called every frame

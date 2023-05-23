@@ -30,6 +30,8 @@ ABombPickup::ABombPickup()
 	BoxCollision->SetEnableGravity(true);
 	BoxCollision->SetCollisionResponseToAllChannels(ECR_Block);
 	BoxCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	BoxCollision->SetNotifyRigidBodyCollision(true);
+	BoxCollision->OnComponentHit.AddDynamic(this, &ABombPickup::OnBoxCollide);
 	
 	InteractionComponent->OnInteract.AddDynamic(this, &ABombPickup::OnPickupInteract);
 	
@@ -55,6 +57,18 @@ void ABombPickup::OnPickupInteract(APawn* Interactor)
 			DefaultPlayerCharacter->SetHasBomb(true);
 			Destroy();
 		}
+	}
+}
+
+void ABombPickup::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
+{
+	NormalImpulse.Normalize();
+	float degZ = FMath::RadiansToDegrees(FMath::Acos(NormalImpulse.Dot(FVector(0.f, 0.f, 1.f))));
+	if(degZ <= 30.f)
+	{
+		BoxCollision->SetSimulatePhysics(false);
+		BoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	}
 }
 

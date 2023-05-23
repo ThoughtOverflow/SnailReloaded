@@ -42,7 +42,9 @@ public:
 	
 	UFUNCTION()
 	void OnPickupInteract(APawn* Interactor);
-
+	UFUNCTION()
+	void OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                  FVector NormalImpulse, const FHitResult& Hit);
 };
 	
 	
