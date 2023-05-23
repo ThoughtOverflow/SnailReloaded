@@ -4,6 +4,7 @@
 #include "World/Objects/BombPickup.h"
 
 #include "Components/BoxComponent.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 
 ABombPickup::ABombPickup()
@@ -55,6 +56,13 @@ void ABombPickup::OnPickupInteract(APawn* Interactor)
 		if(DefaultPlayerCharacter->HasAuthority())
 		{
 			DefaultPlayerCharacter->SetHasBomb(true);
+			if(HasAuthority())
+			{
+				if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+				{
+					StandardCombatGameState->GetMinimapDefinition()->SetShowDroppedBombMarker(false);
+				}
+			}
 			Destroy();
 		}
 	}
@@ -69,6 +77,13 @@ void ABombPickup::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherA
 	{
 		BoxCollision->SetSimulatePhysics(false);
 		BoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		if(HasAuthority())
+		{
+			if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+			{
+				StandardCombatGameState->GetMinimapDefinition()->SetShowDroppedBombMarker(true);
+			}
+		}
 	}
 }
 

@@ -570,14 +570,17 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 {
 	if(HasAuthority())
 	{
-		if(bIsBombEquipped && HasBomb())
+		if(AStandardCombatGameState* State = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 		{
-			DropBomb();
-		}else
-		{
-			if(GetCurrentlyEquippedWeapon())
+			if(bIsBombEquipped && HasBomb() && !State->IsSomeonePlanting())
 			{
-				DropWeaponAtSlot(GetCurrentlyEquippedWeapon()->WeaponSlot);
+				DropBomb();
+			}else
+			{
+				if(GetCurrentlyEquippedWeapon())
+				{
+					DropWeaponAtSlot(GetCurrentlyEquippedWeapon()->WeaponSlot);
+				}
 			}
 		}
 	}else

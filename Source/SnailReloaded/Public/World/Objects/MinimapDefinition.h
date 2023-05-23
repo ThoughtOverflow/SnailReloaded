@@ -38,6 +38,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_MapMarkers)
 	bool bShowPlantedBomb;
 	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_MapMarkers)
+	bool bShowDroppedBomb;
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_MapMarkers)
 	FVector BombLoc;
 
 public:	
@@ -53,6 +55,10 @@ public:
 	void SetShowPlantMarker(bool bShow);
 	UFUNCTION(BlueprintPure)
 	bool ShouldShowPlantMarker();
+	UFUNCTION(BlueprintCallable)
+	void SetShowDroppedBombMarker(bool bShow);
+	UFUNCTION(BlueprintPure)
+	bool ShouldShowDroppedBombMarker();
 	UFUNCTION(BlueprintCallable)
 	void SetBombLocation(FVector NewLoc);
 	UFUNCTION(BlueprintPure)
