@@ -48,6 +48,7 @@ AWeaponBase::AWeaponBase()
 	ReloadTime = 3.f;
 	bIsReloading = false;
 	bCanSell = true;
+	bIsOneHanded = false;
 
 	Recoil_FiredShots = 0;
 	FireAnimationDelay = 1.f;

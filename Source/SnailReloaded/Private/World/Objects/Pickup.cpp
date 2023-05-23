@@ -46,6 +46,10 @@ void APickup::OnRep_WeaponRef()
 {
 	SkeletalMesh->SetSkeletalMesh(WeaponReference.GetDefaultObject()->WeaponMesh->GetSkeletalMeshAsset(), false);
 	SkeletalMesh->SetRelativeScale3D(WeaponReference.GetDefaultObject()->WeaponMesh->GetRelativeScale3D() * PickupGlobalScale);
+	for(int i=0; i<WeaponReference.GetDefaultObject()->WeaponMesh->GetMaterials().Num(); i++)
+	{
+		SkeletalMesh->SetMaterial(i, WeaponReference.GetDefaultObject()->WeaponMesh->GetMaterial(i));
+	}
 	SetWidgetWeaponName(WeaponReference.GetDefaultObject()->WeaponName);
 }
 
