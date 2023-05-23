@@ -48,7 +48,8 @@ enum class EItemIdentifier : uint8
 	NullShield = 6,
 	VoltyShorty = 7,
 	Triad = 8,
-	Slugfire = 9
+	Slugfire = 9,
+	Snailsprayer = 10
 };
 
 UENUM(BlueprintType)
