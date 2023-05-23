@@ -72,7 +72,27 @@ void AStandardCombatGameMode::PlantBomb(ADefaultPlayerCharacter* Planter)
 			FGamePhase PostPlantPhase;
 			if(GetGamePhaseByType(EGamePhase::PostPlant, PostPlantPhase))
 			{
-				StandardCombatGameState->PlantedBomb = GetWorld()->SpawnActor<ABomb>(BombActor, Planter->GetActorLocation() + Planter->GetActorRotation().Vector() * 100.f, FRotator::ZeroRotator);
+				//Calc new loc:
+				FVector Loc = Planter->GetActorLocation();
+				FVector StartLoc = Planter->GetActorLocation() + Planter->GetActorRotation().Vector() * 100.f;
+				FVector EndLoc = StartLoc + FVector(0.f, 0.f, -500.f);
+				FHitResult HitResult;
+				FCollisionQueryParams Params;
+				if(AStandardCombatGameState* State = GetGameState<AStandardCombatGameState>())
+				{
+					for(auto& Player : State->GetAllGamePlayers())
+					{
+						Params.AddIgnoredActor(Player);
+					}
+				}
+				if(GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility, Params))
+				{
+					if(HitResult.GetActor())
+					{
+						Loc = HitResult.ImpactPoint;
+					}
+				}
+				StandardCombatGameState->PlantedBomb = GetWorld()->SpawnActor<ABomb>(BombActor, Loc, FRotator::ZeroRotator);
 				StandardCombatGameState->PlantedBomb->PlantBomb();
 				Planter->SetHasBomb(false);
 			}

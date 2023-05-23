@@ -621,6 +621,7 @@ void ADefaultPlayerCharacter::DropBomb()
 		Pickup->BoxCollision->AddImpulse(GetController()->GetControlRotation().Vector() * 350.f, NAME_None, true);
 		TryUnequipBomb();
 		SetHasBomb(false);
+		EquipStrongestWeapon();
 	}
 }
 
@@ -1191,8 +1192,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
 				Multi_SpawnBarrelParticles();
 				Multi_PlayFireAudio();
-				Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 				CalculateWeaponRecoil(TraceEndLoc);
+				Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
 				
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
