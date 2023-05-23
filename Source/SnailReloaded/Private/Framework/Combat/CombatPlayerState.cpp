@@ -54,6 +54,16 @@ void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ACombatPlayerState, PlayerScore);
 	DOREPLIFETIME(ACombatPlayerState, PlayerPlantCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerDefuseCount);
+	DOREPLIFETIME(ACombatPlayerState, PlayerColor);
+}
+
+void ACombatPlayerState::OnRep_PlayerColor()
+{
+	//If color changes, notify everything through the GameState.
+	if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		CombatGameState->OnRep_GamePlayers();
+	}
 }
 
 void ACombatPlayerState::SetPlayerMoney(int32 NewMoney)
@@ -199,6 +209,41 @@ void ACombatPlayerState::SetTeam(EGameTeams NewTeam)
 	if(HasAuthority())
 	{
 		CurrentTeam = NewTeam;
+		PlayerColor = EPlayerColor::None;
+		OnRep_PlayerColor();
 		OnRep_GameTeam();
 	}
+}
+
+void ACombatPlayerState::SetPlayerColor(EPlayerColor Color)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			if(GetTeam() == EGameTeams::None) return;
+			for(auto& PlayerState : CombatGameState->GetAllPlayersOfTeam(GetTeam()))
+			{
+				if(PlayerState->GetPlayerColor() == Color)
+				{
+					return;
+				}
+			}
+			PlayerColor = Color;
+			OnRep_PlayerColor();
+		}
+	}else
+	{
+		Server_SetPlayerColor(Color);
+	}
+}
+
+void ACombatPlayerState::Server_SetPlayerColor_Implementation(EPlayerColor Color)
+{
+	SetPlayerColor(Color);
+}
+
+EPlayerColor ACombatPlayerState::GetPlayerColor()
+{
+	return PlayerColor;
 }
