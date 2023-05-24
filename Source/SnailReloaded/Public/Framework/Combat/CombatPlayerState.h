@@ -10,6 +10,21 @@
 /**
  * 
  */
+
+
+UENUM()
+enum class EPlayerColor : uint8
+{
+	None = 0,
+	Red = 1,
+	Green = 2,
+	Blue = 3,
+	Magenta = 4,
+	Cyan = 5,
+	Yellow = 6,
+	
+};
+
 UCLASS()
 class SNAILRELOADED_API ACombatPlayerState : public ADefaultPlayerState
 {
@@ -20,6 +35,7 @@ public:
 	ACombatPlayerState();
 
 	virtual void BeginPlay() override;
+
 
 protected:
 	
@@ -39,12 +55,14 @@ protected:
 	int32 PlayerDefuseCount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_DiedPreviousRound)
 	bool IsDeadPreviousRound;
 	
 
 	UFUNCTION()
 	void OnRep_GameTeam();
+	UFUNCTION()
+	void OnRep_DiedPreviousRound();
 	
 	UFUNCTION()
 	void OnRep_PlayerMoney();
@@ -52,6 +70,14 @@ protected:
 	void OnRep_ScoreUpdate();
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
+
+	//Player colors:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_PlayerColor)
+	EPlayerColor PlayerColor;
+
+	UFUNCTION()
+	void OnRep_PlayerColor();
 
 public:
 
@@ -95,5 +121,17 @@ public:
 	EGameTeams GetTeam();
 	UFUNCTION(BlueprintCallable)
 	void SetTeam(EGameTeams NewTeam);
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerColor(EPlayerColor Color);
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlayerColor(EPlayerColor Color);
+	UFUNCTION(BlueprintPure)
+	EPlayerColor GetPlayerColor();
+
+	UPROPERTY(EditDefaultsOnly)
+	TMap<EPlayerColor, FLinearColor> ColorMap;
+
+	UFUNCTION(BlueprintPure)
+	FLinearColor GetColorByEnum(EPlayerColor Color);
 	
 };

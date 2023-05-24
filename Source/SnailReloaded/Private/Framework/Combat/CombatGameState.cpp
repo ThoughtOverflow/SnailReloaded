@@ -405,3 +405,8 @@ int32 ACombatGameState::GetLoserDeadReward() const
 {
 	return LoserDeadReward;
 }
+
+void ACombatGameState::NotifyPlayerDeath(ACombatPlayerState* Player)
+{
+	OnPlayerDied.Broadcast();
+}

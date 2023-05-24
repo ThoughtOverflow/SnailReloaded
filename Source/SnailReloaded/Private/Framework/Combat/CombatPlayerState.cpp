@@ -4,12 +4,14 @@
 #include "Framework/Combat/CombatPlayerState.h"
 
 #include "Framework/Combat/CombatGameState.h"
+#include "Framework/Combat/CombatPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 ACombatPlayerState::ACombatPlayerState()
 {
 	CurrentTeam = EGameTeams::None;
+	IsDeadPreviousRound = false;
 }
 
 void ACombatPlayerState::BeginPlay()
@@ -28,6 +30,14 @@ void ACombatPlayerState::OnRep_GameTeam()
 	if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		CombatGameState->OnRep_GamePlayers();
+	}
+}
+
+void ACombatPlayerState::OnRep_DiedPreviousRound()
+{
+	if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		CombatGameState->NotifyPlayerDeath(this);
 	}
 }
 
@@ -54,6 +64,17 @@ void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ACombatPlayerState, PlayerScore);
 	DOREPLIFETIME(ACombatPlayerState, PlayerPlantCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerDefuseCount);
+	DOREPLIFETIME(ACombatPlayerState, PlayerColor);
+	DOREPLIFETIME(ACombatPlayerState, IsDeadPreviousRound);
+}
+
+void ACombatPlayerState::OnRep_PlayerColor()
+{
+	//If color changes, notify everything through the GameState.
+	if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		CombatGameState->OnRep_GamePlayers();
+	}
 }
 
 void ACombatPlayerState::SetPlayerMoney(int32 NewMoney)
@@ -176,12 +197,21 @@ void ACombatPlayerState::CalculateScore()
 
 void ACombatPlayerState::YouDied()
 {
-	IsDeadPreviousRound = true;
+	if(HasAuthority() && !IsDeadPreviousRound)
+	{
+		IsDeadPreviousRound = true;
+		OnRep_DiedPreviousRound();
+	}
 }
 
 void ACombatPlayerState::ResetDeathFlag()
 {
-	IsDeadPreviousRound = false;
+	if(HasAuthority() && IsDeadPreviousRound)
+	{
+		IsDeadPreviousRound = false;
+		OnRep_DiedPreviousRound();
+	}
+	
 }
 
 bool ACombatPlayerState::GetDeathState()
@@ -199,6 +229,48 @@ void ACombatPlayerState::SetTeam(EGameTeams NewTeam)
 	if(HasAuthority())
 	{
 		CurrentTeam = NewTeam;
+		PlayerColor = EPlayerColor::None;
+		OnRep_PlayerColor();
 		OnRep_GameTeam();
 	}
+}
+
+void ACombatPlayerState::SetPlayerColor(EPlayerColor Color)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			if(GetTeam() == EGameTeams::None) return;
+			for(auto& PlayerState : CombatGameState->GetAllPlayersOfTeam(GetTeam()))
+			{
+				if(PlayerState->GetPlayerColor() == Color)
+				{
+					return;
+				}
+			}
+			PlayerColor = Color;
+			OnRep_PlayerColor();
+		}
+	}else
+	{
+		Server_SetPlayerColor(Color);
+	}
+}
+
+void ACombatPlayerState::Server_SetPlayerColor_Implementation(EPlayerColor Color)
+{
+	SetPlayerColor(Color);
+}
+
+EPlayerColor ACombatPlayerState::GetPlayerColor()
+{
+	return PlayerColor;
+}
+
+
+FLinearColor ACombatPlayerState::GetColorByEnum(EPlayerColor Color)
+{
+	if(Color == EPlayerColor::None) return FLinearColor::White;
+	return *ColorMap.Find(Color);
 }

@@ -11,6 +11,7 @@
  * 
  */
 
+enum class EPlayerColor : uint8;
 class ACombatPlayerController;
 
 UCLASS()
@@ -41,6 +42,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
 	UOverlay* NotificationWrapper;
+
+	
 	
 	
 };
