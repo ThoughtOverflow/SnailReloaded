@@ -47,7 +47,9 @@ enum class EItemIdentifier : uint8
 	DefaultShotgun = 5,
 	NullShield = 6,
 	VoltyShorty = 7,
-	Triad = 8
+	Triad = 8,
+	Slugfire = 9,
+	Snailsprayer = 10
 };
 
 UENUM(BlueprintType)
@@ -91,6 +93,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	FName HandMountSocketName;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	bool bIsOneHanded;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings", Replicated, meta = (EditCondition = "WeaponSlot != EWeaponSlot::Melee", EditConditionHides=true))
 	EWeaponMode WeaponMode;
@@ -117,13 +121,15 @@ public:
 	int32 NumOfPellets;
 
 	//Recoil:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Recoil", meta = (ShowOnlyInnerProperties))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Recoil", meta = (ShowOnlyInnerProperties))
 	FWeaponRecoil WeaponRecoil;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* ImpactParticleSystem;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	UNiagaraSystem* BarrelParticleSystem;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
+	UNiagaraSystem* TracerParticleSystem;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
 	USoundBase* FireSound;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings")
@@ -148,9 +154,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* WeaponMesh;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Animations")
 	TMap<UAnimMontage*, float> FireAnimations;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings | Animations")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon Settings|Animations")
 	float FireAnimationDelay;
 	
 	
@@ -182,6 +188,9 @@ protected:
 
 	UPROPERTY()
 	int32 Recoil_FiredShots;
+
+	UPROPERTY(EditDefaultsOnly)
+	USoundAttenuation* FireSoundAttenuation;
 
 public:
 	

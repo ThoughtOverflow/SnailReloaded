@@ -154,7 +154,7 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 
 									//sell, then buy it.
 
-									if(SellItem(PlayerCharacter, ItemIdentifier))
+									if(SellItem(PlayerCharacter, Weapon->ItemIdentifier))
 									{
 											PlayerCharacter->AssignWeapon(WeaponClass);
 											PlayerCharacter->EquipStrongestWeapon();
@@ -166,6 +166,14 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 								}else
 								{
 									//Drop current, buy new one.
+
+									PlayerCharacter->DropWeaponAtSlot(Weapon->WeaponSlot);
+									
+									PlayerCharacter->AssignWeapon(WeaponClass);
+									PlayerCharacter->EquipStrongestWeapon();
+									//Remove monkey:
+									CombatPlayerState->ChangePlayerMoney(-ItemPrice);
+									return true;
 								}
 							}
 						}

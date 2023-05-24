@@ -3,3 +3,5 @@
 
 #include "Gameplay/UI/TeamSelectionWidget.h"
 
+#include "Framework/Combat/CombatPlayerState.h"
+

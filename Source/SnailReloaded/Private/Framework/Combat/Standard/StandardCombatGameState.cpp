@@ -38,6 +38,8 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 				PlayerCharacter->PlayerHealthComponent->SetCanSell(false);
 			}
 		}
+		//Barrier
+		ToggleBarriers(false);
 	}else if(ExpiredPhase == EGamePhase::ActiveGame)
 	{
 		//Timer ran out.
@@ -48,6 +50,31 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 		{
 			ExplodeBomb();
 		}
+	}else if(ExpiredPhase == EGamePhase::EndPhase)
+	{
+		if(HasAuthority())
+		{
+			//Remove everything non static from the map. eg.: weapon pickups, bomb, etc
+			if(PlantedBomb)
+			{
+				PlantedBomb->Destroy();
+				PlantedBomb = nullptr;
+			}
+			//remove all pickups:
+			TArray<AActor*> RefPickups;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), RefPickups);
+			for(AActor*& actor : RefPickups)
+			{
+				actor->Destroy();
+			}
+			//destroy bomb pickup.
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABombPickup::StaticClass(), RefPickups);
+			for(AActor*& actor : RefPickups)
+			{
+				actor->Destroy();
+			}
+		}
+
 	}
 
 	switch (CurrentGamePhase.GamePhase) {
@@ -66,17 +93,20 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	if(NewPhase == EGamePhase::EndPhase)
 	{
 
-		for(auto& PlayerState : GetAllGamePlayers())
+		if(HasAuthority())
 		{
-			//Add prep phase noti:
-			if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
+			for(auto& PlayerState : GetAllGamePlayers())
 			{
-				if(GetWinningTeam() == PlayerState->GetTeam())
+				//Add prep phase noti:
+				if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetPlayerController()))
 				{
-					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundWon);
-				}else
-				{
-					CombatPlayerController->TriggerGameNotification(ENotificationType::RoundLost);
+					if(GetWinningTeam() == PlayerState->GetTeam())
+					{
+						CombatPlayerController->TriggerGameNotification(ENotificationType::RoundWon);
+					}else
+					{
+						CombatPlayerController->TriggerGameNotification(ENotificationType::RoundLost);
+					}
 				}
 			}
 		}
@@ -162,7 +192,24 @@ void AStandardCombatGameState::StartNewRound()
 			}
 		}
 	}
+
+	//Barrier
+	ToggleBarriers(true);
 	
+}
+
+void AStandardCombatGameState::ToggleBarriers(bool bShow)
+{
+	if(HasAuthority())
+	{
+		TArray<AActor*> BarrierActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), BarrierClass, BarrierActors);
+		for(auto& actor : BarrierActors)
+		{
+			actor->SetActorHiddenInGame(!bShow);
+			actor->SetActorEnableCollision(bShow);
+		}
+	}
 }
 
 void AStandardCombatGameState::ExplodeBomb()
@@ -261,9 +308,35 @@ void AStandardCombatGameState::RespawnPlayers()
 						CurrentCharacter = GetWorld()->SpawnActor<ADefaultPlayerCharacter>(PlayerCharacterClass, RandStart->GetActorLocation(), RandStart->GetActorRotation());
 						PlayerController->Possess(CurrentCharacter);
 					}
+
+					//reset weapons:
+
+					if(!CurrentCharacter->GetWeaponAtSlot(EWeaponSlot::Melee) && DefaultMelee)
+					{
+						//assign new melee:
+						CurrentCharacter->AssignWeapon(DefaultMelee, EEquipCondition::EquipIfStronger);
+					}
+					if(AWeaponBase* Weapon = CurrentCharacter->GetWeaponAtSlot(EWeaponSlot::Primary))
+					{
+						Weapon->SetCurrentClipAmmo(Weapon->GetMaxClipAmmo());
+						Weapon->SetCurrentTotalAmmo(Weapon->GetMaxTotalAmmo());
+					}else if(DefaultPrimary)
+					{
+						CurrentCharacter->AssignWeapon(DefaultPrimary, EEquipCondition::EquipIfStronger);
+					}
+					if(AWeaponBase* Weapon = CurrentCharacter->GetWeaponAtSlot(EWeaponSlot::Secondary))
+					{
+						Weapon->SetCurrentClipAmmo(Weapon->GetMaxClipAmmo());
+						Weapon->SetCurrentTotalAmmo(Weapon->GetMaxTotalAmmo());
+					}else if(DefaultSecondary)
+					{
+						CurrentCharacter->AssignWeapon(DefaultSecondary, EEquipCondition::EquipIfStronger);
+					}
+					
 					CurrentCharacter->SetActorLocation(RandStart->GetActorLocation());
 					PlayerController->SetRespawnRotation(RandStart->GetActorRotation());
 					CurrentCharacter->BlockPlayerInputs(false);
+					
 				}
 			}
 		}
@@ -341,6 +414,10 @@ void AStandardCombatGameState::OnBombPlanted()
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddPlant();
+		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Attacker)))
+		{
+			PlayerState->ChangePlayerMoney(GetPlantReward());
+		}
 		SelectNewPhase(EGamePhase::PostPlant);
 
 		//Minimap maker:
@@ -488,6 +565,10 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 					bAttackersDead = false;
 					break;
 				}
+			}else
+			{
+				bAttackersDead = false;
+				break;
 			}
 		}
 		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Defender)))
@@ -499,12 +580,25 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 					bDefendersDead = false;
 					break;
 				}
+			}else
+			{
+				bDefendersDead = false;
+				break;
 			}
 		}
 		if(bAttackersDead || bDefendersDead)
 		{
 			RoundEndResult = bAttackersDead ? ERoundEndResult::AttackersKilled : ERoundEndResult::DefendersKilled;
+			//The one fckn unique case that will 100% happen - we are playing with bastards.
+			if(bAttackersDead && bDefendersDead && PlantedBomb)
+			{
+				RoundEndResult = ERoundEndResult::DefendersKilled;
+			}
+			
 			if(!PlantedBomb)
+			{
+				SelectNewPhase(EGamePhase::EndPhase);
+			}else if(bDefendersDead)
 			{
 				SelectNewPhase(EGamePhase::EndPhase);
 			}

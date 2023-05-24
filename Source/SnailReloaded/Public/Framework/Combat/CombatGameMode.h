@@ -118,5 +118,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void ProcessPlayerDeath(ACombatPlayerState* PlayerState);
 
+	//Color:
+
 	
 };

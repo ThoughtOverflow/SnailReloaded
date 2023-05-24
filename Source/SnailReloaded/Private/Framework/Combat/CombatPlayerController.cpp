@@ -3,7 +3,6 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
-#include "SourceControlHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/Overlay.h"

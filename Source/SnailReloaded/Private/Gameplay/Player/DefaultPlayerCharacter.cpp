@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/ArmoredHealthComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Engine/DamageEvents.h"
@@ -100,6 +101,18 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInDefuseRadius);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowDefuse);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsBombEquipped);
+}
+
+void ADefaultPlayerCharacter::FellOutOfWorld(const UDamageType& dmgType)
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->ChangeObjectHealth(FDamageRequest::DeathDamage(this, this));
+		}
+	}
+	Super::FellOutOfWorld(dmgType);
 }
 
 EGameTeams ADefaultPlayerCharacter::QueryGameTeam()
@@ -458,10 +471,11 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 	if(HasAuthority())
 	{
 		//TEMP:!!
-		UnequipWeapon();
-		if(PrimaryWeapon) PrimaryWeapon->Destroy();
-		if(SecondaryWeapon) SecondaryWeapon->Destroy();
+		// UnequipWeapon();
+		// if(PrimaryWeapon) PrimaryWeapon->Destroy();
+		// if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
+		TryStopPlanting();
 		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
 		{
 			CombatPlayerState->AddDeath();
@@ -482,6 +496,17 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			CombatGameMode->ProcessPlayerDeath(Cast<ACombatPlayerState>(GetPlayerState()));
+		}
+		for(auto& Item : GetAllWeapons())
+		{
+			if(Item != EItemIdentifier::None && Item != EItemIdentifier::DefaultMelee)
+			{
+				DropWeaponAtSlot(GetWeaponSlotByIdentifier(Item));
+			}
+		}
+		if(HasBomb())
+		{
+			DropBomb();
 		}
 		this->Destroy();
 	}
@@ -554,27 +579,68 @@ bool ADefaultPlayerCharacter::CanPlayerAttack()
 
 void ADefaultPlayerCharacter::DropCurrentWeapon()
 {
-	FVector PlayerLocation = GetController()->GetControlRotation().Vector()*150.f+CameraComponent->GetComponentLocation();
-	if(GetCurrentlyEquippedWeapon())
+	if(HasAuthority())
 	{
-		
-		
-		
-		APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
-		Pickup->WeaponClass = GetCurrentlyEquippedWeapon()->GetClass();
-		Pickup->SkeletalMesh->SetSkeletalMesh(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSkeletalMeshAsset(), false);
-		Pickup->SkeletalMesh->SetRelativeScale3D(CurrentlyEquippedWeapon->WeaponMesh->GetRelativeScale3D() * Pickup->PickupGlobalScale);
-		Pickup->CurrentWeaponClipAmmo = GetCurrentlyEquippedWeapon()->GetCurrentClipAmmo();
-		Pickup->CurrentWeaponTotalAmmo = GetCurrentlyEquippedWeapon()->GetCurrentTotalAmmo();
-		Pickup->SetWidgetWeaponName(GetCurrentlyEquippedWeapon()->WeaponName);
-		RemoveWeapon(GetCurrentlyEquippedWeapon()->WeaponSlot);
-	}else if(bIsBombEquipped && HasBomb())
+		if(AStandardCombatGameState* State = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+		{
+			if(bIsBombEquipped && HasBomb() && !State->IsSomeonePlanting())
+			{
+				DropBomb();
+			}else
+			{
+				if(GetCurrentlyEquippedWeapon())
+				{
+					DropWeaponAtSlot(GetCurrentlyEquippedWeapon()->WeaponSlot);
+				}
+			}
+		}
+	}else
+	{
+		Server_DropCurrentWeapon();
+	}
+	
+}
+
+
+void ADefaultPlayerCharacter::DropWeaponAtSlot(EWeaponSlot Slot)
+{
+	if(HasAuthority())
+	{
+		FVector PlayerLocation = GetController()->GetControlRotation().Vector()+CameraComponent->GetComponentLocation();
+		if(AWeaponBase* WeaponToDrop = GetWeaponAtSlot(Slot))
+		{
+			if(WeaponToDrop->GetIsReloading())
+			{
+				CancelReload();
+			}
+			APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, PlayerLocation,FRotator::ZeroRotator);
+			//YEET:
+			Pickup->BoxCollision->AddImpulse(GetController()->GetControlRotation().Vector() * 350.f, NAME_None, true);
+			Pickup->SetWeaponReference(WeaponToDrop->GetClass(), this);
+			RemoveWeapon(WeaponToDrop->WeaponSlot);
+		}
+	}
+}
+
+void ADefaultPlayerCharacter::DropBomb()
+{
+	FVector PlayerLocation = GetController()->GetControlRotation().Vector()+CameraComponent->GetComponentLocation();
+	if(HasBomb())
 	{
 		//Spawn bomb:
 		ABombPickup* Pickup = GetWorld()->SpawnActor<ABombPickup>(BombPickupClass, PlayerLocation,FRotator::ZeroRotator);
+		//YEET:
+		Pickup->BoxCollision->AddImpulse(GetController()->GetControlRotation().Vector() * 350.f, NAME_None, true);
 		TryUnequipBomb();
 		SetHasBomb(false);
+		EquipStrongestWeapon();
 	}
+}
+
+
+void ADefaultPlayerCharacter::Server_DropCurrentWeapon_Implementation()
+{
+	DropCurrentWeapon();
 }
 
 void ADefaultPlayerCharacter::OnRep_AllowPlant()
@@ -627,8 +693,11 @@ void ADefaultPlayerCharacter::CheckForInteractable()
 	if(GetWorld() && GetCombatPlayerController() && !IsPendingKillPending())
 	{
 		FHitResult HitResult;
-		FVector TraceStartLocation = CameraComponent->GetComponentLocation();
-		FVector TraceEndLocation = TraceStartLocation + GetCombatPlayerController()->GetControlRotation().Vector() * InteractionCastDistance;
+		FVector TraceStartLocation;
+		FRotator TraceStartRotation;
+		GetController()->GetPlayerViewPoint(TraceStartLocation, TraceStartRotation);
+		TraceStartLocation = CameraComponent->GetComponentLocation();
+		FVector TraceEndLocation = TraceStartLocation + TraceStartRotation.Vector() * InteractionCastDistance;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this);
 
@@ -760,15 +829,8 @@ void ADefaultPlayerCharacter::OnPlayerPossessed(ACombatPlayerController* PlayerC
 {
 	if(PlayerController)
 	{
-		//Add wpn after possessing
-		if(TestWpn)
-		{
-			AssignWeapon(TestWpn, EEquipCondition::EquipAlways);
-		}
-
 		//Load Default hud for player UI
 		Client_LoadDefaultHudData();
-		
 	}
 }
 
@@ -856,6 +918,24 @@ bool ADefaultPlayerCharacter::RemoveWeapon(EWeaponSlot Slot)
 		Server_RemoveWeapon(Slot);
 	}
 	return false;
+}
+
+void ADefaultPlayerCharacter::RemoveAllWeapons()
+{
+	if(HasAuthority())
+	{
+		RemoveWeapon(EWeaponSlot::Melee);
+		RemoveWeapon(EWeaponSlot::Primary);
+		RemoveWeapon(EWeaponSlot::Secondary);
+	}else
+	{
+		Server_RemoveAllWeapons();
+	}
+}
+
+void ADefaultPlayerCharacter::Server_RemoveAllWeapons_Implementation()
+{
+	RemoveAllWeapons();
 }
 
 void ADefaultPlayerCharacter::Server_RemoveWeapon_Implementation(EWeaponSlot Slot)
@@ -1001,10 +1081,14 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 void ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback()
 {
 	FHitResult HitResult;
-	FVector TraceStartLoc = CameraComponent->GetComponentLocation();
-	FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * MeleeWeaponCastMaxDistance;
+	FVector TraceStartLoc;
+	FRotator TraceStartRot;
+	GetController()->GetActorEyesViewPoint(TraceStartLoc, TraceStartRot);
+	TraceStartLoc = CameraComponent->GetComponentLocation();
+	FVector TraceEndLoc = TraceStartLoc + TraceStartRot.Vector() * MeleeWeaponCastMaxDistance;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
+	// DrawDebugLine(GetWorld(), TraceStartLoc, TraceEndLoc, FColor::Orange, false, 2.f, 0, 2);
 	if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
 	{
 		Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
@@ -1028,7 +1112,10 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 	if (HasAuthority() && GetController() && !IsPendingKillPending())
 	{
 		FHitResult HitResult;
-		FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+		FVector TraceStartLoc;
+		FRotator TraceStartRot;
+		GetController()->GetActorEyesViewPoint(TraceStartLoc, TraceStartRot);
+		TraceStartLoc = CameraComponent->GetComponentLocation();
 		FVector TraceEndLoc;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this);
@@ -1064,7 +1151,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				Multi_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
-					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
+					TraceEndLoc = TraceStartLoc + TraceStartRot.Vector() *
 						WeaponCastMaxDistance;
 
 
@@ -1079,10 +1166,8 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 					
 
 					TraceEndLoc += EndDeviation;
-					Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
-
 					CalculateWeaponRecoil(TraceEndLoc);
-					
+					Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 					if (GetWorld() && GetWorld()->LineTraceSingleByChannel(
 						HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, QueryParams))
 					{
@@ -1116,7 +1201,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		}
 		else
 		{
-			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * WeaponCastMaxDistance;
+			TraceEndLoc = TraceStartLoc + TraceStartRot.Vector() * WeaponCastMaxDistance;
 			
 			
 			//Can Shoot:
@@ -1127,11 +1212,10 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				FiredRoundsPerShootingEvent++;
 				CurrentlyEquippedWeapon->SetCurrentClipAmmo(CurrentlyEquippedWeapon->GetCurrentClipAmmo() - 1);
 				if(CurrentlyEquippedWeapon->CanSell()) CurrentlyEquippedWeapon->SetCanSell(false);
-				Multi_SpawnBulletParticles(TraceStartLoc, TraceEndLoc);
 				Multi_SpawnBarrelParticles();
 				Multi_PlayFireAudio();
-
 				CalculateWeaponRecoil(TraceEndLoc);
+				Client_SpawnBulletParticles(GetCurrentlyEquippedWeapon()->WeaponMesh->GetSocketLocation(FName("barrel_socket")), TraceEndLoc);
 				CurrentlyEquippedWeapon->WeaponFired();
 				
 				if (GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,
@@ -1158,7 +1242,6 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 							
 						}
 					}
-					
 				}
 			}
 		}
@@ -1345,6 +1428,15 @@ TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllItems()
 	return Identifiers;
 }
 
+TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllWeapons()
+{
+	TArray<EItemIdentifier> Identifiers;
+	if(PrimaryWeapon) Identifiers.Add(PrimaryWeapon->ItemIdentifier);
+	if(SecondaryWeapon) Identifiers.Add(SecondaryWeapon->ItemIdentifier);
+	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
+	return Identifiers;
+}
+
 EWeaponSlot ADefaultPlayerCharacter::GetWeaponSlotByIdentifier(EItemIdentifier Identifier)
 {
 	if(PrimaryWeapon && PrimaryWeapon->ItemIdentifier == Identifier) return PrimaryWeapon->WeaponSlot;
@@ -1428,11 +1520,11 @@ void ADefaultPlayerCharacter::Multi_SpawnImpactParticles_Implementation(FVector 
 	}
 }
 
-void ADefaultPlayerCharacter::Multi_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
+void ADefaultPlayerCharacter::Client_SpawnBulletParticles_Implementation(FVector StartLoc, FVector EndLoc)
 {
-	if(NiagaraSystem)
+	if(GetCurrentlyEquippedWeapon() && GetCurrentlyEquippedWeapon()->TracerParticleSystem)
 	{
-		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, StartLoc, UKismetMathLibrary::FindLookAtRotation(StartLoc, EndLoc));	
+		UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), GetCurrentlyEquippedWeapon()->TracerParticleSystem, StartLoc, UKismetMathLibrary::FindLookAtRotation(StartLoc, EndLoc));	
 	}
 }
 
@@ -1490,11 +1582,6 @@ void ADefaultPlayerCharacter::CheckPlantRequirements()
 		{
 			bAllowPlant &= CombatGameState->GetCurrentGamePhase().GamePhase == EGamePhase::ActiveGame;
 			bAllowPlant &= !CombatGameState->IsSomeonePlanting();
-			//cancel plant if somehow it became false;
-			if(!bAllowPlant && CombatGameState->IsSomeonePlanting())
-			{
-				CombatGameState->SetPlayerPlanting(this, false);
-			}
 		}
 		OnRep_AllowPlant();
 	}

@@ -13,5 +13,9 @@ UCLASS()
 class SNAILRELOADED_API UTeamSelectionWidget : public UUserWidget
 {
 	GENERATED_BODY()
+
+public:
+	
+
 	
 };

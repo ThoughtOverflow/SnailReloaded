@@ -65,14 +65,34 @@ void AStandardCombatGameMode::EndDefuse(ADefaultPlayerCharacter* PlantingPlayer)
 void AStandardCombatGameMode::PlantBomb(ADefaultPlayerCharacter* Planter)
 {
 	//plant bomb - change phases.
-	if(BombActor)
+	if(BombActor && Planter)
 	{
 		if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
 		{
 			FGamePhase PostPlantPhase;
 			if(GetGamePhaseByType(EGamePhase::PostPlant, PostPlantPhase))
 			{
-				StandardCombatGameState->PlantedBomb = GetWorld()->SpawnActor<ABomb>(BombActor, Planter->GetActorLocation() + Planter->GetActorRotation().Vector() * 100.f, FRotator::ZeroRotator);
+				//Calc new loc:
+				FVector Loc = Planter->GetActorLocation();
+				FVector StartLoc = Planter->GetActorLocation() + Planter->GetActorRotation().Vector() * 100.f;
+				FVector EndLoc = StartLoc + FVector(0.f, 0.f, -500.f);
+				FHitResult HitResult;
+				FCollisionQueryParams Params;
+				if(AStandardCombatGameState* State = GetGameState<AStandardCombatGameState>())
+				{
+					for(auto& Player : State->GetAllGamePlayers())
+					{
+						Params.AddIgnoredActor(Player);
+					}
+				}
+				if(GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility, Params))
+				{
+					if(HitResult.GetActor())
+					{
+						Loc = HitResult.ImpactPoint;
+					}
+				}
+				StandardCombatGameState->PlantedBomb = GetWorld()->SpawnActor<ABomb>(BombActor, Loc, FRotator::ZeroRotator);
 				StandardCombatGameState->PlantedBomb->PlantBomb();
 				Planter->SetHasBomb(false);
 			}
@@ -83,11 +103,14 @@ void AStandardCombatGameMode::PlantBomb(ADefaultPlayerCharacter* Planter)
 void AStandardCombatGameMode::DefuseBomb(ADefaultPlayerCharacter* Defuser)
 {
 	//stop bomb - end game.
-	if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
+	if(Defuser)
 	{
-		if(StandardCombatGameState->PlantedBomb)
+		if(AStandardCombatGameState* StandardCombatGameState = GetGameState<AStandardCombatGameState>())
 		{
-			StandardCombatGameState->PlantedBomb->DefuseBomb();
+			if(StandardCombatGameState->PlantedBomb)
+			{
+				StandardCombatGameState->PlantedBomb->DefuseBomb();
+			}
 		}
 	}
 }
@@ -119,6 +142,15 @@ bool AStandardCombatGameMode::SwapSides()
 		case EBombTeam::Attacker: StandardCombatGameState->SetSideOfTeam(EGameTeams::TeamB, EBombTeam::Defender); break;
 		case EBombTeam::Defender: StandardCombatGameState->SetSideOfTeam(EGameTeams::TeamB, EBombTeam::Attacker); break;
 		default: ;
+		}
+		//clear all player weapons:
+		for(auto& Player : StandardCombatGameState->GetAllGamePlayers())
+		{
+			if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(Player->GetPawn()))
+			{
+				DefaultPlayerCharacter->RemoveAllWeapons();
+				DefaultPlayerCharacter->PlayerHealthComponent->UpdateShieldProperties(FShieldProperties::NullShield());
+			}
 		}
 		return true;
 	}

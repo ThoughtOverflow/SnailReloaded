@@ -4,6 +4,7 @@
 #include "World/Objects/BombPickup.h"
 
 #include "Components/BoxComponent.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 
 ABombPickup::ABombPickup()
@@ -12,9 +13,12 @@ ABombPickup::ABombPickup()
 	PrimaryActorTick.bCanEverTick = true;
 
 	PickupGlobalScale = 1.f;
+
+	bReplicates = true;
+	SetReplicateMovement(true);
 	
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("PickupInteraction"));
+	InteractionComponent = CreateDefaultSubobject<UBombPickupInteraction>(TEXT("PickupInteraction"));
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 
 	SetRootComponent(BoxCollision);
@@ -27,6 +31,8 @@ ABombPickup::ABombPickup()
 	BoxCollision->SetEnableGravity(true);
 	BoxCollision->SetCollisionResponseToAllChannels(ECR_Block);
 	BoxCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	BoxCollision->SetNotifyRigidBodyCollision(true);
+	BoxCollision->OnComponentHit.AddDynamic(this, &ABombPickup::OnBoxCollide);
 	
 	InteractionComponent->OnInteract.AddDynamic(this, &ABombPickup::OnPickupInteract);
 	
@@ -50,7 +56,33 @@ void ABombPickup::OnPickupInteract(APawn* Interactor)
 		if(DefaultPlayerCharacter->HasAuthority())
 		{
 			DefaultPlayerCharacter->SetHasBomb(true);
+			if(HasAuthority())
+			{
+				if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+				{
+					StandardCombatGameState->GetMinimapDefinition()->SetShowDroppedBombMarker(false);
+				}
+			}
 			Destroy();
+		}
+	}
+}
+
+void ABombPickup::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
+{
+	NormalImpulse.Normalize();
+	float degZ = FMath::RadiansToDegrees(FMath::Acos(NormalImpulse.Dot(FVector(0.f, 0.f, 1.f))));
+	if(degZ <= 30.f)
+	{
+		BoxCollision->SetSimulatePhysics(false);
+		BoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		if(HasAuthority())
+		{
+			if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+			{
+				StandardCombatGameState->GetMinimapDefinition()->SetShowDroppedBombMarker(true);
+			}
 		}
 	}
 }

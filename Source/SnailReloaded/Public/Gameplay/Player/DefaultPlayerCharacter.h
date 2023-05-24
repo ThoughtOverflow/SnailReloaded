@@ -91,8 +91,6 @@ public:
 	int32 FiredRoundsPerShootingEvent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", Replicated)
 	bool bAllowAutoReload;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons")
-	UNiagaraSystem* NiagaraSystem;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<APickup> PickupClass;
@@ -125,6 +123,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void FellOutOfWorld(const UDamageType& dmgType) override;
 
 	//Health Component:
 
@@ -199,6 +198,8 @@ protected:
 	bool CanPlayerAttack();
 	UFUNCTION(BlueprintCallable)
 	void DropCurrentWeapon();
+	UFUNCTION(Server, Reliable)
+	void Server_DropCurrentWeapon();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapons", ReplicatedUsing=OnRep_CurrentWeapon)
 	AWeaponBase* CurrentlyEquippedWeapon;
@@ -278,6 +279,10 @@ public:
 	void Server_AssignWeapon(TSubclassOf<AWeaponBase> WeaponClass, EEquipCondition EquipCondition);
 	UFUNCTION(BlueprintCallable)
 	bool RemoveWeapon(EWeaponSlot Slot);
+	UFUNCTION(BlueprintCallable)
+	void RemoveAllWeapons();
+	UFUNCTION(Server, Reliable)
+	void Server_RemoveAllWeapons();
 	UFUNCTION(Server,Reliable)
 	void Server_RemoveWeapon(EWeaponSlot Slot);
 	UFUNCTION(BlueprintCallable)
@@ -316,8 +321,8 @@ public:
 	bool CanWeaponFireInMode();
 	UFUNCTION(BlueprintPure)
 	bool WeaponHasAmmo();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
+	UFUNCTION(Client, Reliable)
+	void Client_SpawnBulletParticles(FVector StartLoc, FVector EndLoc);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnBarrelParticles();
 	UFUNCTION(NetMulticast, Reliable)
@@ -348,9 +353,6 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	float GetReloadProgress();
-	
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeaponBase> TestWpn;
 
 	//Buy system
 
@@ -372,6 +374,8 @@ public:
 	bool HasStoredShield();
 	UFUNCTION(BlueprintPure)
 	TArray<EItemIdentifier> GetAllItems();
+	UFUNCTION(BlueprintPure)
+	TArray<EItemIdentifier> GetAllWeapons();
 	UFUNCTION(BlueprintPure)
 	EWeaponSlot GetWeaponSlotByIdentifier(EItemIdentifier Identifier);
 	UFUNCTION(BlueprintPure)
@@ -421,6 +425,11 @@ public:
 	void Server_TryEquipBomb();
 	UFUNCTION(Server, Reliable)
 	void Server_TryUnequipBomb();
+
+	UFUNCTION(BlueprintCallable)
+	void DropWeaponAtSlot(EWeaponSlot Slot);
+	UFUNCTION()
+	void DropBomb();
 	
 };
 

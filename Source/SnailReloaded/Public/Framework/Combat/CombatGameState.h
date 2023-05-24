@@ -13,6 +13,7 @@
 /**
  * 
  */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerDied);
 
 UENUM(BlueprintType)
 enum class EBombTeam : uint8
@@ -69,6 +70,10 @@ public:
 	int32 LoserReward;
 	UPROPERTY(BlueprintReadWrite)
 	int32 LoserDeadReward;
+
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerDied OnPlayerDied;
 
 
 protected:
@@ -182,6 +187,9 @@ public:
 	int32 GetLoserReward() const;
 	UFUNCTION(BlueprintCallable)
 	int32 GetLoserDeadReward() const;
+
+	UFUNCTION(BlueprintCallable)
+	void NotifyPlayerDeath(ACombatPlayerState* Player);
 
 
 	

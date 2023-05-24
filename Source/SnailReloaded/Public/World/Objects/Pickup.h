@@ -28,16 +28,31 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float PickupGlobalScale;
 
-	UPROPERTY(BlueprintReadWrite)
-	TSubclassOf<AWeaponBase> WeaponClass;
-	UPROPERTY(BlueprintReadWrite)
-	int32 CurrentWeaponClipAmmo;
-	UPROPERTY(BlueprintReadWrite)
-	int32 CurrentWeaponTotalAmmo;
+	// UPROPERTY(BlueprintReadWrite)
+	// TSubclassOf<AWeaponBase> WeaponClass;
+	// UPROPERTY(BlueprintReadWrite)
+	// int32 CurrentWeaponClipAmmo;
+	// UPROPERTY(BlueprintReadWrite)
+	// int32 CurrentWeaponTotalAmmo;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponRef)
+	TSubclassOf<AWeaponBase> WeaponReference;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponRef)
+	int32 ClipAmmo;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponRef)
+	int32 TotalAmmo;
+
+	UFUNCTION()
+	void OnRep_WeaponRef();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	void OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 public:	
 	// Called every frame
@@ -48,5 +63,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetWidgetWeaponName(const FText& Name);
+
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponReference(TSubclassOf<AWeaponBase> WeaponRef, ADefaultPlayerCharacter* DroppingPlayer);
 
 };
