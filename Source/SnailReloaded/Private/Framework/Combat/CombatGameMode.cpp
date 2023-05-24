@@ -154,7 +154,7 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 
 									//sell, then buy it.
 
-									if(SellItem(PlayerCharacter, ItemIdentifier))
+									if(SellItem(PlayerCharacter, Weapon->ItemIdentifier))
 									{
 											PlayerCharacter->AssignWeapon(WeaponClass);
 											PlayerCharacter->EquipStrongestWeapon();
