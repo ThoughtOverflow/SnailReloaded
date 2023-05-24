@@ -471,9 +471,9 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 	if(HasAuthority())
 	{
 		//TEMP:!!
-		UnequipWeapon();
-		if(PrimaryWeapon) PrimaryWeapon->Destroy();
-		if(SecondaryWeapon) SecondaryWeapon->Destroy();
+		// UnequipWeapon();
+		// if(PrimaryWeapon) PrimaryWeapon->Destroy();
+		// if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
 		TryStopPlanting();
 		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
@@ -496,6 +496,17 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			CombatGameMode->ProcessPlayerDeath(Cast<ACombatPlayerState>(GetPlayerState()));
+		}
+		for(auto& Item : GetAllWeapons())
+		{
+			if(Item != EItemIdentifier::None && Item != EItemIdentifier::DefaultMelee)
+			{
+				DropWeaponAtSlot(GetWeaponSlotByIdentifier(Item));
+			}
+		}
+		if(HasBomb())
+		{
+			DropBomb();
 		}
 		this->Destroy();
 	}
@@ -590,6 +601,7 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 	
 }
 
+
 void ADefaultPlayerCharacter::DropWeaponAtSlot(EWeaponSlot Slot)
 {
 	if(HasAuthority())
@@ -681,8 +693,11 @@ void ADefaultPlayerCharacter::CheckForInteractable()
 	if(GetWorld() && GetCombatPlayerController() && !IsPendingKillPending())
 	{
 		FHitResult HitResult;
-		FVector TraceStartLocation = CameraComponent->GetComponentLocation();
-		FVector TraceEndLocation = TraceStartLocation + GetCombatPlayerController()->GetControlRotation().Vector() * InteractionCastDistance;
+		FVector TraceStartLocation;
+		FRotator TraceStartRotation;
+		GetController()->GetPlayerViewPoint(TraceStartLocation, TraceStartRotation);
+		TraceStartLocation = CameraComponent->GetComponentLocation();
+		FVector TraceEndLocation = TraceStartLocation + TraceStartRotation.Vector() * InteractionCastDistance;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this);
 
@@ -1066,10 +1081,14 @@ void ADefaultPlayerCharacter::UseMeleeWeapon()
 void ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback()
 {
 	FHitResult HitResult;
-	FVector TraceStartLoc = CameraComponent->GetComponentLocation();
-	FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * MeleeWeaponCastMaxDistance;
+	FVector TraceStartLoc;
+	FRotator TraceStartRot;
+	GetController()->GetActorEyesViewPoint(TraceStartLoc, TraceStartRot);
+	TraceStartLoc = CameraComponent->GetComponentLocation();
+	FVector TraceEndLoc = TraceStartLoc + TraceStartRot.Vector() * MeleeWeaponCastMaxDistance;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
+	// DrawDebugLine(GetWorld(), TraceStartLoc, TraceEndLoc, FColor::Orange, false, 2.f, 0, 2);
 	if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
 	{
 		Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
@@ -1093,7 +1112,10 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 	if (HasAuthority() && GetController() && !IsPendingKillPending())
 	{
 		FHitResult HitResult;
-		FVector TraceStartLoc = CameraComponent->GetComponentLocation();
+		FVector TraceStartLoc;
+		FRotator TraceStartRot;
+		GetController()->GetActorEyesViewPoint(TraceStartLoc, TraceStartRot);
+		TraceStartLoc = CameraComponent->GetComponentLocation();
 		FVector TraceEndLoc;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this);
@@ -1129,7 +1151,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 				Multi_PlayFireAudio();
 				for (int i = 0; i < CurrentlyEquippedWeapon->NumOfPellets; i++)
 				{
-					TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() *
+					TraceEndLoc = TraceStartLoc + TraceStartRot.Vector() *
 						WeaponCastMaxDistance;
 
 
@@ -1179,7 +1201,7 @@ void ADefaultPlayerCharacter::FireEquippedWeapon()
 		}
 		else
 		{
-			TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * WeaponCastMaxDistance;
+			TraceEndLoc = TraceStartLoc + TraceStartRot.Vector() * WeaponCastMaxDistance;
 			
 			
 			//Can Shoot:
@@ -1403,6 +1425,15 @@ TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllItems()
 	if(SecondaryWeapon) Identifiers.Add(SecondaryWeapon->ItemIdentifier);
 	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
 	if(PlayerHealthComponent->GetShieldIdentifier() != EItemIdentifier::NullShield) Identifiers.Add(PlayerHealthComponent->GetShieldIdentifier());
+	return Identifiers;
+}
+
+TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllWeapons()
+{
+	TArray<EItemIdentifier> Identifiers;
+	if(PrimaryWeapon) Identifiers.Add(PrimaryWeapon->ItemIdentifier);
+	if(SecondaryWeapon) Identifiers.Add(SecondaryWeapon->ItemIdentifier);
+	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
 	return Identifiers;
 }
 

@@ -375,6 +375,8 @@ public:
 	UFUNCTION(BlueprintPure)
 	TArray<EItemIdentifier> GetAllItems();
 	UFUNCTION(BlueprintPure)
+	TArray<EItemIdentifier> GetAllWeapons();
+	UFUNCTION(BlueprintPure)
 	EWeaponSlot GetWeaponSlotByIdentifier(EItemIdentifier Identifier);
 	UFUNCTION(BlueprintPure)
 	EItemIdentifier GetCurrentShieldType();

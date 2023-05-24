@@ -3,7 +3,6 @@
 
 #include "Framework/Combat/CombatPlayerController.h"
 
-#include "SourceControlHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/Overlay.h"
@@ -445,6 +444,7 @@ void ACombatPlayerController::TriggerGameNotification(ENotificationType Notifica
 		Client_TriggerGameNotification(Notification);
 	}
 }
+
 
 void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)
 {
