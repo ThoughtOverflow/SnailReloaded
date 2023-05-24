@@ -189,6 +189,9 @@ protected:
 	UPROPERTY()
 	int32 Recoil_FiredShots;
 
+	UPROPERTY(EditDefaultsOnly)
+	USoundAttenuation* FireSoundAttenuation;
+
 public:
 	
 
