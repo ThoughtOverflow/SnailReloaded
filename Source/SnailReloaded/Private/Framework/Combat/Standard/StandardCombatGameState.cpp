@@ -395,6 +395,10 @@ void AStandardCombatGameState::OnBombPlanted()
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddPlant();
+		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Attacker)))
+		{
+			PlayerState->ChangePlayerMoney(GetPlantReward());
+		}
 		SelectNewPhase(EGamePhase::PostPlant);
 
 		//Minimap maker:
