@@ -471,9 +471,9 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 	if(HasAuthority())
 	{
 		//TEMP:!!
-		UnequipWeapon();
-		if(PrimaryWeapon) PrimaryWeapon->Destroy();
-		if(SecondaryWeapon) SecondaryWeapon->Destroy();
+		// UnequipWeapon();
+		// if(PrimaryWeapon) PrimaryWeapon->Destroy();
+		// if(SecondaryWeapon) SecondaryWeapon->Destroy();
 		if(MeleeWeapon) MeleeWeapon->Destroy();
 		TryStopPlanting();
 		if(ACombatPlayerState* CombatPlayerState = GetCombatPlayerController()->GetPlayerState<ACombatPlayerState>())
@@ -496,6 +496,17 @@ void ADefaultPlayerCharacter::OnPlayerDied(const FDamageResponse& DamageResponse
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			CombatGameMode->ProcessPlayerDeath(Cast<ACombatPlayerState>(GetPlayerState()));
+		}
+		for(auto& Item : GetAllWeapons())
+		{
+			if(Item != EItemIdentifier::None && Item != EItemIdentifier::DefaultMelee)
+			{
+				DropWeaponAtSlot(GetWeaponSlotByIdentifier(Item));
+			}
+		}
+		if(HasBomb())
+		{
+			DropBomb();
 		}
 		this->Destroy();
 	}
@@ -589,6 +600,7 @@ void ADefaultPlayerCharacter::DropCurrentWeapon()
 	}
 	
 }
+
 
 void ADefaultPlayerCharacter::DropWeaponAtSlot(EWeaponSlot Slot)
 {
@@ -1403,6 +1415,15 @@ TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllItems()
 	if(SecondaryWeapon) Identifiers.Add(SecondaryWeapon->ItemIdentifier);
 	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
 	if(PlayerHealthComponent->GetShieldIdentifier() != EItemIdentifier::NullShield) Identifiers.Add(PlayerHealthComponent->GetShieldIdentifier());
+	return Identifiers;
+}
+
+TArray<EItemIdentifier> ADefaultPlayerCharacter::GetAllWeapons()
+{
+	TArray<EItemIdentifier> Identifiers;
+	if(PrimaryWeapon) Identifiers.Add(PrimaryWeapon->ItemIdentifier);
+	if(SecondaryWeapon) Identifiers.Add(SecondaryWeapon->ItemIdentifier);
+	if(MeleeWeapon) Identifiers.Add(MeleeWeapon->ItemIdentifier);
 	return Identifiers;
 }
 
