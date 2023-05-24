@@ -173,8 +173,6 @@ public:
 
 	//Game Notifications:
 	void TriggerGameNotification(ENotificationType Notification);
-	
-	
 
 	
 };
