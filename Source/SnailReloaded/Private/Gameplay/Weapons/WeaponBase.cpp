@@ -343,10 +343,10 @@ void AWeaponBase::SpawnBarrelParticles()
 
 void AWeaponBase::PlayFireSound()
 {
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, WeaponMesh->GetSocketLocation(FName("barrel_socket")), FRotator::ZeroRotator);
+	UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh, FName("barrel_socket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true, 1, 1, 0, FireSoundAttenuation);
 }
 
 void AWeaponBase::PlayEquipSound()
 {
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EquipSound, WeaponMesh->GetSocketLocation(FName("barrel_socket")), FRotator::ZeroRotator);	
+	UGameplayStatics::SpawnSoundAttached(EquipSound, WeaponMesh, FName("barrel_socket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true, 1, 1, 0, FireSoundAttenuation);
 }
