@@ -1082,6 +1082,7 @@ void ADefaultPlayerCharacter::UseMeleeWeaponDelay_Callback()
 	FVector TraceEndLoc = TraceStartLoc + GetController()->GetControlRotation().Vector() * MeleeWeaponCastMaxDistance;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
+	DrawDebugLine(GetWorld(), TraceStartLoc, TraceEndLoc, FColor::Orange, false, 2.f, 0, 2);
 	if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc,ECC_Visibility, QueryParams))
 	{
 		Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
