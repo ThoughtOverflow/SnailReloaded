@@ -38,6 +38,8 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 				PlayerCharacter->PlayerHealthComponent->SetCanSell(false);
 			}
 		}
+		//Barrier
+		ToggleBarriers(false);
 	}else if(ExpiredPhase == EGamePhase::ActiveGame)
 	{
 		//Timer ran out.
@@ -190,7 +192,24 @@ void AStandardCombatGameState::StartNewRound()
 			}
 		}
 	}
+
+	//Barrier
+	ToggleBarriers(true);
 	
+}
+
+void AStandardCombatGameState::ToggleBarriers(bool bShow)
+{
+	if(HasAuthority())
+	{
+		TArray<AActor*> BarrierActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), BarrierClass, BarrierActors);
+		for(auto& actor : BarrierActors)
+		{
+			actor->SetActorHiddenInGame(!bShow);
+			actor->SetActorEnableCollision(bShow);
+		}
+	}
 }
 
 void AStandardCombatGameState::ExplodeBomb()

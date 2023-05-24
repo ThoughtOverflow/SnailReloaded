@@ -41,11 +41,17 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	ABomb* PlantedBomb;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<AActor> BarrierClass;
+
 protected:
 
 	virtual void OnPhaseExpired(EGamePhase ExpiredPhase) override;
 	virtual void OnPhaseSelected(EGamePhase NewPhase) override;
 	virtual void StartNewRound() override;
+
+	UFUNCTION()
+	void ToggleBarriers(bool bShow);
 
 	UFUNCTION()
 	void ExplodeBomb();
