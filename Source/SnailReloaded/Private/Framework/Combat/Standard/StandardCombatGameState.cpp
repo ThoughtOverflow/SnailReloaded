@@ -20,6 +20,18 @@ AStandardCombatGameState::AStandardCombatGameState()
 	RoundEndResult = ERoundEndResult::None;
 	TeamASide = EBombTeam::Attacker;
 	TeamBSide = EBombTeam::Defender;
+	bBarriersActive = true;
+}
+
+void AStandardCombatGameState::OnRep_Barriers()
+{
+	TArray<AActor*> BarrierActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), BarrierClass, BarrierActors);
+	for(auto& actor : BarrierActors)
+	{
+		actor->SetActorHiddenInGame(!bBarriersActive);
+		actor->SetActorEnableCollision(bBarriersActive);
+	}
 }
 
 void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
@@ -39,7 +51,11 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 			}
 		}
 		//Barrier
-		ToggleBarriers(false);
+		if(HasAuthority())
+		{
+			ToggleBarriers(false);
+		}
+		
 	}else if(ExpiredPhase == EGamePhase::ActiveGame)
 	{
 		//Timer ran out.
@@ -194,7 +210,10 @@ void AStandardCombatGameState::StartNewRound()
 	}
 
 	//Barrier
-	ToggleBarriers(true);
+	if(HasAuthority())
+	{
+		ToggleBarriers(true);	
+	}
 	
 }
 
@@ -202,13 +221,12 @@ void AStandardCombatGameState::ToggleBarriers(bool bShow)
 {
 	if(HasAuthority())
 	{
-		TArray<AActor*> BarrierActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), BarrierClass, BarrierActors);
-		for(auto& actor : BarrierActors)
+		if(bShow != bBarriersActive)
 		{
-			actor->SetActorHiddenInGame(!bShow);
-			actor->SetActorEnableCollision(bShow);
+			bBarriersActive = bShow;
+			OnRep_Barriers();
 		}
+		
 	}
 }
 
@@ -358,6 +376,7 @@ void AStandardCombatGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(AStandardCombatGameState, TeamAScore);
 	DOREPLIFETIME(AStandardCombatGameState, TeamBScore);
 	DOREPLIFETIME(AStandardCombatGameState, PlantedBomb);
+	DOREPLIFETIME(AStandardCombatGameState, bBarriersActive);
 }
 
 void AStandardCombatGameState::HandleTeamScoring()

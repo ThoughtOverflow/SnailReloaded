@@ -43,7 +43,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<AActor> BarrierClass;
+	UPROPERTY(ReplicatedUsing = OnRep_Barriers)
+	bool bBarriersActive;
 
+	UFUNCTION()
+	void OnRep_Barriers();
+	
 protected:
 
 	virtual void OnPhaseExpired(EGamePhase ExpiredPhase) override;
