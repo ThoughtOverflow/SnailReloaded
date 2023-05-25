@@ -112,7 +112,7 @@ void ADefaultPlayerCharacter::FellOutOfWorld(const UDamageType& dmgType)
 			CombatGameMode->ChangeObjectHealth(FDamageRequest::DeathDamage(this, this));
 		}
 	}
-	Super::FellOutOfWorld(dmgType);
+	// Super::FellOutOfWorld(dmgType);
 }
 
 EGameTeams ADefaultPlayerCharacter::QueryGameTeam()

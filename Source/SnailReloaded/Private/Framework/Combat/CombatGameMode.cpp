@@ -62,7 +62,7 @@ FDamageResponse ACombatGameMode::ChangeObjectHealth(const FDamageRequest& Damage
 			if(UHealthComponent* SourceHealthComponent = Cast<UHealthComponent>(DamageRequest.SourceActor->GetComponentByClass(UHealthComponent::StaticClass())))
 			{
 				FDamageRequest ModifiedRequest = DamageRequest;
-				if(DamageRequest.DeltaDamage < 0.f)
+				if(DamageRequest.DeltaDamage < 0.f && DamageRequest.SourceActor != DamageRequest.TargetActor)
 				{
 					//Only apply modifiers for damage, not heal.
 					ModifiedRequest.DeltaDamage *= SourceHealthComponent->GetDamageMultiplierForTarget(TargetHealthComponent);
