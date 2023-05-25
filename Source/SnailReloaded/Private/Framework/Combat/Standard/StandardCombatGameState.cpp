@@ -21,6 +21,7 @@ AStandardCombatGameState::AStandardCombatGameState()
 	TeamASide = EBombTeam::Attacker;
 	TeamBSide = EBombTeam::Defender;
 	bBarriersActive = true;
+	bAfterSideSwap = false;
 }
 
 void AStandardCombatGameState::OnRep_Barriers()
@@ -574,7 +575,15 @@ void AStandardCombatGameState::NewRoundPayout()
 		{
 			PlayerState->ResetDeathFlag();
 			//cap the money:
+			if(bAfterSideSwap)
+			{
+				PlayerState->SetPlayerMoney(InitialPlayerMoney);
+			}
 			PlayerState->SetPlayerMoney(FMath::Min(MoneyCap, PlayerState->GetPlayerMoney()));
+		}
+		if(bAfterSideSwap)
+		{
+			bAfterSideSwap = false;
 		}
 		
 		
@@ -665,6 +674,14 @@ void AStandardCombatGameState::SetSideOfTeam(EGameTeams Team, EBombTeam Side)
 	case EGameTeams::TeamA: TeamASide = Side;
 	case EGameTeams::TeamB: TeamBSide = Side;
 	default: ;
+	}
+}
+
+void AStandardCombatGameState::NotifySwapSides()
+{
+	if(HasAuthority())
+	{
+		bAfterSideSwap = true;
 	}
 }
 

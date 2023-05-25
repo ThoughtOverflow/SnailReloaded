@@ -143,7 +143,7 @@ bool AStandardCombatGameMode::SwapSides()
 		case EBombTeam::Defender: StandardCombatGameState->SetSideOfTeam(EGameTeams::TeamB, EBombTeam::Attacker); break;
 		default: ;
 		}
-		//clear all player weapons:
+		//clear all player weapons and reset economy:
 		for(auto& Player : StandardCombatGameState->GetAllGamePlayers())
 		{
 			if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(Player->GetPawn()))
@@ -151,7 +151,9 @@ bool AStandardCombatGameMode::SwapSides()
 				DefaultPlayerCharacter->RemoveAllWeapons();
 				DefaultPlayerCharacter->PlayerHealthComponent->UpdateShieldProperties(FShieldProperties::NullShield());
 			}
+			Player->SetPlayerMoney(PlayerStartMoney);
 		}
+		StandardCombatGameState->NotifySwapSides();
 		return true;
 	}
 	return false;
