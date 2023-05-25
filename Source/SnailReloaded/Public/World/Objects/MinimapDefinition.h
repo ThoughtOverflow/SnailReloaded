@@ -20,6 +20,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UBoxComponent* MinimapArea;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* AssignedMap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MapImageRotation;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnMapMarkersUpdated OnMapMarkersUpdated;

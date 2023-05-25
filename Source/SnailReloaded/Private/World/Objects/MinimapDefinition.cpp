@@ -14,6 +14,7 @@ AMinimapDefinition::AMinimapDefinition()
 	bReplicates = true;
 	MinimapArea = CreateDefaultSubobject<UBoxComponent>(TEXT("MinimapArea"));
 	MinimapArea->SetGenerateOverlapEvents(false);
+	MapImageRotation = 0.f;
 	
 }
 
