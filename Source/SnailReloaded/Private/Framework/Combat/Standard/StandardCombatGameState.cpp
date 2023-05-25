@@ -563,12 +563,15 @@ void AStandardCombatGameState::NewRoundPayout()
 			}
 			
 		}
-		//per kill:
+		
 		
 		for (ACombatPlayerState*PlayerState:GetAllGamePlayers())
 		{
 			PlayerState->ResetDeathFlag();
+			//cap the money:
+			PlayerState->SetPlayerMoney(FMath::Min(MoneyCap, PlayerState->GetPlayerMoney()));
 		}
+		
 		
 	}
 }

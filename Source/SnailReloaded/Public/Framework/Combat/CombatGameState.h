@@ -70,6 +70,8 @@ public:
 	int32 LoserReward;
 	UPROPERTY(BlueprintReadWrite)
 	int32 SurviveReward;
+	UPROPERTY(BlueprintReadWrite)
+	int32 MoneyCap;
 
 	
 	UPROPERTY(BlueprintAssignable)

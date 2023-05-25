@@ -127,6 +127,7 @@ public:
 	void Server_SetPlayerColor(EPlayerColor Color);
 	UFUNCTION(BlueprintPure)
 	EPlayerColor GetPlayerColor();
+	
 
 	UPROPERTY(EditDefaultsOnly)
 	TMap<EPlayerColor, FLinearColor> ColorMap;

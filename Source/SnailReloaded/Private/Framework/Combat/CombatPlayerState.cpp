@@ -12,6 +12,7 @@ ACombatPlayerState::ACombatPlayerState()
 {
 	CurrentTeam = EGameTeams::None;
 	IsDeadPreviousRound = false;
+	PlayerKillsInRound = 0;
 }
 
 void ACombatPlayerState::BeginPlay()
@@ -267,6 +268,7 @@ EPlayerColor ACombatPlayerState::GetPlayerColor()
 {
 	return PlayerColor;
 }
+
 
 
 FLinearColor ACombatPlayerState::GetColorByEnum(EPlayerColor Color)

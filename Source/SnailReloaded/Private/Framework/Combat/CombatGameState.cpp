@@ -26,6 +26,7 @@ ACombatGameState::ACombatGameState()
 	VictorReward =3000;
 	LoserReward =2300;
 	SurviveReward = 1000;
+	MoneyCap = 9000;
 }
 
 
