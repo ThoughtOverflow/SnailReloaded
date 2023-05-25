@@ -191,7 +191,7 @@ void ACombatPlayerState::CalculateScore()
 {
 	if(ACombatGameState* GameState = Cast<ACombatGameState>(GetWorld()->GetGameState()))
 	{
-		PlayerScore = GameState->GetBaseScore()-PlayerDeathCount*GameState->GetDeathValue()+PlayerKillCount*GameState->GetKillReward()+PlayerAssistCount*GameState->GetAssistValue()+(PlayerPlantCount+PlayerDefuseCount)*GameState->GetBombValue();
+		PlayerScore = GameState->GetBaseScore()-PlayerDeathCount*GameState->GetDeathValue()+PlayerKillCount*GameState->GetKillValue()+PlayerAssistCount*GameState->GetAssistValue()+(PlayerPlantCount+PlayerDefuseCount)*GameState->GetBombValue();
 	}
 }
 

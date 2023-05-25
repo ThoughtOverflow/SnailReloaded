@@ -547,7 +547,7 @@ void AStandardCombatGameState::NewRoundPayout()
 {
 	if(HasAuthority())
 	{
-
+		//win / lose rewards + survival reduction
 		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetWinningTeam()))
 		{
 			PlayerState->ChangePlayerMoney(GetVictorReward());
@@ -556,13 +556,15 @@ void AStandardCombatGameState::NewRoundPayout()
 		{
 			if(PlayerState->GetDeathState())
 			{
-				PlayerState->ChangePlayerMoney(GetLoserDeadReward());
+				PlayerState->ChangePlayerMoney(GetLoserReward());
 			}else
 			{
-				PlayerState->ChangePlayerMoney(GetLoserReward());
+				PlayerState->ChangePlayerMoney(GetSurviveReward());
 			}
 			
 		}
+		//per kill:
+		
 		for (ACombatPlayerState*PlayerState:GetAllGamePlayers())
 		{
 			PlayerState->ResetDeathFlag();

@@ -69,7 +69,7 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	int32 LoserReward;
 	UPROPERTY(BlueprintReadWrite)
-	int32 LoserDeadReward;
+	int32 SurviveReward;
 
 	
 	UPROPERTY(BlueprintAssignable)
@@ -186,7 +186,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int32 GetLoserReward() const;
 	UFUNCTION(BlueprintCallable)
-	int32 GetLoserDeadReward() const;
+	int32 GetSurviveReward() const;
 
 	UFUNCTION(BlueprintCallable)
 	void NotifyPlayerDeath(ACombatPlayerState* Player);
