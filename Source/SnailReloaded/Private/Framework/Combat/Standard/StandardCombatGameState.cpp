@@ -194,6 +194,11 @@ void AStandardCombatGameState::StartNewRound()
 			if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
 			{
 				PlayerCharacter->SetHasBomb(false);
+				//Cancel reloads:
+				if(PlayerCharacter->GetCurrentlyEquippedWeapon())
+				{
+					PlayerCharacter->CancelReload();
+				}
 			}
 		}
 		
