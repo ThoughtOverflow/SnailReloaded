@@ -327,8 +327,6 @@ public:
 	void Multi_SpawnBarrelParticles();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayFireAudio();
-	UFUNCTION(Client, Reliable)
-	void Client_PlayEquipAudio();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
 	UFUNCTION(NetMulticast, Reliable)
