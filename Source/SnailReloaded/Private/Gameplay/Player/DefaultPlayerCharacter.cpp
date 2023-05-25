@@ -1712,7 +1712,7 @@ void ADefaultPlayerCharacter::TryEquipBomb()
 			bIsBombEquipped = true;
 			OnRep_BombEquipped();
 			BombInHandActor = GetWorld()->SpawnActor<AActor>(HeldBombClass, FVector::ZeroVector, FRotator::ZeroRotator);
-			BombInHandActor->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,  FName("hand_r"));
+			BombInHandActor->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,  FName("bomb_socket"));
 		}
 		
 	}else
