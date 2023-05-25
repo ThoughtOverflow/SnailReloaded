@@ -12,7 +12,6 @@ ACombatPlayerState::ACombatPlayerState()
 {
 	CurrentTeam = EGameTeams::None;
 	IsDeadPreviousRound = false;
-	PlayerKillsInRound = 0;
 }
 
 void ACombatPlayerState::BeginPlay()
