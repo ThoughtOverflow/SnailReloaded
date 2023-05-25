@@ -185,6 +185,8 @@ void AStandardCombatGameState::StartNewRound()
 	//Give bomb to random player;
 	if(HasAuthority())
 	{
+		//Remove bomb marker:
+		GetMinimapDefinition()->SetShowPlantMarker(false);
 
 		//Remove all bombs:
 		for(auto& PlayerState : PlayerArray)
