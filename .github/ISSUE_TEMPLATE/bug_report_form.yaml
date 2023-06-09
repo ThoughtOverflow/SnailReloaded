@@ -1,0 +1,14 @@
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: ''
+assignees: ''
+body:
+- type: input
+  id: build_tag
+  attributes:
+    label: 'Build ID'
+    description: 'Either commit hash of the current build or the game version marked by the release tag (eg.: v1.0.1-pre)'
+    placeholder: 'v1.0.0'
+  validations:
+    required: true
