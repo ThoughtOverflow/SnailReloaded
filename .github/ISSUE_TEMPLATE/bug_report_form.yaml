@@ -1,8 +1,5 @@
-name: Bug report
+name: Bug report form
 about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
 body:
 - type: input
   id: build_tag
