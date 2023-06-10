@@ -1,6 +1,50 @@
 name: Bug report form
 description: Create a report to help us improve
+label: 'bug'
 body:
+- type: markdown
+  attributes:
+    value: |
+      '<img src="./SpecialContent/SnailReloaded_Logo.png" width=500 height=500></img>'
+      '## Please fill out the form below'
+      
+- type: textarea
+  id: desc
+  attributes:
+    description: 'A clear and concise description of what the bug is.'
+    label: 'Describe the bug'
+  validations:
+    required: true
+    
+- type: textarea
+  id: reprod
+  attributes:
+    description: 'Steps to reproduce the behavior'
+    label: 'To Reproduce'
+    value: |
+      1.
+      2.
+      3.
+      ...
+  validations:
+    required: true
+    
+- type: textarea
+  id: extra
+  attributes:
+    description: 'Any extra information worth mentioning'
+    label: 'Additional context'
+  validations:
+    required: false
+    
+- type: textarea
+  id: attachments
+  attributes:
+    description: 'URL of provided attachments'
+    label: 'Attachments'
+  validations:
+    required: false
+  
 - type: input
   id: build_tag
   attributes:
