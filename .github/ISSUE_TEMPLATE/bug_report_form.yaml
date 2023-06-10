@@ -6,7 +6,7 @@ body:
   attributes:
     value: |
       '<img src="./SpecialContent/SnailReloaded_Logo.png" width=500 height=500></img>'
-      '## Please fill out the form below'
+      ## Please fill out the form below
       
 - type: textarea
   id: desc
