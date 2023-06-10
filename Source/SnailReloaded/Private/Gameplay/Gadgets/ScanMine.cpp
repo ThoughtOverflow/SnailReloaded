@@ -3,9 +3,12 @@
 
 #include "Gameplay/Gadgets/ScanMine.h"
 
+#include <SPIRV-Reflect/SPIRV-Reflect/include/spirv/unified1/spirv.h>
+
 #include "Components/SphereComponent.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AScanMine::AScanMine()
 {
@@ -23,12 +26,15 @@ AScanMine::AScanMine()
 	RootBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	// DetectionSphere->OnComponentBeginOverlap.AddDynamic(this, &AScanMine::PlayerEntered);
 	DetectionSphere->OnComponentEndOverlap.AddDynamic(this, &AScanMine::PlayerExit);
+	RootBox->OnComponentHit.AddDynamic(this, &AScanMine::OnBoxCollide);
+	bAllowScanning = false;
+	RootBox->SetNotifyRigidBodyCollision(true);
 }
 
 void AScanMine::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if(HasAuthority())
+	if(HasAuthority() && bAllowScanning)
 	{
 		TArray<AActor*> Actors;
 		DetectionSphere->GetOverlappingActors(Actors, ADefaultPlayerCharacter::StaticClass());
@@ -81,10 +87,15 @@ void AScanMine::Tick(float DeltaSeconds)
 	
 }
 
-void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex)
+void AScanMine::Initialize()
 {
-	if(HasAuthority())
+	bAllowScanning = true;
+}
+
+void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                           int32 OtherBodyIndex)
+{
+	if(HasAuthority() && bAllowScanning)
 	{
 		if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(OtherActor))
 		{
@@ -102,5 +113,13 @@ void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 			}
 		}
 	}
+}
+
+void AScanMine::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
+{
+	RootBox->SetSimulatePhysics(false);
+	NormalImpulse.Normalize();
+	SetActorRotation(UKismetMathLibrary::MakeRotFromZ(NormalImpulse));
 }
 

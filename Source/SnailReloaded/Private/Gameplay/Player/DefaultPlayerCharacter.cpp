@@ -20,6 +20,7 @@
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Framework/Savegames/SettingsSavegame.h"
+#include "Gameplay/Gadgets/ScanMine.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -358,6 +359,14 @@ void ADefaultPlayerCharacter::HandleDropInput(const FInputActionInstance& Action
 	if(Action.GetValue().Get<bool>())
 	{
 		DropCurrentWeapon();
+	}
+}
+
+void ADefaultPlayerCharacter::HandleSpecialGadgetInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		UseGadget();
 	}
 }
 
@@ -804,6 +813,31 @@ void ADefaultPlayerCharacter::InteractionTimerCallback()
 	}
 }
 
+void ADefaultPlayerCharacter::UseGadget()
+{
+	if(!HasAuthority())
+	{
+		Server_UseGadget();
+	}
+
+	//mine:
+
+	if(HasAuthority() && ScanMineClass)
+	{
+		AScanMine* Gadget = GetWorld()->SpawnActor<AScanMine>(ScanMineClass, CameraComponent->GetComponentLocation(), GetActorRotation());
+		Gadget->OwningPlayerState = Cast<ACombatPlayerState>(GetPlayerState());
+		Gadget->Initialize();
+		Gadget->RootBox->SetSimulatePhysics(true);
+		Gadget->RootBox->AddImpulse(GetControlRotation().Vector() * 1200.f, NAME_None, true);
+	}
+	
+}
+
+void ADefaultPlayerCharacter::Server_UseGadget_Implementation()
+{
+	UseGadget();
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -839,6 +873,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleInteract);
 	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleInteract);
 	EnhancedInputComponent->BindAction(DropItemInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleDropInput);
+	EnhancedInputComponent->BindAction(SpecialGadgetInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSpecialGadgetInput);
 	
 }
 
