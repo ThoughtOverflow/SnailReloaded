@@ -429,6 +429,11 @@ public:
 	void DropWeaponAtSlot(EWeaponSlot Slot);
 	UFUNCTION()
 	void DropBomb();
+
+	//ScanMine
+	
+	UFUNCTION(Client, Reliable)
+	void Client_SetRevealPlayer(ADefaultPlayerCharacter* Player, bool bReveal);
 	
 };
 

@@ -641,6 +641,19 @@ void ADefaultPlayerCharacter::DropBomb()
 	}
 }
 
+void ADefaultPlayerCharacter::Client_SetRevealPlayer_Implementation(ADefaultPlayerCharacter* Player, bool bReveal)
+{
+	if(bReveal)
+	{
+		Player->GetMesh()->SetRenderCustomDepth(true);
+		Player->GetMesh()->CustomDepthStencilValue = 1;
+	}else
+	{
+		Player->GetMesh()->SetRenderCustomDepth(false);
+		Player->GetMesh()->CustomDepthStencilValue = 0;
+	}
+}
+
 
 void ADefaultPlayerCharacter::Server_DropCurrentWeapon_Implementation()
 {

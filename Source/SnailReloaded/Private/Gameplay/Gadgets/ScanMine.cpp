@@ -4,6 +4,7 @@
 #include "Gameplay/Gadgets/ScanMine.h"
 
 #include "Components/SphereComponent.h"
+#include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 
 AScanMine::AScanMine()
@@ -21,34 +22,85 @@ AScanMine::AScanMine()
 	RootBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	RootBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	// DetectionSphere->OnComponentBeginOverlap.AddDynamic(this, &AScanMine::PlayerEntered);
-	// DetectionSphere->OnComponentEndOverlap.AddDynamic(this, &AScanMine::PlayerExit);
+	DetectionSphere->OnComponentEndOverlap.AddDynamic(this, &AScanMine::PlayerExit);
 }
 
 void AScanMine::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	TArray<AActor*> Actors;
-	DetectionSphere->GetOverlappingActors(Actors, ADefaultPlayerCharacter::StaticClass());
-	for(auto& Actor : Actors)
+	if(HasAuthority())
 	{
-		//check for line of sight:
-		ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(Actor);
-		FHitResult HitResult;
-		FVector TraceStartLoc = GetActorLocation();
-		FVector TraceEndLoc = PlayerCharacter->GetActorLocation();
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(PlayerCharacter);
-		// if(!OwningPlayerState->GetOwningController()) return;
-		if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceEndLoc, TraceStartLoc, ECC_Visibility, Params))
+		TArray<AActor*> Actors;
+		DetectionSphere->GetOverlappingActors(Actors, ADefaultPlayerCharacter::StaticClass());
+		for(auto& Actor : Actors)
 		{
-			if(HitResult.GetActor() == this && Cast<ACombatPlayerState>(PlayerCharacter->GetPlayerState())->GetTeam() != GetOwningTeam())
+			//check for line of sight:
+			ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(Actor);
+			FHitResult HitResult;
+			FVector TraceStartLoc = GetActorLocation();
+			FVector TraceEndLoc = PlayerCharacter->GetActorLocation();
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(PlayerCharacter);
+			// if(!OwningPlayerState->GetOwningController()) return;
+			if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceEndLoc, TraceStartLoc, ECC_Visibility, Params))
 			{
-				//We hit the player - it is in line of sight
-				UE_LOG(LogTemp, Warning, TEXT("Revealed: %s"), *PlayerCharacter->GetName());
+				if(HitResult.GetActor() == this && Cast<ACombatPlayerState>(PlayerCharacter->GetPlayerState())->GetTeam() != GetOwningTeam())
+				{
+					//We hit the player - it is in line of sight
+					UE_LOG(LogTemp, Warning, TEXT("Revealed: %s"), *PlayerCharacter->GetName());
+					// PlayerCharacter->SetRevealedByMine(true);
+					if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+					{
+						for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+						{
+							if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+							{
+								DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, true);
+							}
+						}
+					}
+				}else
+				{
+					//Set reveal to false;
+					// PlayerCharacter->SetRevealedByMine(false);
+					if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+					{
+						for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+						{
+							if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+							{
+								DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+							}
+						}
+					}
+				}
 			}
 		}
 	}
+
 	
+}
+
+void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	if(HasAuthority())
+	{
+		if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(OtherActor))
+		{
+			//Set reveal to false;
+			// PlayerCharacter->SetRevealedByMine(false);
+			if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+			{
+				for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+				{
+					if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+					{
+						DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+					}
+				}
+			}
+		}
+	}
 }
 
