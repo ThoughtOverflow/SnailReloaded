@@ -21,6 +21,7 @@
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Framework/Savegames/SettingsSavegame.h"
 #include "Gameplay/Gadgets/ScanMine.h"
+#include "Gameplay/Gadgets/Turret.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -822,13 +823,12 @@ void ADefaultPlayerCharacter::UseGadget()
 
 	//mine:
 
-	if(HasAuthority() && ScanMineClass)
+	if(HasAuthority() && TurretClass)
 	{
-		AScanMine* Gadget = GetWorld()->SpawnActor<AScanMine>(ScanMineClass, CameraComponent->GetComponentLocation(), GetActorRotation());
+		ATurret* Gadget = GetWorld()->SpawnActor<ATurret>(TurretClass, CameraComponent->GetComponentLocation(), GetActorRotation());
 		Gadget->OwningPlayerState = Cast<ACombatPlayerState>(GetPlayerState());
-		Gadget->Initialize();
-		Gadget->RootBox->SetSimulatePhysics(true);
-		Gadget->RootBox->AddImpulse(GetControlRotation().Vector() * 1200.f, NAME_None, true);
+
+
 	}
 	
 }

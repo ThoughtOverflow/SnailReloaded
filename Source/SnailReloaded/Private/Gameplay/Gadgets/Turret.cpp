@@ -13,12 +13,13 @@
 ATurret::ATurret()
 {
 
+	GadgetHealthComponent->GameObjectType.ObjectType = EGameObjectTypes::Turret;
 	SightRadius = CreateDefaultSubobject<USphereComponent>(TEXT("SightRadius"));
 	SightRadius->SetupAttachment(GadgetMesh);
 
 }
 
-void ATurret::FireTurret(ADefaultPlayerCharacter* Target)
+void ATurret::FireTurret(AActor* Target)
 {
 	FHitResult HitResult;
 	FVector TraceStartLoc = GetActorLocation();
@@ -62,10 +63,10 @@ void ATurret::Tick(float DeltaTime)
 	SightRadius->GetOverlappingActors(Targets);
 	for(AActor* T : Targets)
 	{
-		if(ADefaultPlayerCharacter* PotentialT = Cast<ADefaultPlayerCharacter>(T))
+		if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(T->GetComponentByClass(UHealthComponent::StaticClass())))
 		{
-			CurrentTarget = PotentialT;
-			FireTurret(CurrentTarget);
+			CurrentTarget = T;
+			FireTurret(T);
 		}
 	}
 	

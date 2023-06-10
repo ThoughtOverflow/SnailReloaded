@@ -22,11 +22,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USphereComponent* SightRadius;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	ADefaultPlayerCharacter* CurrentTarget;
+	AActor* CurrentTarget;
 
 
 	UFUNCTION(BlueprintCallable)
-	void FireTurret(ADefaultPlayerCharacter* Target);
+	void FireTurret(AActor* Target);
 
 	virtual void Tick(float DeltaTime) override;
 	

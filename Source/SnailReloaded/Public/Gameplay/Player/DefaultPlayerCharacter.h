@@ -124,7 +124,7 @@ public:
 
 	//Gadgets
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AGadget> ScanMineClass;
+	TSubclassOf<AGadget> TurretClass;
 
 protected:
 	// Called when the game starts or when spawned
