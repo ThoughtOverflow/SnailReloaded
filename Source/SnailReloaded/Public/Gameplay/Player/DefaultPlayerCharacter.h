@@ -179,8 +179,6 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_StartReload();
 	UFUNCTION()
-	void CancelReload();
-	UFUNCTION()
 	void OnRep_CurrentWeapon();
 	UFUNCTION()
 	void OnHealthChanged(const FDamageResponse& DamageResponse);
@@ -327,12 +325,13 @@ public:
 	void Multi_SpawnBarrelParticles();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayFireAudio();
-	UFUNCTION(Client, Reliable)
-	void Client_PlayEquipAudio();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnImpactParticles(FVector Loc, FVector SurfaceNormal);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayMeleeAnimation(UAnimMontage* AnimMontage);
+
+	UFUNCTION(BlueprintCallable)
+	void CancelReload();
 
 	UFUNCTION(BlueprintPure)
 	AWeaponBase* GetCurrentlyEquippedWeapon();

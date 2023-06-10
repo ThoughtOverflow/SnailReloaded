@@ -25,6 +25,8 @@ ACombatGameState::ACombatGameState()
 	PlantReward =300;
 	VictorReward =3000;
 	LoserReward =2300;
+	SurviveReward = 1000;
+	MoneyCap = 9000;
 }
 
 
@@ -401,9 +403,9 @@ int32 ACombatGameState::GetLoserReward() const
 	return LoserReward;
 }
 
-int32 ACombatGameState::GetLoserDeadReward() const
+int32 ACombatGameState::GetSurviveReward() const
 {
-	return LoserDeadReward;
+	return SurviveReward;
 }
 
 void ACombatGameState::NotifyPlayerDeath(ACombatPlayerState* Player)

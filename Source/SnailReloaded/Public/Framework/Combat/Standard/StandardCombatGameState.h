@@ -107,7 +107,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AWeaponBase> DefaultSecondary;
 	
-
+	UPROPERTY()
+	bool bAfterSideSwap;
 	
 public:
 
@@ -149,5 +150,8 @@ public:
 	EBombTeam GetSideByTeam(EGameTeams Team);
 	UFUNCTION(BlueprintCallable)
 	void SetSideOfTeam(EGameTeams Team, EBombTeam Side);
+
+	UFUNCTION()
+	void NotifySwapSides();
 	
 };

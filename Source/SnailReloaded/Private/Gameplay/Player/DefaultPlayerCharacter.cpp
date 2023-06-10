@@ -425,6 +425,10 @@ void ADefaultPlayerCharacter::OnRep_CurrentWeapon()
 		CurrentlyEquippedWeapon->OnAmmoUpdated.AddDynamic(this, &ADefaultPlayerCharacter::OnCurrentWeaponAmmoChanged);
 		CurrentlyEquippedWeapon->OnReload.Clear();
 		CurrentlyEquippedWeapon->OnReload.AddDynamic(this, &ADefaultPlayerCharacter::OnCurrentWeaponReloading);
+		if(IsLocallyControlled())
+		{
+			GetCurrentlyEquippedWeapon()->PlayEquipSound();
+		}
 	}
 	
 	if(ACombatPlayerController* PlayerController = Cast<ACombatPlayerController>(GetController()))
@@ -966,7 +970,6 @@ AWeaponBase* ADefaultPlayerCharacter::EquipWeapon(EWeaponSlot Slot)
 			//EquipWeapon;
 			SetCurrentlyEqippedWeapon(GetWeaponAtSlot(Slot));
 			CurrentlyEquippedWeapon->SetIsEquipped(true);
-			Client_PlayEquipAudio();
 		}
 	}else
 	{
@@ -1311,14 +1314,6 @@ void ADefaultPlayerCharacter::Multi_PlayMeleeAnimation_Implementation(UAnimMonta
 	{
 		PlayAnimMontage(AnimMontage);
 		GetCurrentlyEquippedWeapon()->OnFireAnimPlayed();
-	}
-}
-
-void ADefaultPlayerCharacter::Client_PlayEquipAudio_Implementation()
-{
-	if(GetCurrentlyEquippedWeapon())
-	{
-		GetCurrentlyEquippedWeapon()->PlayEquipSound();
 	}
 }
 

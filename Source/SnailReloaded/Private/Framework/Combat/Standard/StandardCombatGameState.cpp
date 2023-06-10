@@ -21,6 +21,7 @@ AStandardCombatGameState::AStandardCombatGameState()
 	TeamASide = EBombTeam::Attacker;
 	TeamBSide = EBombTeam::Defender;
 	bBarriersActive = true;
+	bAfterSideSwap = false;
 }
 
 void AStandardCombatGameState::OnRep_Barriers()
@@ -125,6 +126,11 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 					}
 				}
 			}
+			//cancel active plant or defuse:
+			if(IsSomeoneDefusing() || IsSomeonePlanting())
+			{
+				LatestBombInteractor->TryStopPlanting();
+			}
 		}
 		//Do team scoring - round finished.
 		HandleTeamScoring();
@@ -185,6 +191,8 @@ void AStandardCombatGameState::StartNewRound()
 	//Give bomb to random player;
 	if(HasAuthority())
 	{
+		//Remove bomb marker:
+		GetMinimapDefinition()->SetShowPlantMarker(false);
 
 		//Remove all bombs:
 		for(auto& PlayerState : PlayerArray)
@@ -192,6 +200,11 @@ void AStandardCombatGameState::StartNewRound()
 			if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(PlayerState->GetPawn()))
 			{
 				PlayerCharacter->SetHasBomb(false);
+				//Cancel reloads:
+				if(PlayerCharacter->GetCurrentlyEquippedWeapon())
+				{
+					PlayerCharacter->CancelReload();
+				}
 			}
 		}
 		
@@ -545,7 +558,7 @@ void AStandardCombatGameState::NewRoundPayout()
 {
 	if(HasAuthority())
 	{
-
+		//win / lose rewards + survival reduction
 		for(ACombatPlayerState* PlayerState:GetAllPlayersOfTeam(GetWinningTeam()))
 		{
 			PlayerState->ChangePlayerMoney(GetVictorReward());
@@ -554,17 +567,30 @@ void AStandardCombatGameState::NewRoundPayout()
 		{
 			if(PlayerState->GetDeathState())
 			{
-				PlayerState->ChangePlayerMoney(GetLoserDeadReward());
+				PlayerState->ChangePlayerMoney(GetLoserReward());
 			}else
 			{
-				PlayerState->ChangePlayerMoney(GetLoserReward());
+				PlayerState->ChangePlayerMoney(GetSurviveReward());
 			}
 			
 		}
+		
+		
 		for (ACombatPlayerState*PlayerState:GetAllGamePlayers())
 		{
 			PlayerState->ResetDeathFlag();
+			//cap the money:
+			if(bAfterSideSwap)
+			{
+				PlayerState->SetPlayerMoney(InitialPlayerMoney);
+			}
+			PlayerState->SetPlayerMoney(FMath::Min(MoneyCap, PlayerState->GetPlayerMoney()));
 		}
+		if(bAfterSideSwap)
+		{
+			bAfterSideSwap = false;
+		}
+		
 		
 	}
 }
@@ -584,10 +610,6 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 					bAttackersDead = false;
 					break;
 				}
-			}else
-			{
-				bAttackersDead = false;
-				break;
 			}
 		}
 		for(auto& PlayerState : GetAllPlayersOfTeam(GetTeamBySide(EBombTeam::Defender)))
@@ -599,10 +621,6 @@ void AStandardCombatGameState::CheckForAlivePlayers()
 					bDefendersDead = false;
 					break;
 				}
-			}else
-			{
-				bDefendersDead = false;
-				break;
 			}
 		}
 		if(bAttackersDead || bDefendersDead)
@@ -661,6 +679,14 @@ void AStandardCombatGameState::SetSideOfTeam(EGameTeams Team, EBombTeam Side)
 	case EGameTeams::TeamA: TeamASide = Side;
 	case EGameTeams::TeamB: TeamBSide = Side;
 	default: ;
+	}
+}
+
+void AStandardCombatGameState::NotifySwapSides()
+{
+	if(HasAuthority())
+	{
+		bAfterSideSwap = true;
 	}
 }
 
