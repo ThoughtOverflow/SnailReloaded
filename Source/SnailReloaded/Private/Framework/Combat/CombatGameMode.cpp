@@ -100,7 +100,7 @@ bool ACombatGameMode::PurchaseItem(ADefaultPlayerCharacter* PlayerCharacter, EIt
 							//Raw buy
 							CombatPlayerState->ChangePlayerMoney(-ItemPrice);
 							PlayerCharacter->UpdateShieldProperties(*ShieldData);
-							PlayerCharacter->StoreCurrentShieldData();
+							// PlayerCharacter->StoreCurrentShieldData();
 							PlayerCharacter->SetCanSellCurrentShield(true);
 						}
 					}else
