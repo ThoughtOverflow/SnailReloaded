@@ -126,6 +126,11 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 					}
 				}
 			}
+			//cancel active plant or defuse:
+			if(IsSomeoneDefusing() || IsSomeonePlanting())
+			{
+				LatestBombInteractor->TryStopPlanting();
+			}
 		}
 		//Do team scoring - round finished.
 		HandleTeamScoring();
