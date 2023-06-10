@@ -5,8 +5,8 @@ body:
 - type: markdown
   attributes:
     value: |
-      '<img src="../SpecialContent/SnailReloaded_Logo.png" width=500 height=500></img>'
-      ## Please fill out the form below
+      '<img src="https://github.com/ThoughtOverflow/SnailReloaded/tree/master/SpecialContent" width=500 height=500></img>'
+      # Please fill out the form below
       
 - type: textarea
   id: desc
