@@ -3,11 +3,22 @@
 
 #include "Gameplay/Gadgets/Gadget.h"
 
+#include "GameFramework/PlayerState.h"
+#include "Gameplay/Player/DefaultPlayerCharacter.h"
+
 // Sets default values
 AGadget::AGadget()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	GadgetHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("GadgetHeath"));
+	GadgetHealthComponent->DefaultObjectHealth = 100.f;
+	GadgetHealthComponent->SetObjectMaxHealth(100.f);
+	GadgetHealthComponent->OnTeamQuery.BindDynamic(this, &AGadget::GetOwningTeam);
+	GadgetHealthComponent->ObjectKilled.AddDynamic(this, &AGadget::OnGadgetDestroyed);
+	GadgetMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GadgetMesh"));
+	SetRootComponent(GadgetMesh);
 
 }
 
@@ -16,6 +27,25 @@ void AGadget::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+ADefaultPlayerCharacter* AGadget::TryGetOwningCharacter()
+{
+	if(OwningPlayerState && OwningPlayerState->GetPawn())
+	{
+		return Cast<ADefaultPlayerCharacter>(OwningPlayerState->GetPawn());	
+	}
+	return nullptr;
+}
+
+EGameTeams AGadget::GetOwningTeam()
+{
+	return OwningPlayerState->GetTeam();
+}
+
+void AGadget::OnGadgetDestroyed(const FDamageResponse& LatestDamage)
+{
+	this->Destroy();
 }
 
 // Called every frame
