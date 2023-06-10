@@ -11,6 +11,7 @@
 #include "Components/ArmoredHealthComponent.h"
 #include "Components/InteractionComponent.h"
 #include "Components/PlayerHeaderComponent.h"
+#include "Gameplay/Gadgets/Gadget.h"
 #include "Gameplay/Weapons/WeaponBase.h"
 #include "World/Objects/BombPickup.h"
 #include "World/Objects/Pickup.h"
@@ -69,6 +70,8 @@ public:
 	UInputAction* InteractAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
 	UInputAction* DropItemInput;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Inputs")
+	UInputAction* SpecialGadgetInput;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UCameraComponent* CameraComponent;
@@ -119,6 +122,10 @@ public:
 	UFUNCTION()
 	void OnRep_BombEquipped();
 
+	//Gadgets
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AGadget> ScanMineClass;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -162,6 +169,8 @@ protected:
 	void HandleInteract(const FInputActionInstance& Action);
 	UFUNCTION()
 	void HandleDropInput(const FInputActionInstance& Action);
+	UFUNCTION()
+	void HandleSpecialGadgetInput(const FInputActionInstance& Action);
 	
 	//Shooting
 	
@@ -260,6 +269,12 @@ protected:
 
 	UPROPERTY()
 	FTimerHandle MeleeWeaponDelayTimer;
+
+	//Gadgets
+	UFUNCTION()
+	void UseGadget();
+	UFUNCTION(Server, Reliable)
+	void Server_UseGadget();
 
 public:	
 	// Called every frame
@@ -429,6 +444,11 @@ public:
 	void DropWeaponAtSlot(EWeaponSlot Slot);
 	UFUNCTION()
 	void DropBomb();
+
+	//ScanMine
+	
+	UFUNCTION(Client, Reliable)
+	void Client_SetRevealPlayer(ADefaultPlayerCharacter* Player, bool bReveal);
 	
 };
 
