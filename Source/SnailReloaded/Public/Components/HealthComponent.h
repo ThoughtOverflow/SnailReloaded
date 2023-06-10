@@ -22,6 +22,8 @@ enum class EGameObjectTypes : uint8
 	Player = 1,
 	Bomb = 2,
 	Dummy = 3,
+	ScanMine = 4,
+	Turret = 5
 		
 };
 
