@@ -5,6 +5,7 @@
 
 #include "GameFramework/PlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AGadget::AGadget()
@@ -49,6 +50,13 @@ EGameTeams AGadget::GetOwningTeam()
 void AGadget::OnGadgetDestroyed(const FDamageResponse& LatestDamage)
 {
 	this->Destroy();
+}
+
+void AGadget::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AGadget, OwningPlayerState);
 }
 
 // Called every frame

@@ -20,7 +20,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UHealthComponent* GadgetHealthComponent;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	ACombatPlayerState* OwningPlayerState;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* GadgetMesh;
@@ -35,6 +35,9 @@ protected:
 	EGameTeams GetOwningTeam();
 	UFUNCTION()
 	void OnGadgetDestroyed(const FDamageResponse& LatestDamage);
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 
 public:	
 	// Called every frame

@@ -49,5 +49,8 @@ protected:
 
 	UPROPERTY()
 	FTimerHandle BootupTimer;
+
+	UPROPERTY(EditDefaultsOnly)
+	TArray<ADefaultPlayerCharacter*> DetectedPlayers;
 	
 };

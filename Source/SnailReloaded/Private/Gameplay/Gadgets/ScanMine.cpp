@@ -5,6 +5,7 @@
 #include <SPIRV-Reflect/SPIRV-Reflect/include/spirv/unified1/spirv.h>
 
 #include "Components/SphereComponent.h"
+#include "Framework/Combat/CombatPlayerController.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -54,32 +55,40 @@ void AScanMine::Tick(float DeltaSeconds)
 			{
 				if(HitResult.GetActor() == this && Cast<ACombatPlayerState>(PlayerCharacter->GetPlayerState())->GetTeam() != GetOwningTeam())
 				{
-					//We hit the player - it is in line of sight
-					UE_LOG(LogTemp, Warning, TEXT("Revealed: %s"), *PlayerCharacter->GetName());
-					// PlayerCharacter->SetRevealedByMine(true);
-					if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+					if(!DetectedPlayers.Contains(Actor))
 					{
-						for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+						//We hit the player - it is in line of sight
+						UE_LOG(LogTemp, Warning, TEXT("Revealed: %s"), *PlayerCharacter->GetName());
+						// PlayerCharacter->SetRevealedByMine(true);
+						if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 						{
-							if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+							for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
 							{
-								DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, true);
+								if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+								{
+									DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, true);
+								}
 							}
 						}
+						DetectedPlayers.Add(PlayerCharacter);
 					}
 				}else
 				{
-					//Set reveal to false;
-					// PlayerCharacter->SetRevealedByMine(false);
-					if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+					if(DetectedPlayers.Contains(Actor))
 					{
-						for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+						//Set reveal to false;
+						// PlayerCharacter->SetRevealedByMine(false);
+						if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 						{
-							if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+							for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
 							{
-								DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+								if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+								{
+									DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+								}
 							}
 						}
+						DetectedPlayers.Remove(PlayerCharacter);
 					}
 				}
 			}
@@ -110,17 +119,21 @@ void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	{
 		if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(OtherActor))
 		{
-			//Set reveal to false;
-			// PlayerCharacter->SetRevealedByMine(false);
-			if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+			if(DetectedPlayers.Contains(PlayerCharacter))
 			{
-				for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+				//Set reveal to false;
+				// PlayerCharacter->SetRevealedByMine(false);
+				if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 				{
-					if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+					for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
 					{
-						DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+						if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+						{
+							DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+						}
 					}
 				}
+				DetectedPlayers.Remove(PlayerCharacter);
 			}
 		}
 	}
