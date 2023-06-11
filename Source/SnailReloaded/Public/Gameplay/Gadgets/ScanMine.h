@@ -31,8 +31,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	UFUNCTION(BlueprintCallable)
-	void Initialize();
+	virtual void InitializeGadget(ACombatPlayerState* OwningPlayer) override;
 
 protected:
 

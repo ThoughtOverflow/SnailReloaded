@@ -98,8 +98,9 @@ void AScanMine::Tick(float DeltaSeconds)
 	
 }
 
-void AScanMine::Initialize()
+void AScanMine::InitializeGadget(ACombatPlayerState* OwningPlayer)
 {
+	Super::InitializeGadget(OwningPlayer);
 	if(HasAuthority())
 	{
 		if(FMath::IsNearlyZero(BootupTime))
@@ -110,6 +111,7 @@ void AScanMine::Initialize()
 			GetWorldTimerManager().SetTimer(BootupTimer, this, &AScanMine::ScanInitialize_Callback, BootupTime);
 		}
 	}
+	
 }
 
 void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,

@@ -66,3 +66,16 @@ void AGadget::Tick(float DeltaTime)
 
 }
 
+void AGadget::InitializeGadget(ACombatPlayerState* OwningPlayer)
+{
+	if(HasAuthority())
+	{
+		OwningPlayerState = OwningPlayer;
+	}
+}
+
+ACombatPlayerState* AGadget::GetOwningPlayerState()
+{
+	return OwningPlayerState;
+}
+

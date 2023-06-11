@@ -825,8 +825,7 @@ void ADefaultPlayerCharacter::UseGadget()
 	if(HasAuthority() && ScanMineClass)
 	{
 		AScanMine* Gadget = GetWorld()->SpawnActor<AScanMine>(ScanMineClass, CameraComponent->GetComponentLocation(), GetActorRotation());
-		Gadget->OwningPlayerState = Cast<ACombatPlayerState>(GetPlayerState());
-		Gadget->Initialize();
+		Gadget->InitializeGadget(Cast<ACombatPlayerState>(GetPlayerState()));
 		Gadget->RootBox->SetSimulatePhysics(true);
 		Gadget->RootBox->AddImpulse(GetControlRotation().Vector() * 1200.f, NAME_None, true);
 	}
