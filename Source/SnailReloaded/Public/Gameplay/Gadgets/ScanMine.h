@@ -43,5 +43,11 @@ protected:
 	FVector NormalImpulse, const FHitResult& Hit);
 
 	bool bAllowScanning;
+
+	UFUNCTION()
+	void ScanInitialize_Callback();
+
+	UPROPERTY()
+	FTimerHandle BootupTimer;
 	
 };

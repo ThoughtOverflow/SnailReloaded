@@ -29,6 +29,8 @@ AScanMine::AScanMine()
 	RootBox->OnComponentHit.AddDynamic(this, &AScanMine::OnBoxCollide);
 	bAllowScanning = false;
 	RootBox->SetNotifyRigidBodyCollision(true);
+	GadgetHealthComponent->DefaultObjectHealth = 20.f;
+	GadgetHealthComponent->SetObjectMaxHealth(20.f);
 }
 
 void AScanMine::Tick(float DeltaSeconds)
@@ -89,7 +91,16 @@ void AScanMine::Tick(float DeltaSeconds)
 
 void AScanMine::Initialize()
 {
-	bAllowScanning = true;
+	if(HasAuthority())
+	{
+		if(FMath::IsNearlyZero(BootupTime))
+		{
+			bAllowScanning = true;
+		}else
+		{
+			GetWorldTimerManager().SetTimer(BootupTimer, this, &AScanMine::ScanInitialize_Callback, BootupTime);
+		}
+	}
 }
 
 void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -120,13 +131,20 @@ void AScanMine::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherAct
 {
 	RootBox->SetNotifyRigidBodyCollision(false);
 	RootBox->SetSimulatePhysics(false);
-	// SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorUpVector(), Hit.ImpactNormal));
 	FVector StartV = GetActorUpVector();
 	FVector EndV = Hit.ImpactNormal;
 	FQuat RotationQ = FQuat::FindBetweenNormals(StartV, EndV);
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *RotationQ.Rotator().ToString());
 	SetActorLocation(Hit.ImpactPoint + Hit.ImpactNormal * RootBox->GetScaledBoxExtent().Z);
 	SetActorRotation(RotationQ.Rotator());
+}
+
+void AScanMine::ScanInitialize_Callback()
+{
+	if(HasAuthority())
+	{
+		bAllowScanning = true;
+	}
 }
 
 
