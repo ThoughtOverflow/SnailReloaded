@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/HealthComponent.h"
 #include "Framework/DefaultPlayerState.h"
+#include "Gameplay/Gadgets/Gadget.h"
 #include "CombatPlayerState.generated.h"
 
 /**
@@ -12,6 +13,7 @@
  */
 
 
+struct FGadgetProperty;
 UENUM()
 enum class EPlayerColor : uint8
 {
@@ -79,6 +81,9 @@ protected:
 	UFUNCTION()
 	void OnRep_PlayerColor();
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Replicated = OnRep_PlayerColor)
+	FGadgetProperty SelectedGadget;
+
 public:
 
 	UFUNCTION(BlueprintCallable)
@@ -134,5 +139,14 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FLinearColor GetColorByEnum(EPlayerColor Color);
+
+	//Gadgets:
+
+	UFUNCTION(BlueprintCallable)
+	void AssignGadget(EGadgetType Gadget, int32 Amount);
+	UFUNCTION(Server, Reliable)
+	void Server_AssignGadget(EGadgetType Gadget, int32 Amount);
+	UFUNCTION(BlueprintPure)
+	FGadgetProperty GetAssignedGadget();
 	
 };

@@ -90,6 +90,12 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 			{
 				actor->Destroy();
 			}
+			//Destroy all gadgets:
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGadget::StaticClass(), RefPickups);
+			for(AActor*& actor : RefPickups)
+			{
+				actor->Destroy();
+			}
 		}
 
 	}
@@ -363,6 +369,9 @@ void AStandardCombatGameState::RespawnPlayers()
 					{
 						CurrentCharacter->AssignWeapon(DefaultSecondary, EEquipCondition::EquipIfStronger);
 					}
+
+					//Reset gadget:
+					CurrentCharacter->AssignedGadget = CombatPlayerState->GetAssignedGadget();
 					
 					CurrentCharacter->SetActorLocation(RandStart->GetActorLocation());
 					PlayerController->SetRespawnRotation(RandStart->GetActorRotation());

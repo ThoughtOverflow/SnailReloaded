@@ -124,7 +124,7 @@ public:
 
 	//Gadgets
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AGadget> ScanMineClass;
+	FGadgetProperty AssignedGadget;
 
 protected:
 	// Called when the game starts or when spawned

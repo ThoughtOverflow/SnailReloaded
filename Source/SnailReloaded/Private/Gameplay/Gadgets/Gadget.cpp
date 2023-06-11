@@ -3,9 +3,22 @@
 
 #include "Gameplay/Gadgets/Gadget.h"
 
+#include "Framework/Combat/CombatPlayerState.h"
 #include "GameFramework/PlayerState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Net/UnrealNetwork.h"
+
+FGadgetProperty::FGadgetProperty()
+{
+	GadgetType = EGadgetType::None;
+	NumberOfGadgets = 1;
+	PlacedGadgets = 0;
+}
+
+int32 FGadgetProperty::GetRemainingGadgets()
+{
+	return FMath::Max(0, NumberOfGadgets - PlacedGadgets);
+}
 
 // Sets default values
 AGadget::AGadget()

@@ -65,6 +65,7 @@ void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ACombatPlayerState, PlayerPlantCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerDefuseCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerColor);
+	DOREPLIFETIME(ACombatPlayerState, SelectedGadget);
 	DOREPLIFETIME(ACombatPlayerState, IsDeadPreviousRound);
 }
 
@@ -274,4 +275,29 @@ FLinearColor ACombatPlayerState::GetColorByEnum(EPlayerColor Color)
 {
 	if(Color == EPlayerColor::None) return FLinearColor::White;
 	return *ColorMap.Find(Color);
+}
+
+void ACombatPlayerState::AssignGadget(EGadgetType Gadget, int32 Amount)
+{
+	if(HasAuthority())
+	{
+		SelectedGadget = FGadgetProperty();
+		SelectedGadget.GadgetType = Gadget;
+		SelectedGadget.NumberOfGadgets = Amount;
+		OnRep_PlayerColor();
+	}else
+	{
+		Server_AssignGadget(Gadget, Amount);
+	}
+}
+
+void ACombatPlayerState::Server_AssignGadget_Implementation(EGadgetType Gadget, int32 Amount)
+{
+	AssignGadget(Gadget, Amount);
+}
+
+
+FGadgetProperty ACombatPlayerState::GetAssignedGadget()
+{
+	return SelectedGadget;
 }

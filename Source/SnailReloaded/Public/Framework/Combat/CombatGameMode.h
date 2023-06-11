@@ -6,8 +6,10 @@
 #include "CombatPlayerState.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/DefaultGameMode.h"
+#include "Gameplay/Gadgets/Gadget.h"
 #include "CombatGameMode.generated.h"
 
+enum class EGadgetType : uint8;
 class AWeaponBase;
 class ADefaultPlayerCharacter;
 struct FDamageRequest;
@@ -60,6 +62,9 @@ protected:
 	TMap<EItemIdentifier, TSubclassOf<AWeaponBase>> WeaponIdTable;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
 	TArray<FShieldProperties> ShieldDataTable;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gadgets")
+	TMap<EGadgetType, TSubclassOf<AGadget>> GadgetBlueprints;
 
 	FShieldProperties* FindShieldDataByType(EItemIdentifier ShieldIdentifier);
 	
@@ -118,7 +123,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void ProcessPlayerDeath(ACombatPlayerState* PlayerState);
 
-	//Color:
+	//Gadgets:
+
+	UFUNCTION(BlueprintCallable)
+	bool SpawnGadget(EGadgetType GadgetType, ADefaultPlayerCharacter* SpawningPlayer);
 
 	
 };

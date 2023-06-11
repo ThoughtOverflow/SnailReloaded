@@ -67,6 +67,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 
 	InteractionCastDistance = 1000.f;
 	PlayerInteractionData = FInteractionData();
+	AssignedGadget = FGadgetProperty();
 	
 	
 }
@@ -822,12 +823,12 @@ void ADefaultPlayerCharacter::UseGadget()
 
 	//mine:
 
-	if(HasAuthority() && ScanMineClass)
+	if(HasAuthority())
 	{
-		AScanMine* Gadget = GetWorld()->SpawnActor<AScanMine>(ScanMineClass, CameraComponent->GetComponentLocation(), GetActorRotation());
-		Gadget->InitializeGadget(Cast<ACombatPlayerState>(GetPlayerState()));
-		Gadget->RootBox->SetSimulatePhysics(true);
-		Gadget->RootBox->AddImpulse(GetControlRotation().Vector() * 1200.f, NAME_None, true);
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->SpawnGadget(AssignedGadget.GadgetType, this);
+		}
 	}
 	
 }

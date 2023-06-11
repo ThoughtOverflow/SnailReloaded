@@ -101,6 +101,8 @@ void AScanMine::Tick(float DeltaSeconds)
 void AScanMine::InitializeGadget(ACombatPlayerState* OwningPlayer)
 {
 	Super::InitializeGadget(OwningPlayer);
+	RootBox->SetSimulatePhysics(true);
+	RootBox->AddImpulse(OwningPlayer->GetPawn()->GetControlRotation().Vector() * 1200.f, NAME_None, true);
 	if(HasAuthority())
 	{
 		if(FMath::IsNearlyZero(BootupTime))
