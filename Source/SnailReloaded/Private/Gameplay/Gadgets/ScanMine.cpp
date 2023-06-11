@@ -60,6 +60,10 @@ void AScanMine::Tick(float DeltaSeconds)
 						//We hit the player - it is in line of sight
 						UE_LOG(LogTemp, Warning, TEXT("Revealed: %s"), *PlayerCharacter->GetName());
 						// PlayerCharacter->SetRevealedByMine(true);
+						//Player Notification:
+						Cast<ACombatPlayerController>(PlayerCharacter->GetController())->TriggerPlayerNotification( FText::FromString(TEXT("detected")), FLinearColor(0.7f, 0.5f, 0.f, 0.75f), 3.f);
+						Cast<ACombatPlayerController>(OwningPlayerState->GetOwningController())->TriggerPlayerNotification( FText::FromString(TEXT("mine triggered")), FLinearColor(0.16f, 0.64f, 0.7f, 0.75f), 3.f);
+						//---
 						if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 						{
 							for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))

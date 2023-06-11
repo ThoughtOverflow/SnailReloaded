@@ -7,6 +7,7 @@
 #include "Framework/DefaultPlayerController.h"
 #include "Gameplay/UI/DamageIndicatorWidget.h"
 #include "Gameplay/UI/GameNotification.h"
+#include "Gameplay/UI/PlayerNotification.h"
 #include "Gameplay/UI/TeamSelectionWidget.h"
 #include "CombatPlayerController.generated.h"
 
@@ -88,11 +89,15 @@ protected:
 	UPROPERTY()
 	UGameNotification* CurrentNotification;
 	UPROPERTY()
+	TArray<UPlayerNotification*> CurrentPlayerNotifications;
+	UPROPERTY()
 	FTimerHandle NotificationTimer;
 	UFUNCTION()
 	void NotificationTimer_Callback();
 	UFUNCTION(Client, Reliable)
 	void Client_TriggerGameNotification(ENotificationType Notification);
+	UFUNCTION(Client, Reliable)
+	void Client_TriggerPlayerNotification(const FText& NotificationText, const FLinearColor& NotificationColor, float Time);
 	
 
 
@@ -173,6 +178,8 @@ public:
 
 	//Game Notifications:
 	void TriggerGameNotification(ENotificationType Notification);
+	void TriggerPlayerNotification(const FText& NotificationText, const FLinearColor& NotificationColor, float Time);
+	void RemovePlayerNotification(UPlayerNotification* PlayerNotification);
 
 	
 };
