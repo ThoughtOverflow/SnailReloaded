@@ -1,4 +1,3 @@
-// SnailReloaded - ThoughtOverflow 2023 - All rights reserved.
 
 
 #include "Gameplay/Gadgets/ScanMine.h"
@@ -9,6 +8,7 @@
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Serialization/PropertyLocalizationDataGathering.h"
 
 AScanMine::AScanMine()
 {
@@ -118,8 +118,15 @@ void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 void AScanMine::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
+	RootBox->SetNotifyRigidBodyCollision(false);
 	RootBox->SetSimulatePhysics(false);
-	NormalImpulse.Normalize();
-	SetActorRotation(UKismetMathLibrary::MakeRotFromZ(NormalImpulse));
+	// SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorUpVector(), Hit.ImpactNormal));
+	FVector StartV = GetActorUpVector();
+	FVector EndV = Hit.ImpactNormal;
+	FQuat RotationQ = FQuat::FindBetweenNormals(StartV, EndV);
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *RotationQ.Rotator().ToString());
+	SetActorLocation(Hit.ImpactPoint + Hit.ImpactNormal * RootBox->GetScaledBoxExtent().Z);
+	SetActorRotation(RotationQ.Rotator());
 }
+
 
