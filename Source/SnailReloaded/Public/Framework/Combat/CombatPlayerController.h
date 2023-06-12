@@ -11,6 +11,7 @@
 #include "Gameplay/UI/TeamSelectionWidget.h"
 #include "CombatPlayerController.generated.h"
 
+class USoundCue;
 enum class ENotificationType : uint8;
 struct FInputActionInstance;
 class UInputMappingContext;
@@ -180,6 +181,11 @@ public:
 	void TriggerGameNotification(ENotificationType Notification);
 	void TriggerPlayerNotification(const FText& NotificationText, const FLinearColor& NotificationColor, float Time);
 	void RemovePlayerNotification(UPlayerNotification* PlayerNotification);
+
+	//Announcer:
+
+	UFUNCTION(Client, Reliable)
+	void Client_PlayAnnouncement(USoundBase* Announcement);
 
 	
 };

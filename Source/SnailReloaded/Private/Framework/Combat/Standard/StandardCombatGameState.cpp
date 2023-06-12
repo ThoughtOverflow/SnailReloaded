@@ -144,6 +144,7 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	}
 	if (NewPhase == EGamePhase::PostPlant)
 	{
+		PlayAnnouncement(EAnnouncement::BombPlanted);
 		for (auto& PlayerState : GetAllGamePlayers())
 		{
 			if (ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(
@@ -472,6 +473,7 @@ void AStandardCombatGameState::OnBombDefused()
 {
 	if(HasAuthority())
 	{
+		PlayAnnouncement(EAnnouncement::BombPlanted);
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddDefuse();

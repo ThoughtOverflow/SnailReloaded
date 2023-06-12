@@ -12,7 +12,6 @@
 #include "World/Objects/TeamPlayerStart.h"
 
 
-
 ACombatGameState::ACombatGameState()
 {
 	InitialPlayerMoney = 5000;
@@ -411,4 +410,20 @@ int32 ACombatGameState::GetSurviveReward() const
 void ACombatGameState::NotifyPlayerDeath(ACombatPlayerState* Player)
 {
 	OnPlayerDied.Broadcast();
+}
+
+void ACombatGameState::PlayAnnouncement(EAnnouncement Announcement)
+{
+	for(auto& PlayerState : GetAllGamePlayers())
+	{
+		if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetOwningController()))
+		{
+			if(Announcements.Contains(Announcement))
+			{
+				CombatPlayerController->Client_PlayAnnouncement(*Announcements.Find(Announcement));
+			}
+			
+			
+		}
+	}
 }

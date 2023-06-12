@@ -483,6 +483,11 @@ void ACombatPlayerController::RemovePlayerNotification(UPlayerNotification* Play
 	}
 }
 
+void ACombatPlayerController::Client_PlayAnnouncement_Implementation(USoundBase* Announcement)
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), Announcement);
+}
+
 
 void ACombatPlayerController::Server_AssignPlayerToTeam_Implementation(EGameTeams Team)
 {

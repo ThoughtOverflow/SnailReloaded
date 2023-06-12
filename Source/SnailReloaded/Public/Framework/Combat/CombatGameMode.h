@@ -9,6 +9,7 @@
 #include "Gameplay/Gadgets/Gadget.h"
 #include "CombatGameMode.generated.h"
 
+class USoundCue;
 enum class EGadgetType : uint8;
 class AWeaponBase;
 class ADefaultPlayerCharacter;
@@ -27,6 +28,14 @@ enum class EGamePhase : uint8
 	PostPlant = 3,
 	EndPhase = 4
 };
+
+UENUM(BlueprintType)
+enum class EAnnouncement : uint8
+{
+	BombPlanted = 0,
+	BombDefused = 1
+};
+
 
 USTRUCT(BlueprintType)
 struct FGamePhase
@@ -50,6 +59,8 @@ class SNAILRELOADED_API ACombatGameMode : public ADefaultGameMode
 {
 	GENERATED_BODY()
 
+friend class ACombatGameState;
+	
 public:
 
 	ACombatGameMode();
@@ -127,6 +138,5 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool SpawnGadget(EGadgetType GadgetType, ADefaultPlayerCharacter* SpawningPlayer);
-
 	
 };
