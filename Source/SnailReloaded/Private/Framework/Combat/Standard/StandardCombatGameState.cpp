@@ -473,7 +473,7 @@ void AStandardCombatGameState::OnBombDefused()
 {
 	if(HasAuthority())
 	{
-		PlayAnnouncement(EAnnouncement::BombPlanted);
+		PlayAnnouncement(EAnnouncement::BombDefused);
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddDefuse();
