@@ -230,7 +230,7 @@ void USnailGameInstance::UploadSavegameToCloud(ESavegameCategory Category, FStri
 			{
 				UE_LOG(LogTemp, Warning, TEXT("File Size: %d"), saveContents.Num());
 				UserCloud->OnWriteUserFileCompleteDelegates.AddUObject(this, &USnailGameInstance::OnPlayerConfigUploadFinished);
-				UserCloud->WriteUserFile(*GetFirstGamePlayer()->GetPreferredUniqueNetId(), SavegameName, saveContents);
+				UserCloud->WriteUserFile(*GetFirstGamePlayer()->GetPreferredUniqueNetId(), SavegameName, saveContents);	
 			}
 		}
 	}
@@ -306,6 +306,10 @@ void USnailGameInstance::OnPlayerConfigUploadFinished(bool bSuccessful, const FU
 	if(bSuccessful)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("File upload finished"));
+	}
+	if(IOnlineUserCloudPtr Cloud = OnlineSubsystem->GetUserCloudInterface())
+	{
+		Cloud->ClearOnWriteUserFileCompleteDelegates(this);
 	}
 }
 
@@ -478,9 +482,9 @@ void USnailGameInstance::SaveSettingsSavegameToDisk()
 	if(SavedSettings)
 	{
 		FAsyncSaveGameToSlotDelegate AsyncSaveDelegate;
+		UploadSavegameToCloud(ESavegameCategory::SETTINGS, TEXT("SettingsSavegame.sav"));
 		AsyncSaveDelegate.BindUObject(this, &USnailGameInstance::OnAsyncSaveGameFinished);
 		UGameplayStatics::AsyncSaveGameToSlot(SavedSettings, TEXT("SettingsSavegame"), 0, AsyncSaveDelegate);
-		UploadSavegameToCloud(ESavegameCategory::SETTINGS, TEXT("SettingsSavegame.sav"));
 	}
 }
 
