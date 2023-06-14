@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "SnailGameInstance.generated.h"
 
 #define GOLDEN_SENS (0.130975f);
@@ -88,5 +90,114 @@ public:
 	 */
 	UPROPERTY()
 	FOnEpicLoginComplete EpicLoginComplete;
+
+protected:
+
+	virtual void Shutdown() override;
+	
+	/**
+	 * @brief Query the command line arguments for dedicated servers.
+	 */
+	void QueryCommandLineArguments();
+	/**
+	 * @brief Setup the game as a dedicated server.
+	 */
+	void SetupDedicatedServer();
+	/**
+	 * @brief Setup the game as a Standalone game.
+	 */
+	void SetupGameClient();
+	/**
+	 * @brief Setup the game as a dev client. Development only!
+	 * @param id The id for EOS Dev auth tool.
+	 */
+	UFUNCTION(Exec)
+	void SetupDevClient(int32 id);
+	/**
+	 * @brief Callback for server search process.
+	 * @param bSuccess Whether the search was successful or not.
+	 */
+	void PostDedicatedSearch(bool bSuccess);
+	/**
+	 * @brief Get the specified player's configuration savegame.
+	 * @param NetId The player's specified net identifier.
+	 */
+	void GetPlayerConfigSaveGame(const FUniqueNetId& NetId);
+	/**
+	 * @brief Create a local copy of the specified data array. (For config savegame)
+	 * @param downloadedContents The downloaded / loaded data.
+	 * @param bHasDownload Whether the savegame got downloaded from the cloud or not.
+	 */
+	void CreateLocalCopyOfConfig(TArray<uint8>& downloadedContents, bool bHasDownload);
+	/**
+	 * @brief Save the config savegame.
+	 */
+	void SavePlayerConfigSavegame();
+	/**
+	 * @brief Upload the config savegame to the EOS cloud service.
+	 */
+	void UploadPlayerConfigToCloud();
+
+	IOnlineSubsystem* OnlineSubsystem;
+
+	bool bIsAuthServer;
+	
+	TSharedPtr<FOnlineSessionSearch> SessionSearchSettings;
+
+	/**
+	 * @brief The epic games identifier of the player.
+	 */
+	UPROPERTY()
+	FString PlayerEpicID;
+
+	//delegate binds:
+
+	/**
+	 * @brief Callback for epic login completion.
+	 */
+	void OnLoginComplete(int ControllerIndex, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& ErrorString);
+	/**
+	 * @brief Callback for dedicated session creation.
+	 */
+	void DedicatedSessionCreated(FName SessionName, bool bWasSuccessful);
+	/**
+	 * @brief Callback for session destroyed.
+	 */
+	void SessionDestroyed(FName SessionName, bool bWasSuccessful);
+	/**
+	 * @brief Callback for player config download finished.
+	 */
+	void OnPlayerConfigDownloadFinished(bool bSuccessful, const FUniqueNetId& NetId, const FString& FileName);
+	/**
+	 * @brief Callback for Player config upload finished.
+	 */
+	void OnPlayerConfigUploadFinished(bool bSuccessful, const FUniqueNetId& NetId, const FString& FileName);
+
+public:
+
+	/**
+	 * @brief Search for a server and connect to the first available instance.
+	 */
+	UFUNCTION(BlueprintCallable)
+	void SearchAndConnectToMasterServer();
+
+	/**
+	 * @brief Getter for player epic ID
+	 * @return The epic games identifier.
+	 */
+	UFUNCTION(BlueprintGetter)
+	FString GetPlayerEpicID();
+
+	/**
+	 * @brief Callback for session join completion.
+	 */
+	void OnJoinComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
+	/**
+	 * @brief Host a session. (Either dedicated or listen)
+	 */
+	void CreateDedicatedServerSession();
+
+	
 	
 };
