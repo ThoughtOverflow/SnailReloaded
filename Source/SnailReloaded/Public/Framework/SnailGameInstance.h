@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "OnlineSubsystem.h"
+#include "GameFramework/SaveGame.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "SnailGameInstance.generated.h"
 
@@ -15,6 +16,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEpicLoginComplete);
 
 class FOnlineSessionSearch;
 DECLARE_LOG_CATEGORY_EXTERN(LogOnlineGameSession, Log, All);
+
+UENUM()
+enum class ESavegameCategory : uint8
+{
+	SETTINGS = 0,
+	COSMETICS = 1
+};
 
 /**
  * 
@@ -75,6 +83,8 @@ public:
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game Settings")
 	bool bUseDevAuth;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game Settings")
+	bool bRequireLoginInEditor;
 	/**
 	 * @addtogroup ds_settings
 	 * @brief Reference to the savegame storing the user's config.
@@ -122,21 +132,21 @@ protected:
 	 * @brief Get the specified player's configuration savegame.
 	 * @param NetId The player's specified net identifier.
 	 */
-	void GetPlayerConfigSaveGame(const FUniqueNetId& NetId);
+	void GetSavegame(const FUniqueNetId& NetId, ESavegameCategory Category);
 	/**
 	 * @brief Create a local copy of the specified data array. (For config savegame)
 	 * @param downloadedContents The downloaded / loaded data.
 	 * @param bHasDownload Whether the savegame got downloaded from the cloud or not.
 	 */
-	void CreateLocalCopyOfConfig(TArray<uint8>& downloadedContents, bool bHasDownload);
+	void CreateLocalCopyOfSavegame(TArray<uint8>& downloadedContents, bool bHasDownload, FString FileName, ESavegameCategory Category);
 	/**
 	 * @brief Save the config savegame.
 	 */
-	void SavePlayerConfigSavegame();
+	void SaveSavegame(USaveGame* SavegameObj, FString SavegameName);
 	/**
 	 * @brief Upload the config savegame to the EOS cloud service.
 	 */
-	void UploadPlayerConfigToCloud();
+	void UploadSavegameToCloud(ESavegameCategory Category, FString SavegameName);
 
 	IOnlineSubsystem* OnlineSubsystem;
 
@@ -167,7 +177,7 @@ protected:
 	/**
 	 * @brief Callback for player config download finished.
 	 */
-	void OnPlayerConfigDownloadFinished(bool bSuccessful, const FUniqueNetId& NetId, const FString& FileName);
+	void OnSavegameDownloadFinished(bool bSuccessful, const FUniqueNetId& NetId, const FString& FileName);
 	/**
 	 * @brief Callback for Player config upload finished.
 	 */

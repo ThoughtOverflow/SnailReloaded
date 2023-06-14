@@ -15,6 +15,8 @@
 #include "Kismet/KismetInternationalizationLibrary.h"
 
 
+DEFINE_LOG_CATEGORY(LogOnlineGameSession);
+
 void USnailGameInstance::Shutdown()
 {
 	Super::Shutdown();
@@ -129,28 +131,36 @@ void USnailGameInstance::PostDedicatedSearch(bool bSuccess)
 	}
 }
 
-void USnailGameInstance::GetPlayerConfigSaveGame(const FUniqueNetId& NetId)
+void USnailGameInstance::GetSavegame(const FUniqueNetId& NetId, ESavegameCategory Category)
 {
 	if(OnlineSubsystem)
 	{
 		if(IOnlineUserCloudPtr UserCloud = OnlineSubsystem->GetUserCloudInterface())
 		{
-			UserCloud->OnReadUserFileCompleteDelegates.AddUObject(this, &USnailGameInstance::OnPlayerConfigDownloadFinished);
-			UserCloud->ReadUserFile(NetId, TEXT("ConfigSavegame.sav"));
+			UserCloud->OnReadUserFileCompleteDelegates.AddUObject(this, &USnailGameInstance::OnSavegameDownloadFinished);
+			switch (Category) {
+			case ESavegameCategory::SETTINGS: UserCloud->ReadUserFile(NetId, TEXT("SettingsSavegame.sav")); break;
+			case ESavegameCategory::COSMETICS: break;
+			default: ;
+			}
 		}
 	}
 }
 
-void USnailGameInstance::CreateLocalCopyOfConfig(TArray<uint8>& downloadedContents, bool bHasDownload)
+void USnailGameInstance::CreateLocalCopyOfSavegame(TArray<uint8>& downloadedContents, bool bHasDownload, FString FileName, ESavegameCategory Category)
 {
+	FString SlotName = FileName.LeftChop(4);
 	if(bHasDownload)
 	{
-		
-		if(UPlayerConfigSavegame* MemoLoad = Cast<UPlayerConfigSavegame>(UGameplayStatics::LoadGameFromMemory(downloadedContents)))
+		if(USaveGame* MemoLoad = Cast<USaveGame>(UGameplayStatics::LoadGameFromMemory(downloadedContents)))
 		{
-			PlayerConfigSavegame = MemoLoad;
+			switch (Category) {
+			case ESavegameCategory::SETTINGS: SavedSettings = Cast<USettingsSavegame>(MemoLoad); SaveSavegame(SavedSettings, SlotName); break;
+			case ESavegameCategory::COSMETICS: break;
+			default: ;
+			}
 			//then save to a local instance
-			SavePlayerConfigSavegame();
+			
 		}else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Couldnt load from memo!"));
@@ -158,49 +168,69 @@ void USnailGameInstance::CreateLocalCopyOfConfig(TArray<uint8>& downloadedConten
 	}else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No downloaded instance. Checking for local savegame existance."))
-		if(UGameplayStatics::DoesSaveGameExist(TEXT("PlayerConfig"), 0))
+		if(UGameplayStatics::DoesSaveGameExist(SlotName, 0))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Loading locally found savegame."));
-			if(UPlayerConfigSavegame* LoadedSave = Cast<UPlayerConfigSavegame>(UGameplayStatics::LoadGameFromSlot(TEXT("PlayerConfig"), 0)))
+			if(USaveGame* LoadedSave = Cast<USaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)))
 			{
-				PlayerConfigSavegame = LoadedSave;
-				UploadPlayerConfigToCloud();
+				switch (Category) {
+				case ESavegameCategory::SETTINGS: SavedSettings = Cast<USettingsSavegame>(LoadedSave); break;
+				case ESavegameCategory::COSMETICS: break;
+				default: ;
+				}
+				UploadSavegameToCloud(Category, FileName);
 			}
 		}else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Creating default savegame."));
-			if(UPlayerConfigSavegame* NewPlayerConfig = Cast<UPlayerConfigSavegame>(UGameplayStatics::CreateSaveGameObject(UPlayerConfigSavegame::StaticClass())))
+			UClass* SavegameClass = nullptr;
+			switch (Category) {
+			case ESavegameCategory::SETTINGS: SavegameClass = USettingsSavegame::StaticClass(); break;
+			case ESavegameCategory::COSMETICS: break;
+			default: ;
+			}
+			if(USaveGame* NewPlayerConfig = Cast<USaveGame>(UGameplayStatics::CreateSaveGameObject(SavegameClass)))
 			{
 				//save to disk:
-				PlayerConfigSavegame = NewPlayerConfig;
-				SavePlayerConfigSavegame();
+				switch (Category) {
+				case ESavegameCategory::SETTINGS: SavedSettings = Cast<USettingsSavegame>(NewPlayerConfig); break;
+				case ESavegameCategory::COSMETICS: break;
+				default: ;
+				}
+				SaveSavegame(NewPlayerConfig, SlotName);
 			}
 		}
 	}
 }
 
-void USnailGameInstance::SavePlayerConfigSavegame()
+void USnailGameInstance::SaveSavegame(USaveGame* SavegameObj, FString SavegameName)
 {
 	//async for faster time.
 	FAsyncSaveGameToSlotDelegate AsyncSaveDelegate;
 	AsyncSaveDelegate.BindUObject(this, &USnailGameInstance::OnAsyncSaveGameFinished);
 
-	UGameplayStatics::AsyncSaveGameToSlot(PlayerConfigSavegame, TEXT("PlayerConfig"), 0, AsyncSaveDelegate);
+	UGameplayStatics::AsyncSaveGameToSlot(SavegameObj, SavegameName, 0, AsyncSaveDelegate);
 }
 
-void USnailGameInstance::UploadPlayerConfigToCloud()
+void USnailGameInstance::UploadSavegameToCloud(ESavegameCategory Category, FString SavegameName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Uploading new save file..."))
 	if(OnlineSubsystem)
 	{
 		if(IOnlineUserCloudPtr UserCloud = OnlineSubsystem->GetUserCloudInterface())
 		{
+			USaveGame* SaveGame = nullptr;
+			switch (Category) {
+			case ESavegameCategory::SETTINGS: SaveGame = SavedSettings; break;
+			case ESavegameCategory::COSMETICS: break;
+			default: ;
+			}
 			TArray<uint8> saveContents;
-			if(UGameplayStatics::SaveGameToMemory(PlayerConfigSavegame, saveContents))
+			if(UGameplayStatics::SaveGameToMemory(SaveGame, saveContents))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("asdasd: %d"), saveContents.Num());
+				UE_LOG(LogTemp, Warning, TEXT("File Size: %d"), saveContents.Num());
 				UserCloud->OnWriteUserFileCompleteDelegates.AddUObject(this, &USnailGameInstance::OnPlayerConfigUploadFinished);
-				UserCloud->WriteUserFile(*GetFirstGamePlayer()->GetPreferredUniqueNetId(), TEXT("ConfigSavegame.sav"), saveContents);
+				UserCloud->WriteUserFile(*GetFirstGamePlayer()->GetPreferredUniqueNetId(), SavegameName, saveContents);
 			}
 		}
 	}
@@ -216,7 +246,8 @@ void USnailGameInstance::OnLoginComplete(int ControllerIndex, bool bWasSuccessfu
 		// PlayerNetID = UserId;
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Found eid: %s"), *PlayerEpicID);
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Found full ID: %s"), *UserId.ToString());
-		GetPlayerConfigSaveGame(UserId);
+		//Get the settings.
+		GetSavegame(UserId, ESavegameCategory::SETTINGS);
 		EpicLoginComplete.Broadcast();
 	}else
 	{
@@ -247,7 +278,7 @@ void USnailGameInstance::SessionDestroyed(FName SessionName, bool bWasSuccessful
 	OnlineSubsystem->GetSessionInterface()->ClearOnDestroySessionCompleteDelegates(this);
 }
 
-void USnailGameInstance::OnPlayerConfigDownloadFinished(bool bSuccessful, const FUniqueNetId& NetId,
+void USnailGameInstance::OnSavegameDownloadFinished(bool bSuccessful, const FUniqueNetId& NetId,
 	const FString& FileName)
 {
 	if(OnlineSubsystem)
@@ -260,9 +291,11 @@ void USnailGameInstance::OnPlayerConfigDownloadFinished(bool bSuccessful, const 
 			if(bSuccessful) //if false, file couldn't be downloaded, create a new instance or keep the currently existing one.
 				{
 				//Read cloudSaveData, and parse into array.
-				Cloud->GetFileContents(NetId, TEXT("ConfigSavegame.sav"), fileContents);
+				Cloud->GetFileContents(NetId, FileName, fileContents);
 				}
-			CreateLocalCopyOfConfig(fileContents, bSuccessful);
+			if(FileName == TEXT("SettingsSavegame.sav")) {
+				CreateLocalCopyOfSavegame(fileContents, bSuccessful, FileName, ESavegameCategory::SETTINGS);
+			}
 		}
 	}
 }
@@ -368,7 +401,7 @@ void USnailGameInstance::Init()
 {
 	Super::Init();
 
-	InitializeSavegames();
+	// InitializeSavegames();
 
 	OnlineSubsystem = IOnlineSubsystem::Get("EOS");
 	
@@ -388,6 +421,9 @@ void USnailGameInstance::Init()
 				{
 					SetupGameClient();
 				}
+			}else if(bRequireLoginInEditor)
+			{
+				SetupGameClient();
 			}
 		}
 	}else
@@ -443,7 +479,8 @@ void USnailGameInstance::SaveSettingsSavegameToDisk()
 	{
 		FAsyncSaveGameToSlotDelegate AsyncSaveDelegate;
 		AsyncSaveDelegate.BindUObject(this, &USnailGameInstance::OnAsyncSaveGameFinished);
-		UGameplayStatics::AsyncSaveGameToSlot(SavedSettings, TEXT("GameSettings"), 0, AsyncSaveDelegate);
+		UGameplayStatics::AsyncSaveGameToSlot(SavedSettings, TEXT("SettingsSavegame"), 0, AsyncSaveDelegate);
+		UploadSavegameToCloud(ESavegameCategory::SETTINGS, TEXT("SettingsSavegame.sav"));
 	}
 }
 
