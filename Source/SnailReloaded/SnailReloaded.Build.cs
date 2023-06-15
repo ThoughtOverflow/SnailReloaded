@@ -8,7 +8,7 @@ public class SnailReloaded : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Slate", "SlateCore", "UMG", "EnhancedInput", "Niagara", "OnlineSubsystem", "OnlineSubsystemEOS" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Slate", "SlateCore", "UMG", "EnhancedInput", "Niagara", "OnlineSubsystem", "OnlineSubsystemEOS"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "HTTP", "Json" });
 
