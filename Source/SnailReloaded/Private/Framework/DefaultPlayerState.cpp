@@ -60,8 +60,13 @@ void ADefaultPlayerState::BeginPlay()
 
 void ADefaultPlayerState::OnLoginComplete()
 {
-	API_GetPlayerAccountData();
-	API_GetPlayerInventoryData();
+	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+	{
+		SnailGameInstance->MainStatusMessage = TEXT("Query API data");
+		API_GetPlayerAccountData();
+		API_GetPlayerInventoryData();
+	}
+
 }
 
 FString ADefaultPlayerState::GetPlayerEpicID()
@@ -79,6 +84,10 @@ void ADefaultPlayerState::OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpRe
 		if(ResponseJson->GetStringField("status") != "ERROR")
 		{
 			ResponseJson->TryGetStringArrayField("msg", PlayerOwnedItems);
+			if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+			{
+				SnailGameInstance->SetApiInventoryDataReady(true);
+			}
 		}
 	}
 }
@@ -97,7 +106,11 @@ void ADefaultPlayerState::OnGetAccountDataRequestComplete(FHttpRequestPtr Req, F
 			AccountData.PlayerLevel = OutObj->Get()->GetIntegerField("level");
 			AccountData.PlayerXP = OutObj->Get()->GetIntegerField("xp");
 			AccountData.UnopenedCrates = OutObj->Get()->GetIntegerField("crates");
-			
+
+			if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+			{
+				SnailGameInstance->SetApiAccountDataReady(true);
+			}
 		}
 	}
 }

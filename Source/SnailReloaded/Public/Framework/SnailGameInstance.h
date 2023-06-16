@@ -30,6 +30,8 @@ enum class ESavegameCategory : uint8
 UCLASS()
 class SNAILRELOADED_API USnailGameInstance : public UGameInstance
 {
+
+private:
 	GENERATED_BODY()
 
 public:
@@ -38,6 +40,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	USettingsSavegame* SavedSettings;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString MainStatusMessage;
 	
 protected:
 
@@ -183,6 +188,17 @@ protected:
 	 */
 	void OnPlayerConfigUploadFinished(bool bSuccessful, const FUniqueNetId& NetId, const FString& FileName);
 
+	
+	UPROPERTY()
+	bool bSettingsSavegameLoaded;
+	UPROPERTY()
+	bool bApiAccountDataReady;
+	UPROPERTY()
+	bool bApiInventoryDataReady;
+
+	UFUNCTION()
+	void CheckForTravelReady();
+
 public:
 
 	/**
@@ -208,6 +224,11 @@ public:
 	 */
 	void CreateDedicatedServerSession();
 
-	
+	UFUNCTION(BlueprintCallable)
+	void SetSettingsSavegameLoaded(bool bLoaded);
+	UFUNCTION(BlueprintCallable)
+	void SetApiAccountDataReady(bool bReady);
+	UFUNCTION(BlueprintCallable)
+	void SetApiInventoryDataReady(bool bReady);
 	
 };

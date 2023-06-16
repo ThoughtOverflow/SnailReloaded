@@ -26,6 +26,7 @@ void USnailGameInstance::Shutdown()
 		OnlineSubsystem->GetSessionInterface()->EndSession(FName(*GameServerName));
 		OnlineSubsystem->GetSessionInterface()->OnDestroySessionCompleteDelegates.AddUObject(this, &USnailGameInstance::SessionDestroyed);
 		OnlineSubsystem->GetSessionInterface()->DestroySession(FName(*GameServerName));
+		OnlineSubsystem->GetIdentityInterface()->Logout(0);
 	}
 }
 
@@ -74,6 +75,7 @@ void USnailGameInstance::SetupGameClient()
 	{
 		if(IOnlineIdentityPtr Identity = OnlineSubsystem->GetIdentityInterface())
 		{
+			MainStatusMessage = TEXT("Requesting Epic login");
 			FOnlineAccountCredentials AccountCredentials;
 			AccountCredentials.Id = FString("");
 			AccountCredentials.Token = FString("");
@@ -137,6 +139,7 @@ void USnailGameInstance::GetSavegame(const FUniqueNetId& NetId, ESavegameCategor
 	{
 		if(IOnlineUserCloudPtr UserCloud = OnlineSubsystem->GetUserCloudInterface())
 		{
+			MainStatusMessage = TEXT("Downloading settings...");
 			UserCloud->OnReadUserFileCompleteDelegates.AddUObject(this, &USnailGameInstance::OnSavegameDownloadFinished);
 			switch (Category) {
 			case ESavegameCategory::SETTINGS: UserCloud->ReadUserFile(NetId, TEXT("SettingsSavegame.sav")); break;
@@ -152,6 +155,7 @@ void USnailGameInstance::CreateLocalCopyOfSavegame(TArray<uint8>& downloadedCont
 	FString SlotName = FileName.LeftChop(4);
 	if(bHasDownload)
 	{
+		MainStatusMessage = TEXT("Creating local save");
 		if(USaveGame* MemoLoad = Cast<USaveGame>(UGameplayStatics::LoadGameFromMemory(downloadedContents)))
 		{
 			switch (Category) {
@@ -201,6 +205,7 @@ void USnailGameInstance::CreateLocalCopyOfSavegame(TArray<uint8>& downloadedCont
 			}
 		}
 	}
+	SetSettingsSavegameLoaded(true);
 }
 
 void USnailGameInstance::SaveSavegame(USaveGame* SavegameObj, FString SavegameName)
@@ -208,7 +213,7 @@ void USnailGameInstance::SaveSavegame(USaveGame* SavegameObj, FString SavegameNa
 	//async for faster time.
 	FAsyncSaveGameToSlotDelegate AsyncSaveDelegate;
 	AsyncSaveDelegate.BindUObject(this, &USnailGameInstance::OnAsyncSaveGameFinished);
-
+	MainStatusMessage = TEXT("Saving...");
 	UGameplayStatics::AsyncSaveGameToSlot(SavegameObj, SavegameName, 0, AsyncSaveDelegate);
 }
 
@@ -246,6 +251,7 @@ void USnailGameInstance::OnLoginComplete(int ControllerIndex, bool bWasSuccessfu
 		// PlayerNetID = UserId;
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Found eid: %s"), *PlayerEpicID);
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Found full ID: %s"), *UserId.ToString());
+		MainStatusMessage = TEXT("Login complete");
 		//Get the settings.
 		GetSavegame(UserId, ESavegameCategory::SETTINGS);
 		EpicLoginComplete.Broadcast();
@@ -290,6 +296,7 @@ void USnailGameInstance::OnSavegameDownloadFinished(bool bSuccessful, const FUni
 			TArray<uint8> fileContents;
 			if(bSuccessful) //if false, file couldn't be downloaded, create a new instance or keep the currently existing one.
 				{
+				MainStatusMessage = TEXT("Download complete.");
 				//Read cloudSaveData, and parse into array.
 				Cloud->GetFileContents(NetId, FileName, fileContents);
 				}
@@ -310,6 +317,14 @@ void USnailGameInstance::OnPlayerConfigUploadFinished(bool bSuccessful, const FU
 	if(IOnlineUserCloudPtr Cloud = OnlineSubsystem->GetUserCloudInterface())
 	{
 		Cloud->ClearOnWriteUserFileCompleteDelegates(this);
+	}
+}
+
+void USnailGameInstance::CheckForTravelReady()
+{
+	if(bSettingsSavegameLoaded && bApiAccountDataReady && bApiInventoryDataReady)
+	{
+		GetWorld()->ServerTravel(TEXT("MainMenu"));
 	}
 }
 
@@ -391,6 +406,7 @@ void USnailGameInstance::CreateDedicatedServerSession()
 	}
 }
 
+
 USnailGameInstance::USnailGameInstance()
 {
 	GameServerName = "Council Game Server - Default settings";
@@ -399,6 +415,7 @@ USnailGameInstance::USnailGameInstance()
 	bIsAuthServer = false;
 	bUseDevAuth = false;
 	PlayerEpicID = "";
+	MainStatusMessage = TEXT("Loading...");
 }
 
 void USnailGameInstance::Init()
@@ -470,6 +487,7 @@ void USnailGameInstance::OnAsyncSaveGameFinished(const FString& SlotName, const 
 	if(bSuccess)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Saved savegame '%s'"), *SlotName);
+		MainStatusMessage = TEXT("Save complete.");
 	}else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Could not save savegame '%s'!"), *SlotName);
@@ -496,4 +514,22 @@ void USnailGameInstance::LoadGameSettings()
 		GameUserSettings->ApplySettings(false);
 		UKismetInternationalizationLibrary::SetCurrentLanguageAndLocale(SavedSettings->ActiveLanguage, true);
 	}
+}
+
+void USnailGameInstance::SetSettingsSavegameLoaded(bool bLoaded)
+{
+	this->bSettingsSavegameLoaded = bLoaded;
+	CheckForTravelReady();
+}
+
+void USnailGameInstance::SetApiAccountDataReady(bool bReady)
+{
+	this->bApiAccountDataReady = bReady;
+	CheckForTravelReady();
+}
+
+void USnailGameInstance::SetApiInventoryDataReady(bool bReady)
+{
+	this->bApiInventoryDataReady = bReady;
+	CheckForTravelReady();
 }
