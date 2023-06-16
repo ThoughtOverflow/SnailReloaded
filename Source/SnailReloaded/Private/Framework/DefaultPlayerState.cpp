@@ -4,9 +4,11 @@
 #include "Framework/DefaultPlayerState.h"
 
 #include "HttpModule.h"
+#include "Framework/DefaultGameMode.h"
 #include "Framework/SnailGameInstance.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
+#include "Kismet/GameplayStatics.h"
 
 FAPIAccountData::FAPIAccountData()
 {
@@ -49,6 +51,25 @@ void ADefaultPlayerState::API_GetPlayerInventoryData()
 	Request->ProcessRequest();
 }
 
+void ADefaultPlayerState::API_ValidateToken()
+{
+	if(!HasAuthority())
+	{
+		return;
+	}
+	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+		FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/validatetoken"));
+		Request->SetVerb("POST");
+		Request->SetURL(RequestURL);
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+		Request->SetContentAsString(FString::Printf(TEXT("token=%s"), *DefaultGameMode->APIToken));
+		Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnGetTokenValidationComplete);
+		Request->ProcessRequest();
+	}
+	
+}
 
 
 void ADefaultPlayerState::BeginPlay()
@@ -63,6 +84,7 @@ void ADefaultPlayerState::OnLoginComplete()
 	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
 	{
 		SnailGameInstance->MainStatusMessage = TEXT("Query API data");
+		API_ValidateToken();
 		API_GetPlayerAccountData();
 		API_GetPlayerInventoryData();
 	}
@@ -110,6 +132,26 @@ void ADefaultPlayerState::OnGetAccountDataRequestComplete(FHttpRequestPtr Req, F
 			if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
 			{
 				SnailGameInstance->SetApiAccountDataReady(true);
+			}
+		}
+	}
+}
+
+void ADefaultPlayerState::OnGetTokenValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+{
+	if(bSuccess)
+	{
+		TSharedPtr<FJsonObject> ResponseJson;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Res->GetContentAsString());
+		FJsonSerializer::Deserialize(Reader, ResponseJson);
+		if(ResponseJson->GetStringField("status") != "ERROR")
+		{
+			bool Valid = false;
+			ResponseJson->TryGetBoolField("msg", Valid);
+
+			if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+			{
+				SnailGameInstance->bIsAuthServer = Valid;
 			}
 		}
 	}

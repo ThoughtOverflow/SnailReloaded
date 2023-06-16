@@ -105,6 +105,9 @@ public:
 	 */
 	UPROPERTY()
 	FOnEpicLoginComplete EpicLoginComplete;
+	
+	UPROPERTY()
+	bool bIsAuthServer;
 
 protected:
 
@@ -154,8 +157,6 @@ protected:
 	void UploadSavegameToCloud(ESavegameCategory Category, FString SavegameName);
 
 	IOnlineSubsystem* OnlineSubsystem;
-
-	bool bIsAuthServer;
 	
 	TSharedPtr<FOnlineSessionSearch> SessionSearchSettings;
 
@@ -230,5 +231,10 @@ public:
 	void SetApiAccountDataReady(bool bReady);
 	UFUNCTION(BlueprintCallable)
 	void SetApiInventoryDataReady(bool bReady);
+
+	UFUNCTION(BlueprintCallable)
+	void HostServer();
+	UFUNCTION(BlueprintCallable)
+	void JoinFirstServer();
 	
 };

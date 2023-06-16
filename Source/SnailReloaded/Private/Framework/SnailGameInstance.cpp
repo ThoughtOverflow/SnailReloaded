@@ -7,6 +7,7 @@
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSessionSettings.h"
+#include "Framework/DefaultGameMode.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Interfaces/OnlineIdentityInterface.h"
@@ -36,7 +37,6 @@ void USnailGameInstance::QueryCommandLineArguments()
 	FString ServerName;
 	FString AdminPassword;
 	int32 MaxPlayers;
-	int32 AuthServerInt;
 	if(FParse::Value(FCommandLine::Get(), TEXT("ServerName="), ServerName))
 	{
 		this->GameServerName = ServerName;
@@ -48,10 +48,6 @@ void USnailGameInstance::QueryCommandLineArguments()
 	if(FParse::Value(FCommandLine::Get(), TEXT("MaxPlayers="), MaxPlayers))
 	{
 		this->maxPlayerCount = MaxPlayers;
-	}
-	if(FParse::Value(FCommandLine::Get(), TEXT("IsAuthServer="), AuthServerInt))
-	{
-		this->bIsAuthServer = AuthServerInt == 1;
 	}
 	UE_LOG(LogOnlineGameSession, Warning, TEXT("Set server name to %s"), *GameServerName);
 	UE_LOG(LogOnlineGameSession, Warning, TEXT("Set admin password to %s"), *AdminGamePassword);
@@ -268,6 +264,7 @@ void USnailGameInstance::DedicatedSessionCreated(FName SessionName, bool bWasSuc
 	{
 		UE_LOG(LogOnlineGameSession, Log, TEXT("Created dedicated session (%s)"), *SessionName.ToString());
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Registered as authenticated server: %d"), bIsAuthServer);
+		GetWorld()->ServerTravel(TEXT("Shipyard_v1?listen"));
 	}else
 	{
 		UE_LOG(LogOnlineGameSession, Error, TEXT("Failed to create dedicated session!"));
@@ -532,4 +529,14 @@ void USnailGameInstance::SetApiInventoryDataReady(bool bReady)
 {
 	this->bApiInventoryDataReady = bReady;
 	CheckForTravelReady();
+}
+
+void USnailGameInstance::HostServer()
+{
+	CreateDedicatedServerSession();
+}
+
+void USnailGameInstance::JoinFirstServer()
+{
+	SearchAndConnectToMasterServer();
 }
