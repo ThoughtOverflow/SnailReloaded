@@ -45,6 +45,14 @@ public:
 	TSubclassOf<UPauseWidget> PauseWidgetClass;
 	UPROPERTY(BlueprintReadWrite)
 	UPauseWidget* PauseWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UUserWidget> MainMenuWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* MainMenuWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UUserWidget> GameInitWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* GameInitWidget;
 	
 
 	UPROPERTY(BlueprintReadWrite)
@@ -86,5 +94,17 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleMenuWidget(UUserWidget* MenuWidget, bool bOn, bool bShowsCursor = true);
+
+//Main menu calls:
+	
+	UFUNCTION(BlueprintCallable)
+	void ToggleMainMenuWidget(bool bOn);
+	UFUNCTION(BlueprintCallable)
+	void ToggleGameInitWidget(bool bOn);
+
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleMainMenuWidget(bool bOn);
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleGameInitWidget(bool bOn);
 	
 };

@@ -43,6 +43,17 @@ void ACombatGameState::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if(HasAuthority())
+	{
+		for(auto& PlayerState : PlayerArray)
+		{
+			if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
+			{
+				AddGamePlayer(CombatPlayerState);
+			}
+		}	
+	}
+
 	if(AOverviewCamera* OverviewCamera = Cast<AOverviewCamera>(UGameplayStatics::GetActorOfClass(GetWorld(), AOverviewCamera::StaticClass())))
 	{
 		LevelOverviewCamera = OverviewCamera;

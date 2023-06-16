@@ -198,3 +198,55 @@ void ADefaultPlayerController::ToggleMenuWidget(UUserWidget* MenuWidget, bool bO
 	}
 	
 }
+
+void ADefaultPlayerController::ToggleMainMenuWidget(bool bOn)
+{
+	if(IsLocalController())
+	{
+		if(MainMenuWidgetClass && !MainMenuWidget) MainMenuWidget = CreateWidget(this, MainMenuWidgetClass);
+		if(MainMenuWidget)
+		{
+			if(bOn)
+			{
+				MainMenuWidget->AddToViewport();
+			}else
+			{
+				MainMenuWidget->RemoveFromParent();
+			}
+		}
+	}else
+	{
+		Client_ToggleMainMenuWidget(bOn);
+	}
+}
+
+void ADefaultPlayerController::ToggleGameInitWidget(bool bOn)
+{
+	if(IsLocalController())
+	{
+		if(GameInitWidgetClass && !GameInitWidget) GameInitWidget = CreateWidget(this, GameInitWidgetClass);
+		if(GameInitWidget)
+		{
+			if(bOn)
+			{
+				GameInitWidget->AddToViewport();
+			}else
+			{
+				GameInitWidget->RemoveFromParent();
+			}
+		}
+	}else
+	{
+		Client_ToggleGameInitWidget(bOn);
+	}
+}
+
+void ADefaultPlayerController::Client_ToggleMainMenuWidget_Implementation(bool bOn)
+{
+	ToggleMainMenuWidget(bOn);
+}
+
+void ADefaultPlayerController::Client_ToggleGameInitWidget_Implementation(bool bOn)
+{
+	ToggleGameInitWidget(bOn);
+}

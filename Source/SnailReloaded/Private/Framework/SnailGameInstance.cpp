@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSessionSettings.h"
 #include "Framework/DefaultGameMode.h"
+#include "Framework/DefaultPlayerController.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Interfaces/OnlineIdentityInterface.h"
@@ -321,6 +322,10 @@ void USnailGameInstance::CheckForTravelReady()
 {
 	if(bSettingsSavegameLoaded && bApiAccountDataReady && bApiInventoryDataReady)
 	{
+		if(ADefaultPlayerController* DefaultPlayerController = Cast<ADefaultPlayerController>(GetFirstLocalPlayerController(GetWorld())))
+		{
+			DefaultPlayerController->ToggleGameInitWidget(false);
+		}
 		GetWorld()->ServerTravel(TEXT("MainMenu"));
 	}
 }

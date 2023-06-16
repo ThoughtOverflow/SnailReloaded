@@ -306,6 +306,8 @@ void ACombatGameMode::ProcessPlayerDeath(ACombatPlayerState* PlayerState)
 	//Death logic - override.
 }
 
+
+
 bool ACombatGameMode::SpawnGadget(EGadgetType GadgetType, ADefaultPlayerCharacter* SpawningPlayer)
 {
 	if(GadgetBlueprints.Contains(GadgetType) && SpawningPlayer)
