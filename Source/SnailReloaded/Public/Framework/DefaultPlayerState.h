@@ -84,5 +84,7 @@ protected:
 	
 	void OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnGetAccountDataRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
+
+	virtual void CopyProperties(APlayerState* PlayerState) override;
 	
 };

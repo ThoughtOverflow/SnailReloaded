@@ -114,3 +114,13 @@ void ADefaultPlayerState::OnGetAccountDataRequestComplete(FHttpRequestPtr Req, F
 		}
 	}
 }
+
+void ADefaultPlayerState::CopyProperties(APlayerState* PlayerState)
+{
+	Super::CopyProperties(PlayerState);
+
+	if(ADefaultPlayerState* DefaultPlayerState = Cast<ADefaultPlayerState>(PlayerState))
+	{
+		DefaultPlayerState->AccountData = AccountData;
+	}
+}

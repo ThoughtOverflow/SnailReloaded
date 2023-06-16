@@ -13,5 +13,9 @@ UCLASS()
 class SNAILRELOADED_API ADefaultGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+
+public:
+
+	ADefaultGameMode();
 	
 };
