@@ -139,4 +139,5 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool SpawnGadget(EGadgetType GadgetType, ADefaultPlayerCharacter* SpawningPlayer);
 	
+	
 };

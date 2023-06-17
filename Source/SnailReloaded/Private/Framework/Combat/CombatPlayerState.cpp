@@ -3,8 +3,10 @@
 
 #include "Framework/Combat/CombatPlayerState.h"
 
+#include "HttpModule.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -300,4 +302,48 @@ void ACombatPlayerState::Server_AssignGadget_Implementation(EGadgetType Gadget, 
 FGadgetProperty ACombatPlayerState::GetAssignedGadget()
 {
 	return SelectedGadget;
+}
+
+void ACombatPlayerState::OnRegisterScoreChangeComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+{
+	if(bSuccess)
+	{
+		TSharedPtr<FJsonObject> ResponseJson;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Res->GetContentAsString());
+		FJsonSerializer::Deserialize(Reader, ResponseJson);
+		if(ResponseJson->GetStringField("status") != "ERROR")
+		{
+			const TSharedPtr<FJsonObject>* OutObj;
+			ResponseJson->TryGetObjectField("msg", OutObj);
+			AccountData.PlayerLevel = OutObj->Get()->GetIntegerField("level");
+			AccountData.PlayerXP = OutObj->Get()->GetIntegerField("xp");
+			AccountData.UnopenedCrates = OutObj->Get()->GetIntegerField("crates");
+
+			API_GetPlayerAccountData();
+		}
+	}
+}
+
+void ACombatPlayerState::CopyProperties(APlayerState* PlayerState)
+{
+	Super::CopyProperties(PlayerState);
+}
+
+void ACombatPlayerState::API_RegisterScoreChange()
+{
+	if(!HasAuthority())
+	{
+		return;
+	}
+	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+		FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/registerscore"));
+		Request->SetVerb("POST");
+		Request->SetURL(RequestURL);
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+		Request->SetContentAsString(FString::Printf(TEXT("token=%s&uid=%s&val=%d"), *DefaultGameMode->APIToken, *GetPlayerEpicID(), GetScores()));
+		Request->OnProcessRequestComplete().BindUObject(this, &ACombatPlayerState::OnRegisterScoreChangeComplete);
+		Request->ProcessRequest();
+	}
 }

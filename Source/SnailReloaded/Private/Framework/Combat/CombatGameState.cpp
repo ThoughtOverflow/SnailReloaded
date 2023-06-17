@@ -438,3 +438,17 @@ void ACombatGameState::PlayAnnouncement(EAnnouncement Announcement)
 		}
 	}
 }
+
+void ACombatGameState::ApplyLevelScoring()
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			for(auto& PlayerState : GetAllGamePlayers())
+			{
+				PlayerState->API_RegisterScoreChange();
+			}
+		}
+	}
+}

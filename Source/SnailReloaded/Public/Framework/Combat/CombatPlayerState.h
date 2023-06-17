@@ -148,5 +148,15 @@ public:
 	void Server_AssignGadget(EGadgetType Gadget, int32 Amount);
 	UFUNCTION(BlueprintPure)
 	FGadgetProperty GetAssignedGadget();
+
+	UFUNCTION()
+	void API_RegisterScoreChange();
+
+
+protected:
+
+	void OnRegisterScoreChangeComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
+
+	virtual void CopyProperties(APlayerState* PlayerState) override;
 	
 };

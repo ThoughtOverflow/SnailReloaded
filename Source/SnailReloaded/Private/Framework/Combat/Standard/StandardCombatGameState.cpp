@@ -171,6 +171,7 @@ void AStandardCombatGameState::StartNewRound()
 	//Only restart if the game isn't already over:
 	if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
+		ApplyLevelScoring();
 		if(StandardCombatGameMode->IsMatchOver()) return;
 	}
 	

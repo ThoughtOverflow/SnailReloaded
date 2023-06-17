@@ -45,7 +45,6 @@ public:
 	void API_GetPlayerInventoryData();
 	UFUNCTION()
 	void API_ValidateToken();
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	FAPIAccountData AccountData;
 
@@ -72,17 +71,17 @@ public:
 	*/
 	UPROPERTY()
 	TArray<FString> PlayerOwnedItems;
-	
 
+	UFUNCTION()
+	FString GetPlayerEpicID();
+	
+	
 protected:
 
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
 	void OnLoginComplete();
-
-	UFUNCTION()
-	FString GetPlayerEpicID();
 	
 	void OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnGetAccountDataRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);

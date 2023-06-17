@@ -198,7 +198,11 @@ public:
 	//Announcements:
 	UFUNCTION(BlueprintCallable)
 	void PlayAnnouncement(EAnnouncement Announcement);
-	
+
+	//Scoring methods:
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyLevelScoring();
 	
 };
 

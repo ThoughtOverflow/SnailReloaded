@@ -520,20 +520,29 @@ void USnailGameInstance::LoadGameSettings()
 
 void USnailGameInstance::SetSettingsSavegameLoaded(bool bLoaded)
 {
-	this->bSettingsSavegameLoaded = bLoaded;
-	CheckForTravelReady();
+	if(bSettingsSavegameLoaded != bLoaded)
+	{
+		this->bSettingsSavegameLoaded = bLoaded;
+		CheckForTravelReady();
+	}
 }
 
 void USnailGameInstance::SetApiAccountDataReady(bool bReady)
 {
-	this->bApiAccountDataReady = bReady;
-	CheckForTravelReady();
+	if(bApiAccountDataReady != bReady)
+	{
+		this->bApiAccountDataReady = bReady;
+		CheckForTravelReady();
+	}
 }
 
 void USnailGameInstance::SetApiInventoryDataReady(bool bReady)
 {
-	this->bApiInventoryDataReady = bReady;
-	CheckForTravelReady();
+	if(bApiInventoryDataReady != bReady)
+	{
+		this->bApiInventoryDataReady = bReady;
+		CheckForTravelReady();
+	}
 }
 
 void USnailGameInstance::HostServer()
