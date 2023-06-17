@@ -214,6 +214,8 @@ public:
 	 */
 	UFUNCTION(BlueprintGetter)
 	FString GetPlayerEpicID();
+	UFUNCTION(BlueprintGetter)
+	FString GetPlayerAuthToken();
 
 	/**
 	 * @brief Callback for session join completion.

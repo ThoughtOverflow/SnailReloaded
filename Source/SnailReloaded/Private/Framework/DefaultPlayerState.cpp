@@ -97,6 +97,11 @@ FString ADefaultPlayerState::GetPlayerEpicID()
 	return Cast<USnailGameInstance>(GetGameInstance())->GetPlayerEpicID();
 }
 
+FString ADefaultPlayerState::GetPlayerAuthToken()
+{
+	return Cast<USnailGameInstance>(GetGameInstance())->GetPlayerAuthToken();
+}
+
 void ADefaultPlayerState::OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
 {
 	if(bSuccess)

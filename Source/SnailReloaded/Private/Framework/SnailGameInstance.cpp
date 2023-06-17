@@ -252,6 +252,7 @@ void USnailGameInstance::OnLoginComplete(int ControllerIndex, bool bWasSuccessfu
 		//Get the settings.
 		GetSavegame(UserId, ESavegameCategory::SETTINGS);
 		EpicLoginComplete.Broadcast();
+				
 	}else
 	{
 		UE_LOG(LogOnlineGameSession, Error, TEXT("Login failed!"));
@@ -359,6 +360,15 @@ FString USnailGameInstance::GetPlayerEpicID()
 		return "";
 #endif
 	}
+}
+
+FString USnailGameInstance::GetPlayerAuthToken()
+{
+	if(OnlineSubsystem)
+	{
+		return OnlineSubsystem->GetIdentityInterface()->GetAuthToken(0);
+	}
+	return "";
 }
 
 void USnailGameInstance::OnJoinComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)

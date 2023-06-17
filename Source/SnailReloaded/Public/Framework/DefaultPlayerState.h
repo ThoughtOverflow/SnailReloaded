@@ -74,6 +74,8 @@ public:
 
 	UFUNCTION()
 	FString GetPlayerEpicID();
+	UFUNCTION()
+	FString GetPlayerAuthToken();
 	
 	
 protected:

@@ -342,7 +342,7 @@ void ACombatPlayerState::API_RegisterScoreChange()
 		Request->SetVerb("POST");
 		Request->SetURL(RequestURL);
 		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
-		Request->SetContentAsString(FString::Printf(TEXT("token=%s&uid=%s&val=%d"), *DefaultGameMode->APIToken, *GetPlayerEpicID(), GetScores()));
+		Request->SetContentAsString(FString::Printf(TEXT("token=%s&utoken=%s&uid=%s&val=%d"), *DefaultGameMode->APIToken, *GetPlayerAuthToken(), *GetPlayerEpicID(), GetScores()));
 		Request->OnProcessRequestComplete().BindUObject(this, &ACombatPlayerState::OnRegisterScoreChangeComplete);
 		Request->ProcessRequest();
 	}
