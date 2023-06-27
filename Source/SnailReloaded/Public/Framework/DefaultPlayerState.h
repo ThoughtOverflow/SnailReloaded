@@ -27,6 +27,18 @@ public:
 	
 };
 
+USTRUCT(BlueprintType)
+struct FAPIItemData
+{
+	GENERATED_BODY()
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FString ItemId;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FString GroupId;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bItemEquipped;
+};
+
 /**
  * 
  */
@@ -72,7 +84,7 @@ public:
 	* @brief The owned items of the player (Retrieved from the API)
 	*/
 	UPROPERTY()
-	TArray<FString> PlayerOwnedItems;
+	TArray<FAPIItemData> PlayerOwnedItems;
 
 	UFUNCTION()
 	FString GetPlayerEpicID();

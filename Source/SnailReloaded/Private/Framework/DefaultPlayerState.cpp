@@ -127,7 +127,19 @@ void ADefaultPlayerState::OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpRe
 		FJsonSerializer::Deserialize(Reader, ResponseJson);
 		if(ResponseJson->GetStringField("status") != "ERROR")
 		{
-			ResponseJson->TryGetStringArrayField("msg", PlayerOwnedItems);
+			PlayerOwnedItems.Empty();
+			const TArray<TSharedPtr<FJsonValue>>* ItemsArray;
+			ResponseJson->TryGetArrayField("msg", ItemsArray);
+			for(const TSharedPtr<FJsonValue>& Item : *ItemsArray)
+			{
+				FAPIItemData ItemData;
+				ItemData.ItemId = Item->AsObject()->GetStringField("id");
+				ItemData.GroupId = Item->AsObject()->GetStringField("group");
+				ItemData.bItemEquipped = Item->AsObject()->GetBoolField("equipped");
+				PlayerOwnedItems.Add(ItemData);
+			}
+			
+			
 			if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
 			{
 				SnailGameInstance->SetApiInventoryDataReady(true);
