@@ -71,6 +71,24 @@ void ADefaultPlayerState::API_ValidateToken()
 	
 }
 
+void ADefaultPlayerState::API_ValidateUser()
+{
+	if(!HasAuthority())
+	{
+		return;
+	}
+	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+		FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/createuser"));
+		Request->SetVerb("POST");
+		Request->SetURL(RequestURL);
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+		Request->SetContentAsString(FString::Printf(TEXT("utoken=%s"), *GetPlayerAuthToken()));
+		Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnAccountValidationComplete);
+		Request->ProcessRequest();
+	}
+}
 
 
 void ADefaultPlayerState::BeginPlay()
@@ -85,9 +103,7 @@ void ADefaultPlayerState::OnLoginComplete()
 	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
 	{
 		SnailGameInstance->MainStatusMessage = TEXT("Query API data");
-		API_ValidateToken();
-		API_GetPlayerAccountData();
-		API_GetPlayerInventoryData();
+		API_ValidateUser();
 	}
 
 }
@@ -161,6 +177,13 @@ void ADefaultPlayerState::OnGetTokenValidationComplete(FHttpRequestPtr Req, FHtt
 			}
 		}
 	}
+}
+
+void ADefaultPlayerState::OnAccountValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+{
+	API_ValidateToken();
+	API_GetPlayerAccountData();
+	API_GetPlayerInventoryData();
 }
 
 void ADefaultPlayerState::CopyProperties(APlayerState* PlayerState)

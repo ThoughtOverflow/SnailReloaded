@@ -45,6 +45,8 @@ public:
 	void API_GetPlayerInventoryData();
 	UFUNCTION()
 	void API_ValidateToken();
+	UFUNCTION()
+	void API_ValidateUser();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	FAPIAccountData AccountData;
 
@@ -88,6 +90,7 @@ protected:
 	void OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnGetAccountDataRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnGetTokenValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
+	void OnAccountValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 
 	virtual void CopyProperties(APlayerState* PlayerState) override;
 	
