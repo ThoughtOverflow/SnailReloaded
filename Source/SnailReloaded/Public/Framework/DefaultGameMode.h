@@ -9,6 +9,38 @@
 /**
  * 
  */
+
+UENUM()
+enum class EOutfitRarity : uint8
+{
+	Common = 0,
+	Rare = 1,
+	Epic = 2,
+	Legendary = 3,
+	Snailsane = 4
+};
+
+USTRUCT(BlueprintType)
+struct FOutfitData
+{
+	GENERATED_BODY()
+
+public:
+
+	FOutfitData();
+
+	FOutfitData(FString Name, EOutfitRarity Rarity, UTexture2D* URL);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FString OutfitName;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	EOutfitRarity OutfitRarity;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UTexture2D* ThumbnailURL;
+	
+	
+};
+
 UCLASS(Config = ServerSettings)
 class SNAILRELOADED_API ADefaultGameMode : public AGameModeBase
 {
@@ -23,6 +55,9 @@ public:
 	 */
 	UPROPERTY(Config)
 	FString APIToken;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<FString, FOutfitData> RegisteredOutfits;
 
 	
 };

@@ -3,6 +3,17 @@
 
 #include "Framework/DefaultGameMode.h"
 
+FOutfitData::FOutfitData(): OutfitRarity(EOutfitRarity::Common), ThumbnailURL(nullptr)
+{
+}
+
+FOutfitData::FOutfitData(FString Name, EOutfitRarity Rarity, UTexture2D* URL)
+{
+	OutfitName = Name;
+	OutfitRarity = Rarity;
+	ThumbnailURL = URL;
+}
+
 ADefaultGameMode::ADefaultGameMode()
 {
 	bUseSeamlessTravel = true;

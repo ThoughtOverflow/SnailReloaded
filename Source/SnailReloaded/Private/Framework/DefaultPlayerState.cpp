@@ -9,6 +9,7 @@
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 FAPIAccountData::FAPIAccountData()
 {
@@ -16,6 +17,14 @@ FAPIAccountData::FAPIAccountData()
 	PlayerXP = 0;
 	UnopenedCrates = 0;
 	XpPerLevel = 1000;
+}
+
+FAPIItemData::FAPIItemData()
+{
+	bItemEquipped = false;
+	GroupId = "0";
+	ItemId = "0";
+	OutfitProperties = FOutfitData();
 }
 
 ADefaultPlayerState::ADefaultPlayerState()
@@ -118,6 +127,19 @@ FString ADefaultPlayerState::GetPlayerAuthToken()
 	return Cast<USnailGameInstance>(GetGameInstance())->GetPlayerAuthToken();
 }
 
+void ADefaultPlayerState::OnRep_PlayerItems()
+{
+	OnPlayerOwnedItemsUpdated.Broadcast();
+}
+
+void ADefaultPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ADefaultPlayerState, PlayerOwnedItems, COND_OwnerOnly);
+	DOREPLIFETIME(ADefaultPlayerState, AccountData);
+}
+
 void ADefaultPlayerState::OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
 {
 	if(bSuccess)
@@ -136,6 +158,13 @@ void ADefaultPlayerState::OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpRe
 				ItemData.ItemId = Item->AsObject()->GetStringField("id");
 				ItemData.GroupId = Item->AsObject()->GetStringField("group");
 				ItemData.bItemEquipped = Item->AsObject()->GetBoolField("equipped");
+				if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+				{
+					if(FOutfitData* FoundData = DefaultGameMode->RegisteredOutfits.Find(ItemData.ItemId))
+					{
+						ItemData.OutfitProperties = FOutfitData(FoundData->OutfitName, FoundData->OutfitRarity,FoundData->ThumbnailURL);
+					}
+				}
 				PlayerOwnedItems.Add(ItemData);
 			}
 			
@@ -205,5 +234,6 @@ void ADefaultPlayerState::CopyProperties(APlayerState* PlayerState)
 	if(ADefaultPlayerState* DefaultPlayerState = Cast<ADefaultPlayerState>(PlayerState))
 	{
 		DefaultPlayerState->AccountData = AccountData;
+		DefaultPlayerState->PlayerOwnedItems = PlayerOwnedItems;
 	}
 }

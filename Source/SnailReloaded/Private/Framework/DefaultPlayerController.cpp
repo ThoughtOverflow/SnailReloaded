@@ -90,6 +90,38 @@ void ADefaultPlayerController::TogglePauseMenu(bool bOpen)
 	}
 }
 
+void ADefaultPlayerController::ToggleOutfitMenu(bool bOpen)
+{
+	if(IsLocalController())
+	{
+		if(!OutfitSelectionWidget && OutfitSelectionWidgetClass) OutfitSelectionWidget = CreateWidget<UOutfitSelectionWidget>(this, OutfitSelectionWidgetClass);
+		if(OutfitSelectionWidget)
+		{
+			if(bOpen)
+			{
+				if(!OutfitSelectionWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OutfitSelectionWidget, true);
+				}
+			}else
+			{
+				if(OutfitSelectionWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OutfitSelectionWidget, false);
+				}
+			}
+		}
+	}else
+	{
+		Client_ToggleOutfitMenu(bOpen);
+	}
+}
+
+void ADefaultPlayerController::Client_ToggleOutfitMenu_Implementation(bool bOpen)
+{
+	ToggleOutfitMenu(bOpen);
+}
+
 void ADefaultPlayerController::Client_TogglePauseMenu_Implementation(bool bOpen)
 {
 	TogglePauseMenu(bOpen);

@@ -3,10 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DefaultGameMode.h"
 #include "GameFramework/PlayerState.h"
 #include "Interfaces/IHttpRequest.h"
 #include "DefaultPlayerState.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerOwnedItemsUpdated);
+
+struct FOutfitData;
 USTRUCT(BlueprintType)
 struct FAPIAccountData
 {
@@ -30,6 +35,9 @@ public:
 USTRUCT(BlueprintType)
 struct FAPIItemData
 {
+
+	FAPIItemData();
+	
 	GENERATED_BODY()
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	FString ItemId;
@@ -37,6 +45,8 @@ struct FAPIItemData
 	FString GroupId;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	bool bItemEquipped;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FOutfitData OutfitProperties;
 };
 
 /**
@@ -59,7 +69,7 @@ public:
 	void API_ValidateToken();
 	UFUNCTION()
 	void API_ValidateUser();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	FAPIAccountData AccountData;
 
 	/**
@@ -83,17 +93,25 @@ public:
 	/**
 	* @brief The owned items of the player (Retrieved from the API)
 	*/
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_PlayerItems)
 	TArray<FAPIItemData> PlayerOwnedItems;
 
 	UFUNCTION()
 	FString GetPlayerEpicID();
 	UFUNCTION()
 	FString GetPlayerAuthToken();
+
+	UFUNCTION()
+	void OnRep_PlayerItems();
 	
 	
 protected:
 
+
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerOwnedItemsUpdated OnPlayerOwnedItemsUpdated;
+	
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
 	UFUNCTION()

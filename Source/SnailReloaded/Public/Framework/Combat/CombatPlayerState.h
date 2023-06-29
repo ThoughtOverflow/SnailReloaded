@@ -51,9 +51,9 @@ protected:
 	int32 PlayerAssistCount;
 	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
 	int32 PlayerScore;
-	UPROPERTY(Replicated=OnRep_ScoreUpdate)
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
 	int32 PlayerPlantCount;
-	UPROPERTY(Replicated=OnRep_ScoreUpdate)
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
 	int32 PlayerDefuseCount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
@@ -81,7 +81,7 @@ protected:
 	UFUNCTION()
 	void OnRep_PlayerColor();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Replicated = OnRep_PlayerColor)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = OnRep_PlayerColor)
 	FGadgetProperty SelectedGadget;
 
 public:

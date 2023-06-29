@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/PlayerController.h"
+#include "Gameplay/UI/OutfitSelectionWidget.h"
 #include "DefaultPlayerController.generated.h"
 
 USTRUCT(BlueprintType)
@@ -53,6 +54,10 @@ public:
 	TSubclassOf<UUserWidget> GameInitWidgetClass;
 	UPROPERTY(BlueprintReadWrite)
 	UUserWidget* GameInitWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UOutfitSelectionWidget> OutfitSelectionWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UOutfitSelectionWidget* OutfitSelectionWidget;
 	
 
 	UPROPERTY(BlueprintReadWrite)
@@ -76,6 +81,10 @@ protected:
 	virtual void TogglePauseMenu(bool bOpen);
 	UFUNCTION(Client, Reliable)
 	void Client_TogglePauseMenu(bool bOpen);
+	UFUNCTION(BlueprintCallable)
+	virtual void ToggleOutfitMenu(bool bOpen);
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleOutfitMenu(bool bOpen);
 
 	UPROPERTY()
 	bool bNonMenuCursorState;
