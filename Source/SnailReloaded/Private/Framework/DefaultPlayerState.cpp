@@ -39,11 +39,35 @@ void ADefaultPlayerState::API_GetPlayerAccountData()
 		return;
 	}
 	FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-	FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/queryaccount?uid=%s"), *GetPlayerEpicID());
+	FString RequestURL = GetActiveAPIAdress(FString::Printf(TEXT("queryaccount?uid=%s"), *GetPlayerEpicID()));
 	Request->SetVerb("GET");
 	Request->SetURL(RequestURL);
 	Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnGetAccountDataRequestComplete);
 	Request->ProcessRequest();
+}
+
+void ADefaultPlayerState::API_EquipOutfit(FString ItemID)
+{
+	if(!HasAuthority())
+	{
+		return;
+	}
+	FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+	FString RequestURL = GetActiveAPIAdress(TEXT("equipitem"));
+	Request->SetVerb("POST");
+	Request->SetURL(RequestURL);
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+	Request->SetContentAsString(FString::Printf(TEXT("utoken=%s&item_id=%s"), *GetPlayerAuthToken(), *ItemID));
+	Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnEquipmentComplete);
+	Request->ProcessRequest();
+}
+
+void ADefaultPlayerState::OnEquipmentComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+{
+	if(bSuccess)
+	{
+		API_GetPlayerInventoryData();
+	}
 }
 
 void ADefaultPlayerState::API_GetPlayerInventoryData()
@@ -53,7 +77,7 @@ void ADefaultPlayerState::API_GetPlayerInventoryData()
 		return;
 	}
 	FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-	FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/getitems?uid=%s"), *GetPlayerEpicID());
+	FString RequestURL = GetActiveAPIAdress(FString::Printf(TEXT("getitems?uid=%s"), *GetPlayerEpicID()));
 	Request->SetVerb("GET");
 	Request->SetURL(RequestURL);
 	Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnGetItemsRequestComplete);
@@ -69,7 +93,7 @@ void ADefaultPlayerState::API_ValidateToken()
 	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
 		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-		FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/validatetoken"));
+		FString RequestURL = GetActiveAPIAdress(TEXT("validatetoken"));
 		Request->SetVerb("POST");
 		Request->SetURL(RequestURL);
 		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
@@ -89,7 +113,7 @@ void ADefaultPlayerState::API_ValidateUser()
 	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
 		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-		FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/createuser"));
+		FString RequestURL = GetActiveAPIAdress(TEXT("createuser"));
 		Request->SetVerb("POST");
 		Request->SetURL(RequestURL);
 		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
@@ -132,6 +156,18 @@ void ADefaultPlayerState::OnRep_PlayerItems()
 	OnPlayerOwnedItemsUpdated.Broadcast();
 }
 
+FString ADefaultPlayerState::GetActiveAPIAdress(FString command)
+{
+	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+	{
+		FString url = SnailGameInstance->bUseAlternateAPI ? SnailGameInstance->AlternateAPIWebAddress : SnailGameInstance->APIWebAddress;
+		url.Append(FString::Printf(TEXT(":%d/%s"), SnailGameInstance->APIPort, *command));
+		return url;
+	}
+	return "";
+	
+}
+
 void ADefaultPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -162,11 +198,12 @@ void ADefaultPlayerState::OnGetItemsRequestComplete(FHttpRequestPtr Req, FHttpRe
 				{
 					if(FOutfitData* FoundData = DefaultGameMode->RegisteredOutfits.Find(ItemData.ItemId))
 					{
-						ItemData.OutfitProperties = FOutfitData(FoundData->OutfitName, FoundData->OutfitRarity,FoundData->ThumbnailURL);
+						ItemData.OutfitProperties = FOutfitData(FoundData->OutfitName, FoundData->OutfitRarity,FoundData->Thumbnail);
 					}
 				}
 				PlayerOwnedItems.Add(ItemData);
 			}
+			OnRep_PlayerItems();
 			
 			
 			if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))

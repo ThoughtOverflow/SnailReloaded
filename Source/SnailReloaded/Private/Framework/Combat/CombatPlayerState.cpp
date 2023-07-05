@@ -338,7 +338,7 @@ void ACombatPlayerState::API_RegisterScoreChange()
 	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
 		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-		FString RequestURL = FString::Printf(TEXT("http://oregtolgy-panzio.com:3000/registerscore"));
+		FString RequestURL = GetActiveAPIAdress(TEXT("registerscore"));
 		Request->SetVerb("POST");
 		Request->SetURL(RequestURL);
 		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));

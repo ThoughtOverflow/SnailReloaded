@@ -13,5 +13,6 @@ UCLASS()
 class SNAILRELOADED_API UOutfitSelectionWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
+public:
 };

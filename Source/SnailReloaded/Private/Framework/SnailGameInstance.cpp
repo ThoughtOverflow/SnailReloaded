@@ -428,6 +428,8 @@ USnailGameInstance::USnailGameInstance()
 	bUseDevAuth = false;
 	PlayerEpicID = "";
 	MainStatusMessage = TEXT("Loading...");
+	APIWebAddress = "http://oregtolgy-panzio.com";
+	APIPort = 3000;
 }
 
 void USnailGameInstance::Init()

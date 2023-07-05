@@ -3,15 +3,15 @@
 
 #include "Framework/DefaultGameMode.h"
 
-FOutfitData::FOutfitData(): OutfitRarity(EOutfitRarity::Common), ThumbnailURL(nullptr)
+FOutfitData::FOutfitData(): OutfitRarity(EOutfitRarity::Common), Thumbnail(nullptr)
 {
 }
 
-FOutfitData::FOutfitData(FString Name, EOutfitRarity Rarity, UTexture2D* URL)
+FOutfitData::FOutfitData(FString Name, EOutfitRarity Rarity, UTexture2D* Thumb)
 {
 	OutfitName = Name;
 	OutfitRarity = Rarity;
-	ThumbnailURL = URL;
+	Thumbnail = Thumb;
 }
 
 ADefaultGameMode::ADefaultGameMode()

@@ -64,6 +64,8 @@ public:
 	UFUNCTION()
 	void API_GetPlayerAccountData();
 	UFUNCTION()
+	void API_EquipOutfit(FString ItemID);
+	UFUNCTION()
 	void API_GetPlayerInventoryData();
 	UFUNCTION()
 	void API_ValidateToken();
@@ -103,6 +105,9 @@ public:
 
 	UFUNCTION()
 	void OnRep_PlayerItems();
+
+	UFUNCTION(BlueprintCallable)
+	FString GetActiveAPIAdress(FString command);
 	
 	
 protected:
@@ -121,6 +126,7 @@ protected:
 	void OnGetAccountDataRequestComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnGetTokenValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnAccountValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
+	void OnEquipmentComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 
 	virtual void CopyProperties(APlayerState* PlayerState) override;
 	

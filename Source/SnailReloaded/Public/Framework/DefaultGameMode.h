@@ -29,14 +29,14 @@ public:
 
 	FOutfitData();
 
-	FOutfitData(FString Name, EOutfitRarity Rarity, UTexture2D* URL);
+	FOutfitData(FString Name, EOutfitRarity Rarity, UTexture2D* Thumb);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FString OutfitName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	EOutfitRarity OutfitRarity;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	UTexture2D* ThumbnailURL;
+	UTexture2D* Thumbnail;
 	
 	
 };

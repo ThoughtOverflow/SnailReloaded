@@ -43,8 +43,18 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	FString MainStatusMessage;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 APIPort;
+	UPROPERTY(BlueprintReadOnly)
+	FString APIWebAddress;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool bUseAlternateAPI;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta = (EditCondition = bUseAlternateAPI))
+	FString AlternateAPIWebAddress;
 	
 protected:
+	
 
 	virtual void Init() override;
 

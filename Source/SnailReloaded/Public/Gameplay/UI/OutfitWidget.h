@@ -23,6 +23,10 @@ public:
 	UPROPERTY(EditDefaultsOnly,	 BlueprintReadWrite)
 	FText OutfitGroup;
 	UPROPERTY(EditDefaultsOnly,	 BlueprintReadWrite)
+	FString OutfitId;
+	UPROPERTY(EditDefaultsOnly,	 BlueprintReadWrite)
 	bool bOutfitEquipped;
+
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	
 };
