@@ -63,8 +63,10 @@ public:
 
 	UFUNCTION()
 	void API_GetPlayerAccountData();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void API_EquipOutfit(FString ItemID);
+	UFUNCTION(BlueprintCallable)
+	void API_UnequipOutfit(FString ItemID);
 	UFUNCTION()
 	void API_GetPlayerInventoryData();
 	UFUNCTION()
@@ -102,7 +104,8 @@ public:
 	FString GetPlayerEpicID();
 	UFUNCTION()
 	FString GetPlayerAuthToken();
-
+	UFUNCTION()
+	void DisplayEquippedOutfits();
 	UFUNCTION()
 	void OnRep_PlayerItems();
 

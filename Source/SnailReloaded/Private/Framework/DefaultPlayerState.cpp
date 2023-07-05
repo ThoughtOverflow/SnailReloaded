@@ -10,6 +10,7 @@
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "World/Objects/SkinDisplayActor.h"
 
 FAPIAccountData::FAPIAccountData()
 {
@@ -54,6 +55,22 @@ void ADefaultPlayerState::API_EquipOutfit(FString ItemID)
 	}
 	FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
 	FString RequestURL = GetActiveAPIAdress(TEXT("equipitem"));
+	Request->SetVerb("POST");
+	Request->SetURL(RequestURL);
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+	Request->SetContentAsString(FString::Printf(TEXT("utoken=%s&item_id=%s"), *GetPlayerAuthToken(), *ItemID));
+	Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnEquipmentComplete);
+	Request->ProcessRequest();
+}
+
+void ADefaultPlayerState::API_UnequipOutfit(FString ItemID)
+{
+	if(!HasAuthority())
+	{
+		return;
+	}
+	FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+	FString RequestURL = GetActiveAPIAdress(TEXT("unequipitem"));
 	Request->SetVerb("POST");
 	Request->SetURL(RequestURL);
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
@@ -151,9 +168,35 @@ FString ADefaultPlayerState::GetPlayerAuthToken()
 	return Cast<USnailGameInstance>(GetGameInstance())->GetPlayerAuthToken();
 }
 
+void ADefaultPlayerState::DisplayEquippedOutfits()
+{
+	if(HasAuthority())
+	{
+		if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			if(ASkinDisplayActor* FoundSkinModel = Cast<ASkinDisplayActor>(UGameplayStatics::GetActorOfClass(GetWorld(), ASkinDisplayActor::StaticClass())))
+			{
+				//clear everyting:
+				FoundSkinModel->HeadgearMesh->SetSkeletalMesh(nullptr);
+				for(auto& Item : PlayerOwnedItems)
+				{
+					if(Item.bItemEquipped && Item.GroupId == "HEAD")
+					{
+						if(USkeletalMesh* AssignedMesh = *DefaultGameMode->HeadgearAssets.Find(Item.ItemId))
+						{
+							FoundSkinModel->HeadgearMesh->SetSkeletalMesh(AssignedMesh);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 void ADefaultPlayerState::OnRep_PlayerItems()
 {
 	OnPlayerOwnedItemsUpdated.Broadcast();
+	DisplayEquippedOutfits();
 }
 
 FString ADefaultPlayerState::GetActiveAPIAdress(FString command)

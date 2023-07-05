@@ -58,6 +58,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TMap<FString, FOutfitData> RegisteredOutfits;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<FString, USkeletalMesh*> HeadgearAssets;
+	
 
 	
 };
