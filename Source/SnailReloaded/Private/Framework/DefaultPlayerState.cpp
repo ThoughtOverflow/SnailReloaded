@@ -184,7 +184,7 @@ void ADefaultPlayerState::DisplayEquippedOutfits()
 					{
 						if(USkeletalMesh* AssignedMesh = *DefaultGameMode->HeadgearAssets.Find(Item.ItemId))
 						{
-							FoundSkinModel->HeadgearMesh->SetSkeletalMesh(AssignedMesh);
+							FoundSkinModel->EquipHeadgearToDummy(AssignedMesh);
 						}
 					}
 				}

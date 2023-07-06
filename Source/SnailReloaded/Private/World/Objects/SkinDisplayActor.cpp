@@ -5,6 +5,7 @@
 
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 ASkinDisplayActor::ASkinDisplayActor()
@@ -16,7 +17,7 @@ ASkinDisplayActor::ASkinDisplayActor()
 	SetRootComponent(BaseSkeleton);
 	HeadgearMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HeadgearMesh"));
 	DeathEffectParticles = CreateDefaultSubobject<UNiagaraComponent>(TEXT("DeathParticles"));
-	HeadgearMesh->SetupAttachment(GetRootComponent(), FName("head"));
+	HeadgearMesh->SetupAttachment(GetRootComponent(), FName("headgear_socket"));
 	DeathEffectParticles->SetupAttachment(GetRootComponent());
 
 }
@@ -33,5 +34,22 @@ void ASkinDisplayActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ASkinDisplayActor::EquipHeadgearToDummy(USkeletalMesh* Mesh)
+{
+	HeadgearMesh->SetRelativeLocation(FVector::ZeroVector);
+	HeadgearMesh->SetRelativeRotation(FRotator::ZeroRotator);
+	HeadgearMesh->SetSkeletalMesh(Mesh);
+	FVector DeltaTransform = (BaseSkeleton->GetSocketLocation(FName("headgear_socket")) - HeadgearMesh->GetSocketLocation(FName("mount_socket"))) / BaseSkeleton->GetRelativeScale3D();
+	HeadgearMesh->SetRelativeLocation(DeltaTransform);
+	//ROTATION::
+
+	FVector NewLoc = HeadgearMesh->GetSocketRotation(FName("mount_socket")).Quaternion().RotateVector(-DeltaTransform);
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *NewLoc.ToString());
+	HeadgearMesh->SetRelativeLocation(-NewLoc);
+	HeadgearMesh->SetRelativeRotation(HeadgearMesh->GetSocketRotation(FName("mount_socket")));
+	// FRotator DeltaRotation = HeadgearMesh->GetComponentRotation() - HeadgearMesh->GetSocketRotation(FName("mount_socket"));
+	// HeadgearMesh->SetWorldRotation(DeltaRotation);
 }
 
