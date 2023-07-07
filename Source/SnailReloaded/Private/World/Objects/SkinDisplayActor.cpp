@@ -39,9 +39,11 @@ void ASkinDisplayActor::Tick(float DeltaTime)
 
 void ASkinDisplayActor::EquipHeadgearToDummy(USkeletalMesh* Mesh)
 {
+	HeadgearMesh->SetRelativeScale3D(FVector(0.1f));
 	HeadgearMesh->SetRelativeLocation(FVector::ZeroVector);
 	HeadgearMesh->SetRelativeRotation(FRotator::ZeroRotator);
 	HeadgearMesh->SetSkeletalMesh(Mesh);
+	HeadgearMesh->SetRelativeScale3D(HeadgearMesh->GetRelativeScale3D() * HeadgearMesh->GetSocketTransform(FName("mount_socket"),RTS_ParentBoneSpace).GetScale3D());
 	FVector DeltaTransform = (BaseSkeleton->GetSocketLocation(FName("headgear_socket")) - HeadgearMesh->GetSocketLocation(FName("mount_socket"))) / BaseSkeleton->GetRelativeScale3D();
 	HeadgearMesh->SetRelativeLocation(DeltaTransform);
 	//ROTATION::
