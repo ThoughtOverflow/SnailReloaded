@@ -6,6 +6,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Framework/DefaultPlayerState.h"
 
 // Sets default values
 ASkinDisplayActor::ASkinDisplayActor()
