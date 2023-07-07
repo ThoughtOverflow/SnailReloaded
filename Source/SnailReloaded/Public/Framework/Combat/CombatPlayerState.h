@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/HealthComponent.h"
 #include "Framework/DefaultPlayerState.h"
+#include "Gameplay/Gadgets/Gadget.h"
 #include "CombatPlayerState.generated.h"
 
 /**
@@ -12,6 +13,7 @@
  */
 
 
+struct FGadgetProperty;
 UENUM()
 enum class EPlayerColor : uint8
 {
@@ -49,9 +51,9 @@ protected:
 	int32 PlayerAssistCount;
 	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
 	int32 PlayerScore;
-	UPROPERTY(Replicated=OnRep_ScoreUpdate)
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
 	int32 PlayerPlantCount;
-	UPROPERTY(Replicated=OnRep_ScoreUpdate)
+	UPROPERTY(ReplicatedUsing=OnRep_ScoreUpdate)
 	int32 PlayerDefuseCount;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_GameTeam)
 	EGameTeams CurrentTeam;
@@ -78,6 +80,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_PlayerColor();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = OnRep_PlayerColor)
+	FGadgetProperty SelectedGadget;
 
 public:
 
@@ -134,5 +139,24 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FLinearColor GetColorByEnum(EPlayerColor Color);
+
+	//Gadgets:
+
+	UFUNCTION(BlueprintCallable)
+	void AssignGadget(EGadgetType Gadget, int32 Amount);
+	UFUNCTION(Server, Reliable)
+	void Server_AssignGadget(EGadgetType Gadget, int32 Amount);
+	UFUNCTION(BlueprintPure)
+	FGadgetProperty GetAssignedGadget();
+
+	UFUNCTION()
+	void API_RegisterScoreChange();
+
+
+protected:
+
+	void OnRegisterScoreChangeComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
+
+	virtual void CopyProperties(APlayerState* PlayerState) override;
 	
 };

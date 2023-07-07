@@ -5,12 +5,14 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/Overlay.h"
+#include "Components/VerticalBox.h"
 #include "PlayerHud.generated.h"
 
 /**
  * 
  */
 
+class UPlayerNotification;
 enum class EPlayerColor : uint8;
 class ACombatPlayerController;
 
@@ -42,8 +44,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
 	UOverlay* NotificationWrapper;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+	UVerticalBox* PlayerNotificationWrapper;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<UPlayerNotification> PlayerNotificationClass;
 
-	
-	
-	
+	UFUNCTION(BlueprintCallable)
+	UPlayerNotification* CreatePlayerNotification(const FText& NotificationText,
+	const FLinearColor& NotificationColor, float Time);
 };

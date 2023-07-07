@@ -305,3 +305,21 @@ void ACombatGameMode::ProcessPlayerDeath(ACombatPlayerState* PlayerState)
 {
 	//Death logic - override.
 }
+
+
+
+bool ACombatGameMode::SpawnGadget(EGadgetType GadgetType, ADefaultPlayerCharacter* SpawningPlayer)
+{
+	if(GadgetBlueprints.Contains(GadgetType) && SpawningPlayer)
+	{
+		if(SpawningPlayer->AssignedGadget.GetRemainingGadgets() > 0)
+		{
+			TSubclassOf<AGadget> GadgetClass = *GadgetBlueprints.Find(GadgetType);
+			AGadget* Gadget = GetWorld()->SpawnActor<AGadget>(GadgetClass, SpawningPlayer->CameraComponent->GetComponentLocation(), SpawningPlayer->GetActorRotation());
+			Gadget->InitializeGadget(Cast<ACombatPlayerState>(SpawningPlayer->GetPlayerState()));
+			SpawningPlayer->AssignedGadget.PlacedGadgets++;
+			return true;
+		}
+	}
+	return false;
+}

@@ -22,6 +22,8 @@ enum class EGameObjectTypes : uint8
 	Player = 1,
 	Bomb = 2,
 	Dummy = 3,
+	ScanMine = 4,
+	Turret = 5
 		
 };
 
@@ -121,6 +123,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Dead)
 	bool bIsDead;
 
+	UPROPERTY(EditDefaultsOnly, meta = (ShowOnlyInnerProperties))
+	FGameObjectType GameObjectType;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -131,8 +136,6 @@ protected:
 	float ObjectHealth;
 	UPROPERTY(Replicated)
 	float ObjectMaxHealth;
-	UPROPERTY(EditDefaultsOnly, meta = (ShowOnlyInnerProperties))
-	FGameObjectType GameObjectType;
 
 	UFUNCTION()
 	void OnRep_ObjectHealth();
