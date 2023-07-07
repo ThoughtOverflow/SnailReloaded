@@ -15,4 +15,6 @@ class SNAILRELOADED_API UOutfitSelectionWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+
+	virtual void NativeConstruct() override;
 };
