@@ -39,6 +39,7 @@ void ASkinDisplayActor::Tick(float DeltaTime)
 
 void ASkinDisplayActor::EquipHeadgearToDummy(USkeletalMesh* Mesh)
 {
+	SetActorRelativeRotation(FRotator(0.f, 90.f, 0.f));
 	HeadgearMesh->SetRelativeScale3D(FVector(0.1f));
 	HeadgearMesh->SetRelativeLocation(FVector::ZeroVector);
 	HeadgearMesh->SetRelativeRotation(FRotator::ZeroRotator);

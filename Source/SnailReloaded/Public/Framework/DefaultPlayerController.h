@@ -41,6 +41,8 @@ public:
 	UInputMappingContext* UIDefaultMappingContext;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI input settings")
 	UInputAction* EscInputAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI input settings")
+	UInputAction* MouseScrollAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
 	TSubclassOf<UPauseWidget> PauseWidgetClass;
@@ -68,6 +70,8 @@ public:
 
 	UFUNCTION()
 	void OnCloseCurrentlyOpenMenu(const FInputActionInstance& InputActionInstance);
+	UFUNCTION()
+	void RotateOutfitDummy(const FInputActionInstance& InputActionInstance);
 
 protected:
 

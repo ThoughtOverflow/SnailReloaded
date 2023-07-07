@@ -6,9 +6,11 @@
 #include "Blueprint/UserWidget.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/UI/PauseWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "Kismet/KismetTextLibrary.h"
+#include "World/Objects/SkinDisplayActor.h"
 
 FMenuWidgetData::FMenuWidgetData()
 {
@@ -32,6 +34,7 @@ void ADefaultPlayerController::SetupInputComponent()
 		UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
 
 		EnhancedInputComponent->BindAction(EscInputAction, ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnCloseCurrentlyOpenMenu);
+		EnhancedInputComponent->BindAction(MouseScrollAction, ETriggerEvent::Triggered, this, &ADefaultPlayerController::RotateOutfitDummy);
 	}
 }
 
@@ -160,9 +163,19 @@ void ADefaultPlayerController::OnCloseCurrentlyOpenMenu(const FInputActionInstan
 	}
 }
 
+void ADefaultPlayerController::RotateOutfitDummy(const FInputActionInstance& InputActionInstance)
+{
+	float rotation = InputActionInstance.GetValue().Get<float>();
+
+	if(AActor* Dummy = UGameplayStatics::GetActorOfClass(GetWorld(), ASkinDisplayActor::StaticClass()))
+	{
+		Dummy->AddActorLocalRotation(FRotator(0.f, rotation, 0.f));
+	}	
+}
+
 void ADefaultPlayerController::ResetNonMenuInputMode()
 {
-	SetInputMode(FInputModeUIOnly());
+	SetInputMode(FInputModeGameAndUI());
 }
 
 bool ADefaultPlayerController::IsAnyMenuOpen()
