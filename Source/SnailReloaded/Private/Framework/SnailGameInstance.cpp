@@ -459,6 +459,9 @@ void USnailGameInstance::Init()
 			}else if(bRequireLoginInEditor)
 			{
 				SetupGameClient();
+			}else
+			{
+				EpicLoginComplete.Broadcast();
 			}
 		}
 	}else

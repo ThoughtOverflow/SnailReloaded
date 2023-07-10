@@ -39,21 +39,20 @@ void ASkinDisplayActor::Tick(float DeltaTime)
 
 void ASkinDisplayActor::EquipHeadgearToDummy(USkeletalMesh* Mesh)
 {
-	SetActorRelativeRotation(FRotator(0.f, 90.f, 0.f));
+	// SetActorRelativeRotation(FRotator(0.f, 90.f, 0.f));
 	HeadgearMesh->SetRelativeScale3D(FVector(0.1f));
 	HeadgearMesh->SetRelativeLocation(FVector::ZeroVector);
 	HeadgearMesh->SetRelativeRotation(FRotator::ZeroRotator);
 	HeadgearMesh->SetSkeletalMesh(Mesh);
 	HeadgearMesh->SetRelativeScale3D(HeadgearMesh->GetRelativeScale3D() * HeadgearMesh->GetSocketTransform(FName("mount_socket"),RTS_ParentBoneSpace).GetScale3D());
+	FRotator actorDeltaRotation = GetActorRotation() - FRotator(0.f, 90.f, 0.f);
 	FVector DeltaTransform = (BaseSkeleton->GetSocketLocation(FName("headgear_socket")) - HeadgearMesh->GetSocketLocation(FName("mount_socket"))) / BaseSkeleton->GetRelativeScale3D();
+	DeltaTransform = actorDeltaRotation.UnrotateVector(DeltaTransform);
 	HeadgearMesh->SetRelativeLocation(DeltaTransform);
 	//ROTATION::
-
-	FVector NewLoc = HeadgearMesh->GetSocketRotation(FName("mount_socket")).Quaternion().RotateVector(-DeltaTransform);
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *NewLoc.ToString());
+	FRotator correctedRotation = HeadgearMesh->GetSocketRotation(FName("mount_socket")) - actorDeltaRotation;
+	FVector NewLoc = correctedRotation.Quaternion().RotateVector(-DeltaTransform);
 	HeadgearMesh->SetRelativeLocation(-NewLoc);
-	HeadgearMesh->SetRelativeRotation(HeadgearMesh->GetSocketRotation(FName("mount_socket")));
-	// FRotator DeltaRotation = HeadgearMesh->GetComponentRotation() - HeadgearMesh->GetSocketRotation(FName("mount_socket"));
-	// HeadgearMesh->SetWorldRotation(DeltaRotation);
+	HeadgearMesh->SetRelativeRotation(correctedRotation);
 }
 
