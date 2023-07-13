@@ -72,6 +72,7 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	HeadgearMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HeadgearMesh"));
 	HeadgearMesh->SetupAttachment(GetMesh(), FName("headgear_socket"));
 	HeadgearMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HeadgearMesh->SetOwnerNoSee(true);
 	
 }
 
