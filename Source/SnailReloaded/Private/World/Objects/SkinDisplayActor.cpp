@@ -39,19 +39,22 @@ void ASkinDisplayActor::Tick(float DeltaTime)
 
 void ASkinDisplayActor::EquipHeadgearToDummy(USkeletalMesh* Mesh)
 {
-	// SetActorRelativeRotation(FRotator(0.f, 90.f, 0.f));
 	HeadgearMesh->SetRelativeScale3D(FVector(0.1f));
 	HeadgearMesh->SetRelativeLocation(FVector::ZeroVector);
 	HeadgearMesh->SetRelativeRotation(FRotator::ZeroRotator);
 	HeadgearMesh->SetSkeletalMesh(Mesh);
 	HeadgearMesh->SetRelativeScale3D(HeadgearMesh->GetRelativeScale3D() * HeadgearMesh->GetSocketTransform(FName("mount_socket"),RTS_ParentBoneSpace).GetScale3D());
 	FRotator actorDeltaRotation = GetActorRotation() - FRotator(0.f, 90.f, 0.f);
-	FVector DeltaTransform = (BaseSkeleton->GetSocketLocation(FName("headgear_socket")) - HeadgearMesh->GetSocketLocation(FName("mount_socket"))) / BaseSkeleton->GetRelativeScale3D();
-	DeltaTransform = actorDeltaRotation.UnrotateVector(DeltaTransform);
+	//UE_LOG(LogTemp,	Warning, TEXT("%s AND %s"), *(BaseSkeleton->GetSocketLocation(FName("headgear_socket"))/ BaseSkeleton->GetRelativeScale3D()).ToString(), *(HeadgearMesh->GetSocketLocation(FName("mount_socket"))/ BaseSkeleton->GetRelativeScale3D()).ToString());
+	// FVector DeltaTransform = (BaseSkeleton->GetSocketLocation(FName("headgear_socket")) - HeadgearMesh->GetSocketLocation(FName("mount_socket"))) / BaseSkeleton->GetRelativeScale3D();
+	FVector DeltaTransform = -HeadgearMesh->GetSocketTransform(FName("mount_socket"), RTS_ParentBoneSpace).GetLocation() * 10.f / 1.5f;
+	// DeltaTransform = actorDeltaRotation.UnrotateVector(DeltaTransform);
 	HeadgearMesh->SetRelativeLocation(DeltaTransform);
 	//ROTATION::
-	FRotator correctedRotation = HeadgearMesh->GetSocketRotation(FName("mount_socket")) - actorDeltaRotation;
+	FRotator correctedRotation = HeadgearMesh->GetSocketTransform(FName("mount_socket"), RTS_ParentBoneSpace).Rotator();// - actorDeltaRotation;
+	UE_LOG(LogTemp, Warning, TEXT("YOMOM: %s"), *correctedRotation.ToString());
 	FVector NewLoc = correctedRotation.Quaternion().RotateVector(-DeltaTransform);
+	UE_LOG(LogTemp, Warning, TEXT("YOMOM: %s"), *NewLoc.ToString());
 	HeadgearMesh->SetRelativeLocation(-NewLoc);
 	HeadgearMesh->SetRelativeRotation(correctedRotation);
 }

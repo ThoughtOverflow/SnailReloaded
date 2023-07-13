@@ -42,6 +42,17 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 		ToggleTeamSelectionScreen(false);
 		CreatePlayerHud();
 		PlayerCharacter->ReloadPlayerBanner();
+		for(auto& Item : PlayerCharacter->GetPlayerState<ADefaultPlayerState>()->PlayerOwnedItems)
+		{
+			if(Item.bItemEquipped && Item.GroupId == TEXT("HEAD"))
+			{
+				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+				{
+					PlayerCharacter->ApplyHeadgear(*CombatGameMode->HeadgearAssets.Find(Item.ItemId));
+				}
+				
+			}
+		}
 		PlayerCharacter->OnPlayerPossessed(this);
 		
 	}

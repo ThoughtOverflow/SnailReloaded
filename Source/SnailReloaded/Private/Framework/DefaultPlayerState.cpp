@@ -91,14 +91,17 @@ void ADefaultPlayerState::API_GetPlayerInventoryData()
 {
 	if(!HasAuthority())
 	{
-		return;
+		Server_GetPlayerInventoryData();
+	}else
+	{
+		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+		FString RequestURL = GetActiveAPIAdress(FString::Printf(TEXT("getitems?uid=%s"), *GetPlayerEpicID()));
+		Request->SetVerb("GET");
+		Request->SetURL(RequestURL);
+		Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnGetItemsRequestComplete);
+		Request->ProcessRequest();	
 	}
-	FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-	FString RequestURL = GetActiveAPIAdress(FString::Printf(TEXT("getitems?uid=%s"), *GetPlayerEpicID()));
-	Request->SetVerb("GET");
-	Request->SetURL(RequestURL);
-	Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnGetItemsRequestComplete);
-	Request->ProcessRequest();
+	
 }
 
 void ADefaultPlayerState::API_ValidateToken()
@@ -209,6 +212,11 @@ FString ADefaultPlayerState::GetActiveAPIAdress(FString command)
 	}
 	return "";
 	
+}
+
+void ADefaultPlayerState::Server_GetPlayerInventoryData_Implementation()
+{
+	API_GetPlayerInventoryData();
 }
 
 void ADefaultPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

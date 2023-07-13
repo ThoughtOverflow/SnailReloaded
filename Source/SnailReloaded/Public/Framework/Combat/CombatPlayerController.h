@@ -73,7 +73,7 @@ protected:
 
 	UFUNCTION()
 	void OnToggleScoreboardTriggered(const FInputActionInstance& InputActionInstance);
-
+	
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void BeginPlay() override;
 

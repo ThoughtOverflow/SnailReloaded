@@ -9,6 +9,7 @@
 #include "OnlineSessionSettings.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/DefaultPlayerController.h"
+#include "Framework/DefaultPlayerState.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Interfaces/OnlineIdentityInterface.h"
@@ -385,6 +386,10 @@ void USnailGameInstance::OnJoinComplete(FName SessionName, EOnJoinSessionComplet
 				{
 					if(APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 					{
+						if(ADefaultPlayerState* DefaultPlayerState = PlayerController->GetPlayerState<ADefaultPlayerState>())
+						{
+							DefaultPlayerState->API_GetPlayerInventoryData();
+						}
 						PlayerController->SetInputMode(FInputModeGameOnly());
 						PlayerController->SetShowMouseCursor(false);
 						PlayerController->ClientTravel(ConnectionString, ETravelType::TRAVEL_Absolute);
