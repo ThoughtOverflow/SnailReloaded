@@ -864,7 +864,7 @@ void ADefaultPlayerCharacter::OnRep_HeadgearMesh()
 		FRotator actorDeltaRotation = GetActorRotation() - FRotator(0.f, 90.f, 0.f);
 		//UE_LOG(LogTemp,	Warning, TEXT("%s AND %s"), *(BaseSkeleton->GetSocketLocation(FName("headgear_socket"))/ BaseSkeleton->GetRelativeScale3D()).ToString(), *(HeadgearMesh->GetSocketLocation(FName("mount_socket"))/ BaseSkeleton->GetRelativeScale3D()).ToString());
 		// FVector DeltaTransform = (BaseSkeleton->GetSocketLocation(FName("headgear_socket")) - HeadgearMesh->GetSocketLocation(FName("mount_socket"))) / BaseSkeleton->GetRelativeScale3D();
-		FVector DeltaTransform = -HeadgearMesh->GetSocketTransform(FName("mount_socket"), RTS_ParentBoneSpace).GetLocation() * 10.f * HeadgearMesh->GetSocketTransform(FName("mount_socket"),RTS_ParentBoneSpace).GetScale3D();
+		FVector DeltaTransform = -HeadgearMesh->GetSocketTransform(FName("mount_socket"), RTS_ParentBoneSpace).GetLocation() * HeadgearMesh->GetSocketTransform(FName("mount_socket"),RTS_ParentBoneSpace).GetScale3D();
 		// DeltaTransform = actorDeltaRotation.UnrotateVector(DeltaTransform);
 		HeadgearMesh->SetRelativeLocation(DeltaTransform);
 		//ROTATION::
