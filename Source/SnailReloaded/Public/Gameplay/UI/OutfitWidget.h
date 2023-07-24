@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "OutfitWidget.generated.h"
 
+enum class EOutfitRarity : uint8;
 /**
  * 
  */
@@ -26,6 +27,8 @@ public:
 	FString OutfitId;
 	UPROPERTY(EditDefaultsOnly,	 BlueprintReadWrite)
 	bool bOutfitEquipped;
+	UPROPERTY(EditDefaultsOnly,	 BlueprintReadWrite)
+	EOutfitRarity Rarity;
 
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	

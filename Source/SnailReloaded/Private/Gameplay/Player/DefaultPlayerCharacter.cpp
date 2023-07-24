@@ -856,7 +856,7 @@ void ADefaultPlayerCharacter::OnRep_HeadgearMesh()
 {
 	if(EquippedHeadgear)
 	{
-		HeadgearMesh->SetRelativeScale3D(FVector(0.1f));
+		HeadgearMesh->SetRelativeScale3D(FVector(1.f));
 		HeadgearMesh->SetRelativeLocation(FVector::ZeroVector);
 		HeadgearMesh->SetRelativeRotation(FRotator::ZeroRotator);
 		HeadgearMesh->SetSkeletalMesh(EquippedHeadgear);
