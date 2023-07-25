@@ -5,9 +5,43 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "World/Objects/MenuCamera.h"
+#include "World/Objects/SkinDisplayActor.h"
 
 AMenuPlayerController::AMenuPlayerController()
 {
+	TransitionParams.BlendTime = 0.6f;
+	TransitionParams.BlendFunction = VTBlend_EaseIn;
+	TransitionParams.BlendExp = 0.35f;
+	TransitionParams.bLockOutgoing = false;
+
+	bNonMenuCursorState = true;
+}
+
+void AMenuPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if(InputComponent)
+	{
+
+		UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+		
+		EnhancedInputComponent->BindAction(MouseScrollAction, ETriggerEvent::Triggered, this, &AMenuPlayerController::RotateOutfitDummy);
+	}
+}
+
+void AMenuPlayerController::ShowSkinMenu()
+{
+	SetViewTarget(SkinCamera, TransitionParams);
+	ToggleMainMenuWidget(false);
+	ToggleOutfitMenu(true);
+}
+
+void AMenuPlayerController::ReturnToMenu()
+{
+	SetViewTarget(MenuPlayer, TransitionParams);
+	ToggleOutfitMenu(false);
+	ToggleMainMenuWidget(true);
 	
 }
 
@@ -37,7 +71,77 @@ void AMenuPlayerController::BeginPlay()
 	checkf(MenuPlayer, TEXT("No menu player!!"));
 
 	Possess(MenuPlayer);
-	// SetViewTargetWithBlend(MenuCamera, 0.3f, VTBlend_EaseInOut, 2.f);
+	ToggleMainMenuWidget(true);
+	SetInputMode(FInputModeGameAndUI());
+	SetShowMouseCursor(true);
 	
-	
+}
+
+
+void AMenuPlayerController::ToggleOutfitMenu(bool bOpen)
+{
+	if(IsLocalController())
+	{
+		if(!OutfitSelectionWidget && OutfitSelectionWidgetClass) OutfitSelectionWidget = CreateWidget<UOutfitSelectionWidget>(this, OutfitSelectionWidgetClass);
+		if(OutfitSelectionWidget)
+		{
+			if(bOpen)
+			{
+				if(!OutfitSelectionWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OutfitSelectionWidget, true);
+				}
+			}else
+			{
+				if(OutfitSelectionWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OutfitSelectionWidget, false);
+				}
+			}
+		}
+	}else
+	{
+		Client_ToggleOutfitMenu(bOpen);
+	}
+}
+
+void AMenuPlayerController::ToggleMainMenuWidget(bool bOn)
+{
+	if(IsLocalController())
+	{
+		if(MainMenuWidgetClass && !MainMenuWidget) MainMenuWidget = CreateWidget(this, MainMenuWidgetClass);
+		if(MainMenuWidget)
+		{
+			if(bOn)
+			{
+				MainMenuWidget->AddToViewport();
+			}else
+			{
+				MainMenuWidget->RemoveFromParent();
+			}
+		}
+	}else
+	{
+		Client_ToggleMainMenuWidget(bOn);
+	}
+}
+
+void AMenuPlayerController::Client_ToggleMainMenuWidget_Implementation(bool bOn)
+{
+	ToggleMainMenuWidget(bOn);
+}
+
+void AMenuPlayerController::Client_ToggleOutfitMenu_Implementation(bool bOpen)
+{
+	ToggleOutfitMenu(bOpen);
+}
+
+void AMenuPlayerController::RotateOutfitDummy(const FInputActionInstance& InputActionInstance)
+{
+	float rotation = InputActionInstance.GetValue().Get<float>();
+
+	if(AActor* Dummy = UGameplayStatics::GetActorOfClass(GetWorld(), ASkinDisplayActor::StaticClass()))
+	{
+		Dummy->AddActorLocalRotation(FRotator(0.f, rotation, 0.f));
+	}	
 }

@@ -41,25 +41,15 @@ public:
 	UInputMappingContext* UIDefaultMappingContext;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI input settings")
 	UInputAction* EscInputAction;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI input settings")
-	UInputAction* MouseScrollAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
 	TSubclassOf<UPauseWidget> PauseWidgetClass;
 	UPROPERTY(BlueprintReadWrite)
 	UPauseWidget* PauseWidget;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
-	TSubclassOf<UUserWidget> MainMenuWidgetClass;
-	UPROPERTY(BlueprintReadWrite)
-	UUserWidget* MainMenuWidget;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
 	TSubclassOf<UUserWidget> GameInitWidgetClass;
 	UPROPERTY(BlueprintReadWrite)
 	UUserWidget* GameInitWidget;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
-	TSubclassOf<UOutfitSelectionWidget> OutfitSelectionWidgetClass;
-	UPROPERTY(BlueprintReadWrite)
-	UOutfitSelectionWidget* OutfitSelectionWidget;
 	
 
 	UPROPERTY(BlueprintReadWrite)
@@ -70,8 +60,6 @@ public:
 
 	UFUNCTION()
 	void OnCloseCurrentlyOpenMenu(const FInputActionInstance& InputActionInstance);
-	UFUNCTION()
-	void RotateOutfitDummy(const FInputActionInstance& InputActionInstance);
 
 protected:
 
@@ -85,16 +73,13 @@ protected:
 	virtual void TogglePauseMenu(bool bOpen);
 	UFUNCTION(Client, Reliable)
 	void Client_TogglePauseMenu(bool bOpen);
-	UFUNCTION(BlueprintCallable)
-	virtual void ToggleOutfitMenu(bool bOpen);
-	UFUNCTION(Client, Reliable)
-	void Client_ToggleOutfitMenu(bool bOpen);
 
 	UPROPERTY()
 	bool bNonMenuCursorState;
 
 	UFUNCTION()
 	virtual void ResetNonMenuInputMode();
+	
 
 
 public:
@@ -111,12 +96,8 @@ public:
 //Main menu calls:
 	
 	UFUNCTION(BlueprintCallable)
-	void ToggleMainMenuWidget(bool bOn);
-	UFUNCTION(BlueprintCallable)
 	void ToggleGameInitWidget(bool bOn);
-
-	UFUNCTION(Client, Reliable)
-	void Client_ToggleMainMenuWidget(bool bOn);
+	
 	UFUNCTION(Client, Reliable)
 	void Client_ToggleGameInitWidget(bool bOn);
 	

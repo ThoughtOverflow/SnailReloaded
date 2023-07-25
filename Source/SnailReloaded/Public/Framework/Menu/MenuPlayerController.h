@@ -18,6 +18,7 @@ class SNAILRELOADED_API AMenuPlayerController : public ADefaultPlayerController
 
 public:
 
+	UPROPERTY()
 	AMenuPlayer* MenuPlayer;
 	
 	UPROPERTY(BlueprintReadWrite)
@@ -25,8 +26,44 @@ public:
 
 	AMenuPlayerController();
 
+	UFUNCTION(BlueprintCallable)
+	void ShowSkinMenu();
+	UFUNCTION(BlueprintCallable)
+	void ReturnToMenu();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UUserWidget> MainMenuWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* MainMenuWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UOutfitSelectionWidget> OutfitSelectionWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UOutfitSelectionWidget* OutfitSelectionWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI input settings")
+	UInputAction* MouseScrollAction;
+
 protected:
 
 	virtual void BeginPlay() override;
+
+	FViewTargetTransitionParams TransitionParams;
+
+	virtual void SetupInputComponent() override;
+
+	UFUNCTION()
+	void RotateOutfitDummy(const FInputActionInstance& InputActionInstance);
+
+public:
+
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleMainMenuWidget(bool bOn);
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleMainMenuWidget(bool bOn);
+
+	UFUNCTION(BlueprintCallable)
+	virtual void ToggleOutfitMenu(bool bOpen);
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleOutfitMenu(bool bOpen);
 	
 };
