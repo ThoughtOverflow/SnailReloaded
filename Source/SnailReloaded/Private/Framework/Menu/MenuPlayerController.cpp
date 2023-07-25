@@ -4,14 +4,15 @@
 #include "Framework/Menu/MenuPlayerController.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "World/Objects/ImageTablet.h"
 #include "World/Objects/MenuCamera.h"
 #include "World/Objects/SkinDisplayActor.h"
 
 AMenuPlayerController::AMenuPlayerController()
 {
-	TransitionParams.BlendTime = 0.6f;
+	TransitionParams.BlendTime = 0.7f;
 	TransitionParams.BlendFunction = VTBlend_EaseIn;
-	TransitionParams.BlendExp = 0.35f;
+	TransitionParams.BlendExp = 0.8f;
 	TransitionParams.bLockOutgoing = false;
 
 	bNonMenuCursorState = true;
@@ -69,6 +70,15 @@ void AMenuPlayerController::BeginPlay()
 	MenuPlayer = Cast<AMenuPlayer>(UGameplayStatics::GetActorOfClass(GetWorld(), AMenuPlayer::StaticClass()));
 
 	checkf(MenuPlayer, TEXT("No menu player!!"));
+
+	//do the filling:
+
+	TArray<AActor*> Actors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AImageTablet::StaticClass(), Actors);
+	for(auto& actor : Actors)
+	{
+		Cast<AImageTablet>(actor)->RandomizeDecal();
+	}
 
 	Possess(MenuPlayer);
 	ToggleMainMenuWidget(true);
