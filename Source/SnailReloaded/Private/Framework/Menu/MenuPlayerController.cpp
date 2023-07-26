@@ -33,15 +33,26 @@ void AMenuPlayerController::SetupInputComponent()
 
 void AMenuPlayerController::ShowSkinMenu()
 {
+	ToggleDisplayActorVisibility(true);
 	SetViewTarget(SkinCamera, TransitionParams);
 	ToggleMainMenuWidget(false);
+	ToggleSkinOpenMenu(false);
 	ToggleOutfitMenu(true);
+}
+
+void AMenuPlayerController::ShowOpeningMenu()
+{
+	ToggleDisplayActorVisibility(false);
+	SetViewTarget(OpeningCamera, TransitionParams);
+	ToggleOutfitMenu(false);
+	ToggleSkinOpenMenu(true);
 }
 
 void AMenuPlayerController::ReturnToMenu()
 {
 	SetViewTarget(MenuPlayer, TransitionParams);
 	ToggleOutfitMenu(false);
+	ToggleSkinOpenMenu(false);
 	ToggleMainMenuWidget(true);
 	
 }
@@ -58,14 +69,12 @@ void AMenuPlayerController::BeginPlay()
 		if(camActor->CamType == EMenuCamType::SKINSELECT)
 		{
 			SkinCamera = camActor;
-		}
-
-		if(SkinCamera)
+		}else if(camActor->CamType == EMenuCamType::CASE_OPENING)
 		{
-			break;
+			OpeningCamera = camActor;
 		}
 	}
-	checkf(SkinCamera, TEXT("One or more menu camera definitions do not exist!"));
+	checkf(SkinCamera && OpeningCamera, TEXT("One or more menu camera definitions do not exist!"));
 
 	MenuPlayer = Cast<AMenuPlayer>(UGameplayStatics::GetActorOfClass(GetWorld(), AMenuPlayer::StaticClass()));
 
@@ -115,6 +124,38 @@ void AMenuPlayerController::ToggleOutfitMenu(bool bOpen)
 	}
 }
 
+void AMenuPlayerController::ToggleSkinOpenMenu(bool bOpen)
+{
+	if(IsLocalController())
+	{
+		if(!OpeningWidget && OpeningWidgetClass) OpeningWidget = CreateWidget<USkinOpeningWidget>(this, OpeningWidgetClass);
+		if(OpeningWidget)
+		{
+			if(bOpen)
+			{
+				if(!OpeningWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OpeningWidget, true);
+				}
+			}else
+			{
+				if(OpeningWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OpeningWidget, false);
+				}
+			}
+		}
+	}else
+	{
+		Client_ToggleSkinOpenMenu(bOpen);
+	}
+}
+
+void AMenuPlayerController::Client_ToggleSkinOpenMenu_Implementation(bool bOpen)
+{
+	ToggleSkinOpenMenu(bOpen);
+}
+
 void AMenuPlayerController::ToggleMainMenuWidget(bool bOn)
 {
 	if(IsLocalController())
@@ -154,4 +195,12 @@ void AMenuPlayerController::RotateOutfitDummy(const FInputActionInstance& InputA
 	{
 		Dummy->AddActorLocalRotation(FRotator(0.f, rotation, 0.f));
 	}	
+}
+
+void AMenuPlayerController::ToggleDisplayActorVisibility(bool bVisible)
+{
+	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), ASkinDisplayActor::StaticClass()))
+	{
+		Actor->SetActorHiddenInGame(!bVisible);
+	}
 }

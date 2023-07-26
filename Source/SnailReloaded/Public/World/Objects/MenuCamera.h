@@ -14,6 +14,7 @@ UENUM()
 enum class EMenuCamType : uint8
 {
 	NONE = 0,
+	CASE_OPENING = 1,
 	SKINSELECT = 2
 };
 
