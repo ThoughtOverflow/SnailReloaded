@@ -5,6 +5,7 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "World/Objects/ComputerCase.h"
+#include "World/Objects/Holostand.h"
 #include "World/Objects/ImageTablet.h"
 #include "World/Objects/MenuCamera.h"
 #include "World/Objects/SkinDisplayActor.h"
@@ -156,9 +157,9 @@ void AMenuPlayerController::ToggleSkinOpenMenu(bool bOpen)
 
 void AMenuPlayerController::OpenCase()
 {
-	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AComputerCase::StaticClass()))
+	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AHolostand::StaticClass()))
 	{
-		Cast<AComputerCase>(Actor)->AnimOpenCase();
+		Cast<AHolostand>(Actor)->PlayCaseOpening();
 	}
 }
 
