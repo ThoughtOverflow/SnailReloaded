@@ -4,6 +4,7 @@
 #include "Framework/Menu/MenuPlayerController.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "World/Objects/ComputerCase.h"
 #include "World/Objects/ImageTablet.h"
 #include "World/Objects/MenuCamera.h"
 #include "World/Objects/SkinDisplayActor.h"
@@ -33,6 +34,7 @@ void AMenuPlayerController::SetupInputComponent()
 
 void AMenuPlayerController::ShowSkinMenu()
 {
+	ToggleCaseVisibility(false);
 	ToggleDisplayActorVisibility(true);
 	SetViewTarget(SkinCamera, TransitionParams);
 	ToggleMainMenuWidget(false);
@@ -43,6 +45,7 @@ void AMenuPlayerController::ShowSkinMenu()
 void AMenuPlayerController::ShowOpeningMenu()
 {
 	ToggleDisplayActorVisibility(false);
+	ToggleCaseVisibility(true);
 	SetViewTarget(OpeningCamera, TransitionParams);
 	ToggleOutfitMenu(false);
 	ToggleSkinOpenMenu(true);
@@ -151,6 +154,14 @@ void AMenuPlayerController::ToggleSkinOpenMenu(bool bOpen)
 	}
 }
 
+void AMenuPlayerController::OpenCase()
+{
+	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AComputerCase::StaticClass()))
+	{
+		Cast<AComputerCase>(Actor)->AnimOpenCase();
+	}
+}
+
 void AMenuPlayerController::Client_ToggleSkinOpenMenu_Implementation(bool bOpen)
 {
 	ToggleSkinOpenMenu(bOpen);
@@ -200,6 +211,14 @@ void AMenuPlayerController::RotateOutfitDummy(const FInputActionInstance& InputA
 void AMenuPlayerController::ToggleDisplayActorVisibility(bool bVisible)
 {
 	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), ASkinDisplayActor::StaticClass()))
+	{
+		Actor->SetActorHiddenInGame(!bVisible);
+	}
+}
+
+void AMenuPlayerController::ToggleCaseVisibility(bool bVisible)
+{
+	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AComputerCase::StaticClass()))
 	{
 		Actor->SetActorHiddenInGame(!bVisible);
 	}

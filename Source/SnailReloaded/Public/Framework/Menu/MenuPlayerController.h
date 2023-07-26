@@ -66,6 +66,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleDisplayActorVisibility(bool bVisible);
+	UFUNCTION(BlueprintCallable)
+	void ToggleCaseVisibility(bool bVisible);
 
 public:
 
@@ -83,5 +85,8 @@ public:
 	void Client_ToggleOutfitMenu(bool bOpen);
 	UFUNCTION(Client, Reliable)
 	void Client_ToggleSkinOpenMenu(bool bOpen);
+
+	UFUNCTION(BlueprintCallable)
+	void OpenCase();
 	
 };

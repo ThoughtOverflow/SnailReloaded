@@ -1,4 +1,4 @@
-c// SnailReloaded - ThoughtOverflow 2023 - All rights reserved.
+// SnailReloaded - ThoughtOverflow 2023 - All rights reserved.
 
 #pragma once
 
@@ -15,6 +15,12 @@ public:
 	// Sets default values for this actor's properties
 	AComputerCase();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMeshComponent* Mesh;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UAnimationAsset* OpenAnim;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -22,5 +28,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable)
+	void AnimOpenCase();
 
 };

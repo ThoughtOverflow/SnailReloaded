@@ -3,11 +3,16 @@
 
 #include "World/Objects/ComputerCase.h"
 
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values
 AComputerCase::AComputerCase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	SetRootComponent(Mesh);
 
 }
 
@@ -23,5 +28,10 @@ void AComputerCase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AComputerCase::AnimOpenCase()
+{
+	Mesh->PlayAnimation(OpenAnim, false);
 }
 
