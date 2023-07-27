@@ -9,6 +9,7 @@
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/HealthComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ATurret::ATurret()
 {
@@ -23,7 +24,7 @@ ATurret::ATurret()
 
 void ATurret::FireTurret()
 {
-	if(CurrentTarget)
+	if(CurrentTarget && HasAuthority())
 	{
 		FHitResult HitResult;
 		FVector TraceStartLoc = GetActorLocation();
@@ -57,7 +58,7 @@ void ATurret::FireTurret()
 					}
 				}else
 				{
-					CheckTarget();a
+					CheckTarget();
 				}
 				//Multi_SpawnImpactParticles(HitResult.ImpactPoint, HitResult.ImpactNormal);
 				// DrawDebugLine(GetWorld(), TraceStartLoc, HitResult.ImpactPoint, FColor::Magenta, true, -1, 0, 3);
@@ -93,58 +94,64 @@ void ATurret::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Other
 void ATurret::PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	int32 PlayerCount = 0;
-	TArray<AActor*> Actors;
-	SightRadius->GetOverlappingActors(Actors);
-	for(AActor* Actor: Actors)
+	if(HasAuthority())
 	{
-		if(UHealthComponent* HealthComponent= Cast<UHealthComponent>(Actor->GetComponentByClass(UHealthComponent::StaticClass())))
+		int32 PlayerCount = 0;
+		TArray<AActor*> Actors;
+		SightRadius->GetOverlappingActors(Actors);
+		for(AActor* Actor: Actors)
 		{
-			
-			FHitResult HitResult;
-			FVector TraceStartLoc = GetActorLocation();
-			FVector TraceEndLoc = Actor->GetActorLocation();
-			FCollisionQueryParams Params;
-			if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, Params))
+			if(UHealthComponent* HealthComponent= Cast<UHealthComponent>(Actor->GetComponentByClass(UHealthComponent::StaticClass())))
 			{
-				if(HitResult.GetActor() == Actor)
+			
+				FHitResult HitResult;
+				FVector TraceStartLoc = GetActorLocation();
+				FVector TraceEndLoc = Actor->GetActorLocation();
+				FCollisionQueryParams Params;
+				if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, Params))
 				{
-					PlayerCount++;
+					if(HitResult.GetActor() == Actor)
+					{
+						PlayerCount++;
+					}
 				}
 			}
-		}
 		
-	}
-	if (PlayerCount == 1)
-	{
-		CheckTarget();
+		}
+		if (PlayerCount == 1)
+		{
+			CheckTarget();
+		}	
 	}
 }
 
 void ATurret::CheckTarget()
 {
-	CurrentTarget = nullptr;
-	TArray<AActor*> Actors;
-	SightRadius->GetOverlappingActors(Actors);
-	for(AActor* Actor: Actors)
+	if(HasAuthority())
 	{
-		if(UHealthComponent* HealthComponent= Cast<UHealthComponent>(Actor->GetComponentByClass(UHealthComponent::StaticClass())))
+		CurrentTarget = nullptr;
+		TArray<AActor*> Actors;
+		SightRadius->GetOverlappingActors(Actors);
+		for(AActor* Actor: Actors)
 		{
-			FHitResult HitResult;
-			FVector TraceStartLoc = GetActorLocation();
-			FVector TraceEndLoc = Actor->GetActorLocation();
-			FCollisionQueryParams Params;
-			if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, Params))
+			if(UHealthComponent* HealthComponent= Cast<UHealthComponent>(Actor->GetComponentByClass(UHealthComponent::StaticClass())))
 			{
-				if(HitResult.GetActor() == Actor)
+				FHitResult HitResult;
+				FVector TraceStartLoc = GetActorLocation();
+				FVector TraceEndLoc = Actor->GetActorLocation();
+				FCollisionQueryParams Params;
+				if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, Params))
 				{
+					if(HitResult.GetActor() == Actor)
+					{
 					
-					CurrentTarget = Actor;
-					InitiateShooting();
-					return;
+						CurrentTarget = Actor;
+						InitiateShooting();
+						return;
+					}
 				}
 			}
-		}
+	}
 		
 	}
 	
@@ -159,5 +166,12 @@ void ATurret::CheckTarget()
 	{
 		if(HitResult.GetActor() == Actor)
 	}*/
+}
+
+void ATurret::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATurret, CurrentTarget);
 }
 

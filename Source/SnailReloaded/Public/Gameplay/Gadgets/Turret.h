@@ -21,10 +21,8 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USphereComponent* SightRadius;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	AActor* CurrentTarget;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TArray<AActor*> TraceTargets;
 	UPROPERTY(BlueprintReadWrite)
 	FTimerHandle ShootingTimer;
 
@@ -43,6 +41,8 @@ protected:
 	void PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 	UFUNCTION(BlueprintCallable)
 	void CheckTarget();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	
 };
