@@ -86,7 +86,7 @@ void ATurret::Tick(float DeltaTime)
 void ATurret::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	if(IsGadgetInitialized())
+	
 	CheckTarget();
 	
 	
@@ -95,7 +95,7 @@ void ATurret::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Other
 void ATurret::PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(HasAuthority() && IsGadgetInitialized())
+	if(HasAuthority())
 	{
 		int32 PlayerCount = 0;
 		TArray<AActor*> Actors;
@@ -128,7 +128,7 @@ void ATurret::PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 
 void ATurret::CheckTarget()
 {
-	if(HasAuthority())
+	if(HasAuthority() && IsGadgetInitialized())
 	{
 		CurrentTarget = nullptr;
 		TArray<AActor*> Actors;
@@ -171,7 +171,7 @@ void ATurret::CheckTarget()
 void ATurret::OnInitialized()
 {
 	Super::OnInitialized();
-	SightRadius->UpdateOverlaps();
+	CheckTarget();
 }
 
 void ATurret::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
