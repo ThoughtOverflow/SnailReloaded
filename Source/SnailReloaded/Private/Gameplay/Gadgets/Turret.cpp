@@ -86,6 +86,7 @@ void ATurret::Tick(float DeltaTime)
 void ATurret::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
+	if(IsGadgetInitialized())
 	CheckTarget();
 	
 	
@@ -94,7 +95,7 @@ void ATurret::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Other
 void ATurret::PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(HasAuthority())
+	if(HasAuthority() && IsGadgetInitialized())
 	{
 		int32 PlayerCount = 0;
 		TArray<AActor*> Actors;
@@ -142,9 +143,8 @@ void ATurret::CheckTarget()
 				FCollisionQueryParams Params;
 				if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, Params))
 				{
-					if(HitResult.GetActor() == Actor)
+					if(HitResult.GetActor() == Actor && GetOwningTeam()!=HealthComponent->GetOwnerTeam())
 					{
-					
 						CurrentTarget = Actor;
 						InitiateShooting();
 						return;
@@ -166,6 +166,12 @@ void ATurret::CheckTarget()
 	{
 		if(HitResult.GetActor() == Actor)
 	}*/
+}
+
+void ATurret::OnInitialized()
+{
+	Super::OnInitialized();
+	SightRadius->UpdateOverlaps();
 }
 
 void ATurret::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

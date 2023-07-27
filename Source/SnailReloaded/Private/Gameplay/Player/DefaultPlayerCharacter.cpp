@@ -826,7 +826,7 @@ void ADefaultPlayerCharacter::UseGadget()
 	if(HasAuthority() && TurretClass)
 	{
 		ATurret* Gadget = GetWorld()->SpawnActor<ATurret>(TurretClass, CameraComponent->GetComponentLocation(), GetActorRotation());
-		Gadget->OwningPlayerState = Cast<ACombatPlayerState>(GetPlayerState());
+		Gadget->InitializeGadget(Cast<ACombatPlayerState>(GetPlayerState()));
 
 
 	}

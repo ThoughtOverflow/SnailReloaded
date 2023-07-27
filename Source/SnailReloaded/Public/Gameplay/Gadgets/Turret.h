@@ -42,6 +42,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void CheckTarget();
 
+	virtual void OnInitialized() override;
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	

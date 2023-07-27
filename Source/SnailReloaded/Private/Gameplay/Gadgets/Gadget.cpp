@@ -52,6 +52,11 @@ void AGadget::OnGadgetDestroyed(const FDamageResponse& LatestDamage)
 	this->Destroy();
 }
 
+void AGadget::OnInitialized()
+{
+	bGadgetInitialized = true;
+}
+
 void AGadget::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -64,5 +69,23 @@ void AGadget::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AGadget::InitializeGadget(ACombatPlayerState* OwningState)
+{
+	if(HasAuthority())
+	{
+		OwningPlayerState = OwningState;
+		if(OwningPlayerState)
+		{
+			OnInitialized();
+		}
+	}
+	
+}
+
+bool AGadget::IsGadgetInitialized()
+{
+	return bGadgetInitialized;
 }
 
