@@ -21,6 +21,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UAnimationAsset* OpenAnim;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bOpenCase;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FVector OriginalLocation;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -29,7 +35,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintCallable)
-	void AnimOpenCase();
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetOpenedOutfitTexture(UTexture2D* Tex);
 
 };

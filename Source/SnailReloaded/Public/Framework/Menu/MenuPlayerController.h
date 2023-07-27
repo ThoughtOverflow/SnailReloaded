@@ -69,6 +69,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void ToggleCaseVisibility(bool bVisible);
 
+	UFUNCTION(BlueprintCallable)
+	void ResetOpeningScene();
+
 public:
 
 	UFUNCTION(Client, Reliable)
@@ -88,5 +91,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void OpenCase();
+	
+	void CrateDataReceived(const TSharedPtr<FJsonObject>* Data);
+	UFUNCTION(BlueprintCallable)
+	void OnCaseOpeningAnimationFinished();
 	
 };

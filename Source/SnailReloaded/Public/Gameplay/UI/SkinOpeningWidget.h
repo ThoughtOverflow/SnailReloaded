@@ -17,5 +17,13 @@ class SNAILRELOADED_API USkinOpeningWidget : public UUserWidget
 public:
 
 	virtual void NativeConstruct() override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FString DisplayedItemName;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bOpeningInProgress;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayTextAnimation();
 	
 };

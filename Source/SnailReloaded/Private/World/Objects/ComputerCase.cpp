@@ -13,6 +13,7 @@ AComputerCase::AComputerCase()
 
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	SetRootComponent(Mesh);
+	bOpenCase = false;
 
 }
 
@@ -20,7 +21,7 @@ AComputerCase::AComputerCase()
 void AComputerCase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	OriginalLocation = GetActorLocation();
 }
 
 // Called every frame
@@ -30,8 +31,4 @@ void AComputerCase::Tick(float DeltaTime)
 
 }
 
-void AComputerCase::AnimOpenCase()
-{
-	Mesh->PlayAnimation(OpenAnim, false);
-}
 

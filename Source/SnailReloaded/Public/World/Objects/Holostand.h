@@ -20,12 +20,14 @@ public:
 	// Sets default values for this actor's properties
 	AHolostand();
 
+	UPROPERTY(BlueprintReadWrite)
+	bool bPlayCaseOpening;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(BlueprintReadWrite)
-	bool bPlayCaseOpening;
+	
 	
 
 public:	

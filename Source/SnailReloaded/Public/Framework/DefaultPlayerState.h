@@ -73,6 +73,8 @@ public:
 	void API_ValidateToken();
 	UFUNCTION()
 	void API_ValidateUser();
+	UFUNCTION(BlueprintCallable)
+	void API_OpenCrate();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	FAPIAccountData AccountData;
 
@@ -130,6 +132,7 @@ protected:
 	void OnGetTokenValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnAccountValidationComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 	void OnEquipmentComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
+	void OnCrateOpeningComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess);
 
 	virtual void CopyProperties(APlayerState* PlayerState) override;
 

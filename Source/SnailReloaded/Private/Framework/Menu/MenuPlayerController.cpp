@@ -3,6 +3,7 @@
 
 #include "Framework/Menu/MenuPlayerController.h"
 
+#include "Framework/DefaultPlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/Objects/ComputerCase.h"
 #include "World/Objects/Holostand.h"
@@ -41,6 +42,7 @@ void AMenuPlayerController::ShowSkinMenu()
 	ToggleMainMenuWidget(false);
 	ToggleSkinOpenMenu(false);
 	ToggleOutfitMenu(true);
+	ResetOpeningScene();
 }
 
 void AMenuPlayerController::ShowOpeningMenu()
@@ -58,7 +60,6 @@ void AMenuPlayerController::ReturnToMenu()
 	ToggleOutfitMenu(false);
 	ToggleSkinOpenMenu(false);
 	ToggleMainMenuWidget(true);
-	
 }
 
 void AMenuPlayerController::BeginPlay()
@@ -157,9 +158,57 @@ void AMenuPlayerController::ToggleSkinOpenMenu(bool bOpen)
 
 void AMenuPlayerController::OpenCase()
 {
-	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AHolostand::StaticClass()))
+	ResetOpeningScene();
+	if(OpeningWidget)
 	{
-		Cast<AHolostand>(Actor)->PlayCaseOpening();
+		OpeningWidget->bOpeningInProgress = true;
+	}
+	if(ADefaultPlayerState* DefaultPlayerState = GetPlayerState<ADefaultPlayerState>())
+	{
+		DefaultPlayerState->API_OpenCrate();
+	}
+}
+
+void AMenuPlayerController::CrateDataReceived(const TSharedPtr<FJsonObject>* Data)
+{
+	if(AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AComputerCase::StaticClass()))
+	{
+		AComputerCase* ComputerCase = Cast<AComputerCase>(Actor);
+		if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			const TSharedPtr<FJsonObject>* ItemObject;
+			Data->Get()->TryGetObjectField("data", ItemObject);
+			FOutfitData OutfitData = *DefaultGameMode->RegisteredOutfits.Find(ItemObject->Get()->GetStringField("id"));
+			UTexture2D* OpenedItemTexture = OutfitData.Thumbnail;
+			ComputerCase->SetOpenedOutfitTexture(OpenedItemTexture);
+			if(Data->Get()->GetStringField("result") == "itemgranted")
+			{
+				if(OpeningWidget)
+				{
+					OpeningWidget->DisplayedItemName = OutfitData.OutfitName;
+				}
+			}
+			else if(Data->Get()->GetStringField("result") == "duplicate")
+			{
+				if(OpeningWidget)
+				{
+					OpeningWidget->DisplayedItemName = FString::Printf(TEXT("%s - duplicate"), *OutfitData.OutfitName);
+				}
+			}
+			if(AHolostand* Holostand = Cast<AHolostand>(UGameplayStatics::GetActorOfClass(GetWorld(), AHolostand::StaticClass())))
+			{
+				Holostand->PlayCaseOpening();
+			}
+		}
+	}
+}
+
+void AMenuPlayerController::OnCaseOpeningAnimationFinished()
+{
+	if(OpeningWidget)
+	{
+		OpeningWidget->PlayTextAnimation();
+		OpeningWidget->bOpeningInProgress = false;
 	}
 }
 
@@ -223,4 +272,19 @@ void AMenuPlayerController::ToggleCaseVisibility(bool bVisible)
 	{
 		Actor->SetActorHiddenInGame(!bVisible);
 	}
+}
+
+void AMenuPlayerController::ResetOpeningScene()
+{
+	if(AComputerCase* ComputerCase = Cast<AComputerCase>(UGameplayStatics::GetActorOfClass(GetWorld(), AComputerCase::StaticClass())))
+	{
+		ComputerCase->bOpenCase = false;
+		ComputerCase->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		ComputerCase->SetActorLocation(ComputerCase->OriginalLocation);
+	}
+	if(AHolostand* Holostand = Cast<AHolostand>(UGameplayStatics::GetActorOfClass(GetWorld(), AHolostand::StaticClass())))
+	{
+		Holostand->bPlayCaseOpening = false;
+	}
+	
 }

@@ -6,6 +6,7 @@
 #include "HttpModule.h"
 #include "Framework/DefaultGameMode.h"
 #include "Framework/SnailGameInstance.h"
+#include "Framework/Menu/MenuPlayerController.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
@@ -87,6 +88,26 @@ void ADefaultPlayerState::OnEquipmentComplete(FHttpRequestPtr Req, FHttpResponse
 	}
 }
 
+void ADefaultPlayerState::OnCrateOpeningComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+{
+	if(bSuccess)
+	{
+		API_GetPlayerAccountData();
+		TSharedPtr<FJsonObject> ResponseJson;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Res->GetContentAsString());
+		FJsonSerializer::Deserialize(Reader, ResponseJson);
+		if(ResponseJson->GetStringField("status") != "ERROR")
+		{
+			const TSharedPtr<FJsonObject>* OutObj;
+			ResponseJson->TryGetObjectField("msg", OutObj);
+			if(AMenuPlayerController* MenuPlayerController = Cast<AMenuPlayerController>(GetPlayerController()))
+			{
+				MenuPlayerController->CrateDataReceived(OutObj);
+			}
+		}
+	}
+}
+
 void ADefaultPlayerState::API_GetPlayerInventoryData()
 {
 	if(!HasAuthority())
@@ -140,6 +161,28 @@ void ADefaultPlayerState::API_ValidateUser()
 		Request->SetContentAsString(FString::Printf(TEXT("utoken=%s"), *GetPlayerAuthToken()));
 		Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnAccountValidationComplete);
 		Request->ProcessRequest();
+	}
+}
+
+void ADefaultPlayerState::API_OpenCrate()
+{
+	if(!HasAuthority())
+	{
+		return;
+	}
+	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		if(AccountData.UnopenedCrates > 0)
+		{
+			FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+			FString RequestURL = GetActiveAPIAdress(TEXT("opencrate"));
+			Request->SetVerb("POST");
+			Request->SetURL(RequestURL);
+			Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+			Request->SetContentAsString(FString::Printf(TEXT("utoken=%s"), *GetPlayerAuthToken()));
+			Request->OnProcessRequestComplete().BindUObject(this, &ADefaultPlayerState::OnCrateOpeningComplete);
+			Request->ProcessRequest();	
+		}
 	}
 }
 
