@@ -23,11 +23,28 @@ public:
 	USphereComponent* SightRadius;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	AActor* CurrentTarget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TArray<AActor*> TraceTargets;
+	UPROPERTY(BlueprintReadWrite)
+	FTimerHandle ShootingTimer;
 
 
 	UFUNCTION(BlueprintCallable)
-	void FireTurret(AActor* Target);
+	void FireTurret();
+	UFUNCTION(BlueprintCallable)
+	void InitiateShooting();
 
 	virtual void Tick(float DeltaTime) override;
+
+protected:
+	UFUNCTION(BlueprintCallable)
+	void PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	UFUNCTION(BlueprintCallable)
+	void PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	UFUNCTION(BlueprintCallable)
+	void CheckTarget();
+	
 	
 };
+
+
