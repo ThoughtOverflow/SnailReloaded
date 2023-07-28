@@ -350,10 +350,10 @@ void USnailGameInstance::SearchAndConnectToMasterServer()
 
 FString USnailGameInstance::GetPlayerEpicID()
 {
-	if(!GetWorld()->IsPlayInEditor() || bUseDevAuth)
+	if(!GetWorld()->IsPlayInEditor() || bRequireLoginInEditor)
 	{
 		return PlayerEpicID;
-	}else
+	}else 
 	{
 #if WITH_EDITOR
 		return "05d5693c39d64934988ef54990074d56";
