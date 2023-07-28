@@ -40,8 +40,6 @@ void ATurret::FireTurret()
 			//Process hit results:
 			if(HitResult.GetActor())
 			{
-				if(HitResult.GetActor()==CurrentTarget)
-				{
 					if(UHealthComponent* HealthComponent = Cast<UHealthComponent>(HitResult.GetActor()->GetComponentByClass(UHealthComponent::StaticClass())))
 					{
 						if(!HealthComponent->bIsDead)
@@ -54,9 +52,7 @@ void ATurret::FireTurret()
                     				
 							Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->ChangeObjectHealth(DamageRequest);
 						}
-                    							
-					}
-				}else
+					}else
 				{
 					CheckTarget();
 				}
@@ -79,6 +75,7 @@ void ATurret::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	CheckTarget();
 	
 	
 }
@@ -95,7 +92,7 @@ void ATurret::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Other
 void ATurret::PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(HasAuthority())
+	if(HasAuthority() && IsGadgetInitialized())
 	{
 		int32 PlayerCount = 0;
 		TArray<AActor*> Actors;
@@ -111,7 +108,7 @@ void ATurret::PlayerEnter(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 				FCollisionQueryParams Params;
 				if(GetWorld() && GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartLoc, TraceEndLoc, ECC_Visibility, Params))
 				{
-					if(HitResult.GetActor() == Actor)
+					if(HitResult.GetActor() == Actor && GetOwningTeam()!=HealthComponent->GetOwnerTeam())
 					{
 						PlayerCount++;
 					}
@@ -130,7 +127,7 @@ void ATurret::CheckTarget()
 {
 	if(HasAuthority() && IsGadgetInitialized())
 	{
-		CurrentTarget = nullptr;
+		
 		TArray<AActor*> Actors;
 		SightRadius->GetOverlappingActors(Actors);
 		for(AActor* Actor: Actors)
@@ -145,15 +142,20 @@ void ATurret::CheckTarget()
 				{
 					if(HitResult.GetActor() == Actor && GetOwningTeam()!=HealthComponent->GetOwnerTeam())
 					{
-						CurrentTarget = Actor;
-						InitiateShooting();
+						
+						if(Actor!=CurrentTarget)
+						{
+							CurrentTarget = Actor;
+							InitiateShooting();
+						}
+						
 						return;
 					}
 				}
 			}
 	}
-		
-	}
+		CurrentTarget = nullptr;
+}
 	
 	
 	/**ADefaultPlayerCharacter* PlayerCharacter= Cast<ADefaultPlayerCharacter>(Actor);
