@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/HealthComponent.h"
-#include "Framework/Combat/CombatPlayerState.h"
 #include "GameFramework/Actor.h"
 #include "Gadget.generated.h"
 

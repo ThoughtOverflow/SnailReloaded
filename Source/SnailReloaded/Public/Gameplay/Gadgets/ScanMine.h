@@ -31,7 +31,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	virtual void InitializeGadget(ACombatPlayerState* OwningPlayer) override;
+	virtual void OnInitialized() override;
 
 protected:
 

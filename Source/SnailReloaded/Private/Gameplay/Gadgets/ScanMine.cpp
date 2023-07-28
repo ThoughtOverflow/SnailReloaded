@@ -102,11 +102,12 @@ void AScanMine::Tick(float DeltaSeconds)
 	
 }
 
-void AScanMine::InitializeGadget(ACombatPlayerState* OwningPlayer)
+void AScanMine::OnInitialized()
 {
-	Super::InitializeGadget(OwningPlayer);
+	Super::OnInitialized();
+
 	RootBox->SetSimulatePhysics(true);
-	RootBox->AddImpulse(OwningPlayer->GetPawn()->GetControlRotation().Vector() * 1200.f, NAME_None, true);
+	RootBox->AddImpulse(OwningPlayerState->GetPawn()->GetControlRotation().Vector() * 1200.f, NAME_None, true);
 	if(HasAuthority())
 	{
 		if(FMath::IsNearlyZero(BootupTime))
@@ -117,7 +118,6 @@ void AScanMine::InitializeGadget(ACombatPlayerState* OwningPlayer)
 			GetWorldTimerManager().SetTimer(BootupTimer, this, &AScanMine::ScanInitialize_Callback, BootupTime);
 		}
 	}
-	
 }
 
 void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,

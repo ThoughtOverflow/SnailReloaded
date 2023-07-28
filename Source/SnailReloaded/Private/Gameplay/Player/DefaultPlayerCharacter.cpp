@@ -203,7 +203,10 @@ void ADefaultPlayerCharacter::Look(const FInputActionInstance& Action)
 	float SensMultiplier = 1.f;
 	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
 	{
-		SensMultiplier = SnailGameInstance->SavedSettings->MouseSensitivity * GOLDEN_SENS;
+		if(SnailGameInstance->SavedSettings)
+		{
+			SensMultiplier = SnailGameInstance->SavedSettings->MouseSensitivity * GOLDEN_SENS;	
+		}
 	}
 	
 	if(LookVector.X != 0.f)
