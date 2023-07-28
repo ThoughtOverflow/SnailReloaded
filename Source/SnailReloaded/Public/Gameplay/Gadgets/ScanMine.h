@@ -31,8 +31,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	UFUNCTION(BlueprintCallable)
-	void Initialize();
+	virtual void InitializeGadget(ACombatPlayerState* OwningPlayer) override;
 
 protected:
 
@@ -43,5 +42,14 @@ protected:
 	FVector NormalImpulse, const FHitResult& Hit);
 
 	bool bAllowScanning;
+
+	UFUNCTION()
+	void ScanInitialize_Callback();
+
+	UPROPERTY()
+	FTimerHandle BootupTimer;
+
+	UPROPERTY(EditDefaultsOnly)
+	TArray<ADefaultPlayerCharacter*> DetectedPlayers;
 	
 };

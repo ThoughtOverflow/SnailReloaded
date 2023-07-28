@@ -8,7 +8,37 @@
 #include "GameFramework/Actor.h"
 #include "Gadget.generated.h"
 
+UENUM(BlueprintType)
+enum class EGadgetType : uint8
+{
+	None = 0,
+	ScanMine = 1,
+	Turret = 2
+};
+
+USTRUCT(BlueprintType)
+struct FGadgetProperty
+{
+	GENERATED_BODY()
+
+public:
+
+	FGadgetProperty();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	EGadgetType GadgetType;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	int32 NumberOfGadgets;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	int32 PlacedGadgets;
+
+	int32 GetRemainingGadgets();
+	
+};
+
 class ADefaultPlayerCharacter;
+class ACombatPlayerState;
+
 UCLASS()
 class SNAILRELOADED_API AGadget : public AActor
 {
@@ -51,5 +81,8 @@ public:
 	void InitializeGadget(ACombatPlayerState* OwningState);
 	UFUNCTION(BlueprintPure)
 	bool IsGadgetInitialized();
+	UFUNCTION(BlueprintPure)
+	ACombatPlayerState* GetOwningPlayerState();
+
 
 };

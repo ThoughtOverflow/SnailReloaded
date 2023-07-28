@@ -3,8 +3,10 @@
 
 #include "Framework/Combat/CombatPlayerState.h"
 
+#include "HttpModule.h"
 #include "Framework/Combat/CombatGameState.h"
 #include "Framework/Combat/CombatPlayerController.h"
+#include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -65,6 +67,7 @@ void ACombatPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ACombatPlayerState, PlayerPlantCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerDefuseCount);
 	DOREPLIFETIME(ACombatPlayerState, PlayerColor);
+	DOREPLIFETIME(ACombatPlayerState, SelectedGadget);
 	DOREPLIFETIME(ACombatPlayerState, IsDeadPreviousRound);
 }
 
@@ -274,4 +277,73 @@ FLinearColor ACombatPlayerState::GetColorByEnum(EPlayerColor Color)
 {
 	if(Color == EPlayerColor::None) return FLinearColor::White;
 	return *ColorMap.Find(Color);
+}
+
+void ACombatPlayerState::AssignGadget(EGadgetType Gadget, int32 Amount)
+{
+	if(HasAuthority())
+	{
+		SelectedGadget = FGadgetProperty();
+		SelectedGadget.GadgetType = Gadget;
+		SelectedGadget.NumberOfGadgets = Amount;
+		OnRep_PlayerColor();
+	}else
+	{
+		Server_AssignGadget(Gadget, Amount);
+	}
+}
+
+void ACombatPlayerState::Server_AssignGadget_Implementation(EGadgetType Gadget, int32 Amount)
+{
+	AssignGadget(Gadget, Amount);
+}
+
+
+FGadgetProperty ACombatPlayerState::GetAssignedGadget()
+{
+	return SelectedGadget;
+}
+
+void ACombatPlayerState::OnRegisterScoreChangeComplete(FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+{
+	if(bSuccess)
+	{
+		TSharedPtr<FJsonObject> ResponseJson;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Res->GetContentAsString());
+		FJsonSerializer::Deserialize(Reader, ResponseJson);
+		if(ResponseJson->GetStringField("status") != "ERROR")
+		{
+			const TSharedPtr<FJsonObject>* OutObj;
+			ResponseJson->TryGetObjectField("msg", OutObj);
+			AccountData.PlayerLevel = OutObj->Get()->GetIntegerField("level");
+			AccountData.PlayerXP = OutObj->Get()->GetIntegerField("xp");
+			AccountData.UnopenedCrates = OutObj->Get()->GetIntegerField("crates");
+
+			API_GetPlayerAccountData();
+		}
+	}
+}
+
+void ACombatPlayerState::CopyProperties(APlayerState* PlayerState)
+{
+	Super::CopyProperties(PlayerState);
+}
+
+void ACombatPlayerState::API_RegisterScoreChange()
+{
+	if(!HasAuthority())
+	{
+		return;
+	}
+	if(ADefaultGameMode* DefaultGameMode = Cast<ADefaultGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+		FString RequestURL = GetActiveAPIAdress(TEXT("registerscore"));
+		Request->SetVerb("POST");
+		Request->SetURL(RequestURL);
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+		Request->SetContentAsString(FString::Printf(TEXT("token=%s&utoken=%s&uid=%s&val=%d"), *DefaultGameMode->APIToken, *GetPlayerAuthToken(), *GetPlayerEpicID(), GetScores()));
+		Request->OnProcessRequestComplete().BindUObject(this, &ACombatPlayerState::OnRegisterScoreChangeComplete);
+		Request->ProcessRequest();
+	}
 }

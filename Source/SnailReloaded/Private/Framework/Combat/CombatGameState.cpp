@@ -12,7 +12,6 @@
 #include "World/Objects/TeamPlayerStart.h"
 
 
-
 ACombatGameState::ACombatGameState()
 {
 	InitialPlayerMoney = 5000;
@@ -43,6 +42,17 @@ void ACombatGameState::OnRep_GamePhase()
 void ACombatGameState::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(HasAuthority())
+	{
+		for(auto& PlayerState : PlayerArray)
+		{
+			if(ACombatPlayerState* CombatPlayerState = Cast<ACombatPlayerState>(PlayerState))
+			{
+				AddGamePlayer(CombatPlayerState);
+			}
+		}	
+	}
 
 	if(AOverviewCamera* OverviewCamera = Cast<AOverviewCamera>(UGameplayStatics::GetActorOfClass(GetWorld(), AOverviewCamera::StaticClass())))
 	{
@@ -411,4 +421,34 @@ int32 ACombatGameState::GetSurviveReward() const
 void ACombatGameState::NotifyPlayerDeath(ACombatPlayerState* Player)
 {
 	OnPlayerDied.Broadcast();
+}
+
+void ACombatGameState::PlayAnnouncement(EAnnouncement Announcement)
+{
+	for(auto& PlayerState : GetAllGamePlayers())
+	{
+		if(ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(PlayerState->GetOwningController()))
+		{
+			if(Announcements.Contains(Announcement))
+			{
+				CombatPlayerController->Client_PlayAnnouncement(*Announcements.Find(Announcement));
+			}
+			
+			
+		}
+	}
+}
+
+void ACombatGameState::ApplyLevelScoring()
+{
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			for(auto& PlayerState : GetAllGamePlayers())
+			{
+				PlayerState->API_RegisterScoreChange();
+			}
+		}
+	}
 }

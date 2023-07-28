@@ -77,6 +77,8 @@ public:
 	UCameraComponent* CameraComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UArmoredHealthComponent* PlayerHealthComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	USkeletalMeshComponent* HeadgearMesh;
 
 	//Weapon system;
 
@@ -124,7 +126,7 @@ public:
 
 	//Gadgets
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AGadget> TurretClass;
+	FGadgetProperty AssignedGadget;
 
 protected:
 	// Called when the game starts or when spawned
@@ -275,6 +277,9 @@ protected:
 	void UseGadget();
 	UFUNCTION(Server, Reliable)
 	void Server_UseGadget();
+
+	UFUNCTION()
+	void OnRep_HeadgearMesh();
 
 public:	
 	// Called every frame
@@ -449,6 +454,12 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_SetRevealPlayer(ADefaultPlayerCharacter* Player, bool bReveal);
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyHeadgear(USkeletalMesh* NewMesh);
+
+	UPROPERTY(ReplicatedUsing = OnRep_HeadgearMesh)
+	USkeletalMesh* EquippedHeadgear;
 	
 };
 

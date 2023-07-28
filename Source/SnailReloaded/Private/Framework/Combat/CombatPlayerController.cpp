@@ -42,6 +42,17 @@ void ACombatPlayerController::OnPossess(APawn* InPawn)
 		ToggleTeamSelectionScreen(false);
 		CreatePlayerHud();
 		PlayerCharacter->ReloadPlayerBanner();
+		for(auto& Item : PlayerCharacter->GetPlayerState<ADefaultPlayerState>()->PlayerOwnedItems)
+		{
+			if(Item.bItemEquipped && Item.GroupId == TEXT("HEAD"))
+			{
+				if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+				{
+					PlayerCharacter->ApplyHeadgear(*CombatGameMode->HeadgearAssets.Find(Item.ItemId));
+				}
+				
+			}
+		}
 		PlayerCharacter->OnPlayerPossessed(this);
 		
 	}
@@ -112,6 +123,12 @@ void ACombatPlayerController::NotificationTimer_Callback()
 void ACombatPlayerController::Client_TriggerGameNotification_Implementation(ENotificationType Notification)
 {
 	TriggerGameNotification(Notification);
+}
+
+void ACombatPlayerController::Client_TriggerPlayerNotification_Implementation(const FText& NotificationText,
+	const FLinearColor& NotificationColor, float Time)
+{
+	TriggerPlayerNotification(NotificationText, NotificationColor, Time);
 }
 
 void ACombatPlayerController::CreatePlayerHud()
@@ -443,6 +460,43 @@ void ACombatPlayerController::TriggerGameNotification(ENotificationType Notifica
 	{
 		Client_TriggerGameNotification(Notification);
 	}
+}
+
+void ACombatPlayerController::TriggerPlayerNotification(const FText& NotificationText,
+	const FLinearColor& NotificationColor, float Time)
+{
+	if(IsLocalController())
+	{
+
+		if(PlayerHud)
+		{
+			if(UPlayerNotification* PlayerNotification = PlayerHud->CreatePlayerNotification(NotificationText, NotificationColor, Time))
+			{
+				CurrentPlayerNotifications.Add(PlayerNotification);
+			}
+		}
+		
+	}else
+	{
+		Client_TriggerPlayerNotification(NotificationText, NotificationColor, Time);
+	}
+}
+
+void ACombatPlayerController::RemovePlayerNotification(UPlayerNotification* PlayerNotification)
+{
+	if(IsLocalController())
+	{
+		if(CurrentPlayerNotifications.Contains(PlayerNotification))
+		{
+			PlayerNotification->RemoveFromParent();
+			CurrentPlayerNotifications.Remove(PlayerNotification);
+		}
+	}
+}
+
+void ACombatPlayerController::Client_PlayAnnouncement_Implementation(USoundBase* Announcement)
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), Announcement);
 }
 
 

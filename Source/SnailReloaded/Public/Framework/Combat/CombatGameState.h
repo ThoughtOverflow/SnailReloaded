@@ -30,14 +30,11 @@ struct FGamePhase;
 UCLASS()
 class SNAILRELOADED_API ACombatGameState : public ADefaultGameState
 {
+	
 public:
-
-
-private:
+	
 	GENERATED_BODY()
-
-public:
-
+	
 	ACombatGameState();
 
 
@@ -77,6 +74,11 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerDied OnPlayerDied;
 
+	
+	//Announcer:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Announcer")
+	TMap<EAnnouncement, USoundBase*> Announcements;
 
 protected:
 
@@ -193,8 +195,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void NotifyPlayerDeath(ACombatPlayerState* Player);
 
+	//Announcements:
+	UFUNCTION(BlueprintCallable)
+	void PlayAnnouncement(EAnnouncement Announcement);
 
-	
+	//Scoring methods:
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyLevelScoring();
 	
 };
 

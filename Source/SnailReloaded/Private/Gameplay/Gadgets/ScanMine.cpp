@@ -1,4 +1,3 @@
-// SnailReloaded - ThoughtOverflow 2023 - All rights reserved.
 
 
 #include "Gameplay/Gadgets/ScanMine.h"
@@ -6,9 +5,11 @@
 #include <SPIRV-Reflect/SPIRV-Reflect/include/spirv/unified1/spirv.h>
 
 #include "Components/SphereComponent.h"
+#include "Framework/Combat/CombatPlayerController.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Serialization/PropertyLocalizationDataGathering.h"
 
 AScanMine::AScanMine()
 {
@@ -29,6 +30,8 @@ AScanMine::AScanMine()
 	RootBox->OnComponentHit.AddDynamic(this, &AScanMine::OnBoxCollide);
 	bAllowScanning = false;
 	RootBox->SetNotifyRigidBodyCollision(true);
+	GadgetHealthComponent->DefaultObjectHealth = 20.f;
+	GadgetHealthComponent->SetObjectMaxHealth(20.f);
 }
 
 void AScanMine::Tick(float DeltaSeconds)
@@ -52,32 +55,44 @@ void AScanMine::Tick(float DeltaSeconds)
 			{
 				if(HitResult.GetActor() == this && Cast<ACombatPlayerState>(PlayerCharacter->GetPlayerState())->GetTeam() != GetOwningTeam())
 				{
-					//We hit the player - it is in line of sight
-					UE_LOG(LogTemp, Warning, TEXT("Revealed: %s"), *PlayerCharacter->GetName());
-					// PlayerCharacter->SetRevealedByMine(true);
-					if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+					if(!DetectedPlayers.Contains(Actor))
 					{
-						for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+						//We hit the player - it is in line of sight
+						UE_LOG(LogTemp, Warning, TEXT("Revealed: %s"), *PlayerCharacter->GetName());
+						// PlayerCharacter->SetRevealedByMine(true);
+						//Player Notification:
+						Cast<ACombatPlayerController>(PlayerCharacter->GetController())->TriggerPlayerNotification( FText::FromString(TEXT("detected")), FLinearColor(0.7f, 0.5f, 0.f, 0.75f), 3.f);
+						Cast<ACombatPlayerController>(OwningPlayerState->GetOwningController())->TriggerPlayerNotification( FText::FromString(TEXT("mine triggered")), FLinearColor(0.16f, 0.64f, 0.7f, 0.75f), 3.f);
+						//---
+						if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 						{
-							if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+							for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
 							{
-								DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, true);
+								if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+								{
+									DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, true);
+								}
 							}
 						}
+						DetectedPlayers.Add(PlayerCharacter);
 					}
 				}else
 				{
-					//Set reveal to false;
-					// PlayerCharacter->SetRevealedByMine(false);
-					if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+					if(DetectedPlayers.Contains(Actor))
 					{
-						for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+						//Set reveal to false;
+						// PlayerCharacter->SetRevealedByMine(false);
+						if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 						{
-							if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+							for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
 							{
-								DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+								if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+								{
+									DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+								}
 							}
 						}
+						DetectedPlayers.Remove(PlayerCharacter);
 					}
 				}
 			}
@@ -87,9 +102,22 @@ void AScanMine::Tick(float DeltaSeconds)
 	
 }
 
-void AScanMine::Initialize()
+void AScanMine::InitializeGadget(ACombatPlayerState* OwningPlayer)
 {
-	bAllowScanning = true;
+	Super::InitializeGadget(OwningPlayer);
+	RootBox->SetSimulatePhysics(true);
+	RootBox->AddImpulse(OwningPlayer->GetPawn()->GetControlRotation().Vector() * 1200.f, NAME_None, true);
+	if(HasAuthority())
+	{
+		if(FMath::IsNearlyZero(BootupTime))
+		{
+			bAllowScanning = true;
+		}else
+		{
+			GetWorldTimerManager().SetTimer(BootupTimer, this, &AScanMine::ScanInitialize_Callback, BootupTime);
+		}
+	}
+	
 }
 
 void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -99,17 +127,21 @@ void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	{
 		if(ADefaultPlayerCharacter* PlayerCharacter = Cast<ADefaultPlayerCharacter>(OtherActor))
 		{
-			//Set reveal to false;
-			// PlayerCharacter->SetRevealedByMine(false);
-			if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
+			if(DetectedPlayers.Contains(PlayerCharacter))
 			{
-				for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
+				//Set reveal to false;
+				// PlayerCharacter->SetRevealedByMine(false);
+				if(AStandardCombatGameState* StandardCombatGameState = Cast<AStandardCombatGameState>(GetWorld()->GetGameState()))
 				{
-					if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+					for(auto& State : StandardCombatGameState->GetAllPlayersOfTeam(GetOwningTeam()))
 					{
-						DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+						if(ADefaultPlayerCharacter* DefaultPlayerCharacter = Cast<ADefaultPlayerCharacter>(State->GetPawn()))
+						{
+							DefaultPlayerCharacter->Client_SetRevealPlayer(PlayerCharacter, false);
+						}
 					}
 				}
+				DetectedPlayers.Remove(PlayerCharacter);
 			}
 		}
 	}
@@ -118,8 +150,22 @@ void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 void AScanMine::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
+	RootBox->SetNotifyRigidBodyCollision(false);
 	RootBox->SetSimulatePhysics(false);
-	NormalImpulse.Normalize();
-	SetActorRotation(UKismetMathLibrary::MakeRotFromZ(NormalImpulse));
+	FVector StartV = GetActorUpVector();
+	FVector EndV = Hit.ImpactNormal;
+	FQuat RotationQ = FQuat::FindBetweenNormals(StartV, EndV);
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *RotationQ.Rotator().ToString());
+	SetActorLocation(Hit.ImpactPoint + Hit.ImpactNormal * RootBox->GetScaledBoxExtent().Z);
+	SetActorRotation(RotationQ.Rotator());
 }
+
+void AScanMine::ScanInitialize_Callback()
+{
+	if(HasAuthority())
+	{
+		bAllowScanning = true;
+	}
+}
+
 
