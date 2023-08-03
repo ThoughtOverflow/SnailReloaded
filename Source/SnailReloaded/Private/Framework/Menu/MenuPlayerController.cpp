@@ -234,11 +234,12 @@ void AMenuPlayerController::OnServerSearchCompleteCallback(TArray<FOnlineSession
 		for(FOnlineSessionSearchResult& Result : Results)
 		{
 			FServerEntry ServerEntry;
-			ServerEntry.ServerName = Result.Session.OwningUserName;
 			Result.Session.SessionSettings.Get(FName("BISAUTHSERVER"), ServerEntry.bAuthenticatedSession);
+			Result.Session.SessionSettings.Get(SEARCH_KEYWORDS, ServerEntry.ServerName);
 			ServerEntry.ServerPing = Result.PingInMs;
 			ServerEntry.CurrentPlayers = Result.Session.SessionSettings.NumPublicConnections - Result.Session.NumOpenPublicConnections;
 			ServerEntry.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
+			ServerEntry.OnlineSessionSearchResult = Result;
 			ServerBrowserWidget->Servers.Add(ServerEntry);
 		}
 		ServerBrowserWidget->RefreshBrowserWidget();

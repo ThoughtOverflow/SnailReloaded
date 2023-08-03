@@ -253,5 +253,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void HostServer();
+
+	
+	void JoinFoundSession(const FName& SessionName, const FOnlineSessionSearchResult& SearchResult);
 	
 };

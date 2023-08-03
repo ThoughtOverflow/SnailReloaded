@@ -108,14 +108,6 @@ void USnailGameInstance::Callback_SearchForSessions(bool bSuccess)
 		if(SessionSearchSettings->SearchResults.Num() > 0)
 		{
 			OnServerSearchComplete.Broadcast(SessionSearchSettings->SearchResults);
-			// if(SearchResult.Session.SessionSettings.bIsDedicated||true)
-			// {
-			// 	if(OnlineSubsystem)
-			// 	{
-			// 		OnlineSubsystem->GetSessionInterface()->OnJoinSessionCompleteDelegates.AddUObject(this, &USnailGameInstance::OnJoinComplete);
-			// 		OnlineSubsystem->GetSessionInterface()->JoinSession(*InstanceNetId.GetUniqueNetId(), FName(*GameServerName), SearchResult);
-			// 	}	
-			// }
 		}
 		
 	}else
@@ -570,4 +562,12 @@ void USnailGameInstance::HostServer()
 	CreateServerSession();
 }
 
+void USnailGameInstance::JoinFoundSession(const FName& SessionName, const FOnlineSessionSearchResult& SearchResult)
+{
+	if(OnlineSubsystem)
+	{
+		OnlineSubsystem->GetSessionInterface()->OnJoinSessionCompleteDelegates.AddUObject(this, &USnailGameInstance::OnJoinComplete);
+		OnlineSubsystem->GetSessionInterface()->JoinSession(*InstanceNetId.GetUniqueNetId(), FName(*GameServerName), SearchResult);
+	}
+}
 

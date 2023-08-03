@@ -3,9 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OnlineSessionSettings.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/ScrollBox.h"
 #include "ServerBrowserWidget.generated.h"
 
+class UServerEntryWidget;
 USTRUCT(BlueprintType)
 struct FServerEntry
 {
@@ -25,6 +28,7 @@ public:
 	bool bAuthenticatedSession;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	int32 ServerPing;
+	FOnlineSessionSearchResult OnlineSessionSearchResult;
 	
 };
 
@@ -38,10 +42,16 @@ class SNAILRELOADED_API UServerBrowserWidget : public UUserWidget
 
 public:
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+	UScrollBox* ScrollBox;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UServerEntryWidget> ServerEntryClass;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TArray<FServerEntry> Servers;
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION()
 	void RefreshBrowserWidget();
 	
 };
