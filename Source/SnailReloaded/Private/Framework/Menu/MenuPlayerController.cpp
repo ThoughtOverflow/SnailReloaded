@@ -145,6 +145,10 @@ void AMenuPlayerController::ToggleServerBrowserWidget(bool bOpen)
 				{
 					ToggleMainMenuWidget(false);
 					ServerBrowserWidget->AddToViewport();
+					if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
+					{
+						SnailGameInstance->SearchForSessions();
+					}
 				}
 			}else
 			{
@@ -224,7 +228,21 @@ void AMenuPlayerController::OnCaseOpeningAnimationFinished()
 
 void AMenuPlayerController::OnServerSearchCompleteCallback(TArray<FOnlineSessionSearchResult>& Results)
 {
-	
+	if(ServerBrowserWidget)
+	{
+		ServerBrowserWidget->Servers.Empty();
+		for(FOnlineSessionSearchResult& Result : Results)
+		{
+			FServerEntry ServerEntry;
+			ServerEntry.ServerName = Result.Session.OwningUserName;
+			Result.Session.SessionSettings.Get(FName("BISAUTHSERVER"), ServerEntry.bAuthenticatedSession);
+			ServerEntry.ServerPing = Result.PingInMs;
+			ServerEntry.CurrentPlayers = Result.Session.SessionSettings.NumPublicConnections - Result.Session.NumOpenPublicConnections;
+			ServerEntry.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
+			ServerBrowserWidget->Servers.Add(ServerEntry);
+		}
+		ServerBrowserWidget->RefreshBrowserWidget();
+	}
 }
 
 void AMenuPlayerController::Client_ToggleSkinOpenMenu_Implementation(bool bOpen)
