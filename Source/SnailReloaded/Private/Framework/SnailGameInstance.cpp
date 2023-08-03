@@ -113,7 +113,7 @@ void USnailGameInstance::PostDedicatedSearch(bool bSuccess)
 				if(OnlineSubsystem)
 				{
 					OnlineSubsystem->GetSessionInterface()->OnJoinSessionCompleteDelegates.AddUObject(this, &USnailGameInstance::OnJoinComplete);
-					OnlineSubsystem->GetSessionInterface()->JoinSession(*GetFirstGamePlayer()->GetPreferredUniqueNetId(), FName(*GameServerName), SearchResult);
+					OnlineSubsystem->GetSessionInterface()->JoinSession(*InstanceNetId.GetUniqueNetId(), FName(*GameServerName), SearchResult);
 				}	
 			}
 		}
@@ -200,6 +200,7 @@ void USnailGameInstance::CreateLocalCopyOfSavegame(TArray<uint8>& downloadedCont
 				default: ;
 				}
 				SaveSavegame(NewPlayerConfig, SlotName);
+				UploadSavegameToCloud(Category, FileName);
 			}
 		}
 	}
@@ -233,7 +234,7 @@ void USnailGameInstance::UploadSavegameToCloud(ESavegameCategory Category, FStri
 			{
 				UE_LOG(LogTemp, Warning, TEXT("File Size: %d"), saveContents.Num());
 				UserCloud->OnWriteUserFileCompleteDelegates.AddUObject(this, &USnailGameInstance::OnPlayerConfigUploadFinished);
-				UserCloud->WriteUserFile(*GetFirstGamePlayer()->GetPreferredUniqueNetId(), SavegameName, saveContents);	
+				UserCloud->WriteUserFile(*InstanceNetId.GetUniqueNetId(), SavegameName, saveContents);	
 			}
 		}
 	}
@@ -251,6 +252,7 @@ void USnailGameInstance::OnLoginComplete(int ControllerIndex, bool bWasSuccessfu
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Found full ID: %s"), *UserId.ToString());
 		MainStatusMessage = TEXT("Login complete");
 		//Get the settings.
+		InstanceNetId = UserId;
 		GetSavegame(UserId, ESavegameCategory::SETTINGS);
 		EpicLoginComplete.Broadcast();
 				

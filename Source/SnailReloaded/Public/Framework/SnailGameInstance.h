@@ -66,6 +66,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void LoadGameSettings();
+
+	UPROPERTY()
+	FUniqueNetIdRepl InstanceNetId;
 	
 public:
 
