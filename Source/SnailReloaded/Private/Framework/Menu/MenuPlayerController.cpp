@@ -116,13 +116,13 @@ void AMenuPlayerController::ToggleOutfitMenu(bool bOpen)
 			{
 				if(!OutfitSelectionWidget->IsInViewport())
 				{
-					ToggleMenuWidget(OutfitSelectionWidget, true);
+					OutfitSelectionWidget->AddToViewport();
 				}
 			}else
 			{
 				if(OutfitSelectionWidget->IsInViewport())
 				{
-					ToggleMenuWidget(OutfitSelectionWidget, false);
+					OutfitSelectionWidget->RemoveFromParent();
 				}
 			}
 		}
@@ -144,14 +144,14 @@ void AMenuPlayerController::ToggleServerBrowserWidget(bool bOpen)
 				if(!ServerBrowserWidget->IsInViewport())
 				{
 					ToggleMainMenuWidget(false);
-					ToggleMenuWidget(ServerBrowserWidget, true);
+					ServerBrowserWidget->AddToViewport();
 				}
 			}else
 			{
 				if(ServerBrowserWidget->IsInViewport())
 				{
 					ToggleMainMenuWidget(true);
-					ToggleMenuWidget(ServerBrowserWidget, false);
+					ServerBrowserWidget->RemoveFromParent();
 				}
 			}
 		}
@@ -264,13 +264,13 @@ void AMenuPlayerController::ToggleSkinOpenMenu(bool bOn)
 			{
 				if(!OpeningWidget->IsInViewport())
 				{
-					ToggleMenuWidget(OpeningWidget, true);
+					OpeningWidget->AddToViewport();
 				}
 			}else
 			{
 				if(OpeningWidget->IsInViewport())
 				{
-					ToggleMenuWidget(OpeningWidget, false);
+					OpeningWidget->RemoveFromParent();
 				}
 			}
 		}
