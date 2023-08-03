@@ -4,6 +4,7 @@
 #include "Framework/Menu/MenuPlayerController.h"
 
 #include "Framework/DefaultPlayerState.h"
+#include "Framework/SnailGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/Objects/ComputerCase.h"
 #include "World/Objects/Holostand.h"
@@ -98,6 +99,8 @@ void AMenuPlayerController::BeginPlay()
 	ToggleMainMenuWidget(true);
 	SetInputMode(FInputModeGameAndUI());
 	SetShowMouseCursor(true);
+
+	Cast<USnailGameInstance>(GetGameInstance())->OnServerSearchComplete.AddUObject(this, &AMenuPlayerController::OnServerSearchCompleteCallback);
 	
 }
 
@@ -129,24 +132,26 @@ void AMenuPlayerController::ToggleOutfitMenu(bool bOpen)
 	}
 }
 
-void AMenuPlayerController::ToggleSkinOpenMenu(bool bOpen)
+void AMenuPlayerController::ToggleServerBrowserWidget(bool bOpen)
 {
 	if(IsLocalController())
 	{
-		if(!OpeningWidget && OpeningWidgetClass) OpeningWidget = CreateWidget<USkinOpeningWidget>(this, OpeningWidgetClass);
-		if(OpeningWidget)
+		if(!ServerBrowserWidget && ServerBrowserWidgetClass) ServerBrowserWidget = CreateWidget<UServerBrowserWidget>(this, ServerBrowserWidgetClass);
+		if(ServerBrowserWidget)
 		{
 			if(bOpen)
 			{
-				if(!OpeningWidget->IsInViewport())
+				if(!ServerBrowserWidget->IsInViewport())
 				{
-					ToggleMenuWidget(OpeningWidget, true);
+					ToggleMainMenuWidget(false);
+					ToggleMenuWidget(ServerBrowserWidget, true);
 				}
 			}else
 			{
-				if(OpeningWidget->IsInViewport())
+				if(ServerBrowserWidget->IsInViewport())
 				{
-					ToggleMenuWidget(OpeningWidget, false);
+					ToggleMainMenuWidget(true);
+					ToggleMenuWidget(ServerBrowserWidget, false);
 				}
 			}
 		}
@@ -154,6 +159,11 @@ void AMenuPlayerController::ToggleSkinOpenMenu(bool bOpen)
 	{
 		Client_ToggleSkinOpenMenu(bOpen);
 	}
+}
+
+void AMenuPlayerController::Client_ToggleServerBrowserWidget_Implementation(bool bOpen)
+{
+	ToggleServerBrowserWidget(bOpen);
 }
 
 void AMenuPlayerController::OpenCase()
@@ -212,6 +222,11 @@ void AMenuPlayerController::OnCaseOpeningAnimationFinished()
 	}
 }
 
+void AMenuPlayerController::OnServerSearchCompleteCallback(TArray<FOnlineSessionSearchResult>& Results)
+{
+	
+}
+
 void AMenuPlayerController::Client_ToggleSkinOpenMenu_Implementation(bool bOpen)
 {
 	ToggleSkinOpenMenu(bOpen);
@@ -235,6 +250,33 @@ void AMenuPlayerController::ToggleMainMenuWidget(bool bOn)
 	}else
 	{
 		Client_ToggleMainMenuWidget(bOn);
+	}
+}
+
+void AMenuPlayerController::ToggleSkinOpenMenu(bool bOn)
+{
+	if(IsLocalController())
+	{
+		if(!OpeningWidget && OpeningWidgetClass) OpeningWidget = CreateWidget<USkinOpeningWidget>(this, OpeningWidgetClass);
+		if(OpeningWidget)
+		{
+			if(bOn)
+			{
+				if(!OpeningWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OpeningWidget, true);
+				}
+			}else
+			{
+				if(OpeningWidget->IsInViewport())
+				{
+					ToggleMenuWidget(OpeningWidget, false);
+				}
+			}
+		}
+	}else
+	{
+		Client_ToggleServerBrowserWidget(bOn);
 	}
 }
 

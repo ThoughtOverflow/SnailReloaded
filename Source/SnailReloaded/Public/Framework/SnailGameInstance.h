@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "OnlineSubsystem.h"
 #include "GameFramework/SaveGame.h"
+#include "OnlineSessionSettings.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "SnailGameInstance.generated.h"
 
@@ -13,6 +14,7 @@
 
 class USettingsSavegame;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEpicLoginComplete);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnServerSearchComplete, TArray<FOnlineSessionSearchResult>& FoundServers);
 
 class FOnlineSessionSearch;
 DECLARE_LOG_CATEGORY_EXTERN(LogOnlineGameSession, Log, All);
@@ -52,6 +54,8 @@ public:
 	bool bUseAlternateAPI;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta = (EditCondition = bUseAlternateAPI))
 	FString AlternateAPIWebAddress;
+
+	FOnServerSearchComplete OnServerSearchComplete;
 	
 protected:
 	
@@ -148,7 +152,7 @@ protected:
 	 * @brief Callback for server search process.
 	 * @param bSuccess Whether the search was successful or not.
 	 */
-	void PostDedicatedSearch(bool bSuccess);
+	void Callback_SearchForSessions(bool bSuccess);
 	/**
 	 * @brief Get the specified player's configuration savegame.
 	 * @param NetId The player's specified net identifier.
@@ -219,7 +223,7 @@ public:
 	 * @brief Search for a server and connect to the first available instance.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void SearchAndConnectToMasterServer();
+	void SearchForSessions();
 
 	/**
 	 * @brief Getter for player epic ID
@@ -238,7 +242,7 @@ public:
 	/**
 	 * @brief Host a session. (Either dedicated or listen)
 	 */
-	void CreateDedicatedServerSession();
+	void CreateServerSession();
 
 	UFUNCTION(BlueprintCallable)
 	void SetSettingsSavegameLoaded(bool bLoaded);
@@ -249,7 +253,5 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void HostServer();
-	UFUNCTION(BlueprintCallable)
-	void JoinFirstServer();
 	
 };

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Framework/DefaultPlayerController.h"
 #include "Gameplay/Player/MenuPlayer.h"
+#include "Gameplay/UI/ServerBrowserWidget.h"
 #include "Gameplay/UI/SkinOpeningWidget.h"
 #include "MenuPlayerController.generated.h"
 
@@ -48,6 +49,10 @@ public:
 	TSubclassOf<USkinOpeningWidget> OpeningWidgetClass;
 	UPROPERTY(BlueprintReadWrite)
 	USkinOpeningWidget* OpeningWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UServerBrowserWidget> ServerBrowserWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UServerBrowserWidget* ServerBrowserWidget;
 
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI input settings")
@@ -79,6 +84,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleMainMenuWidget(bool bOn);
+	UFUNCTION(BlueprintCallable)
+	void ToggleServerBrowserWidget(bool bOn);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void ToggleOutfitMenu(bool bOpen);
@@ -88,6 +95,8 @@ public:
 	void Client_ToggleOutfitMenu(bool bOpen);
 	UFUNCTION(Client, Reliable)
 	void Client_ToggleSkinOpenMenu(bool bOpen);
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleServerBrowserWidget(bool bOpen);
 
 	UFUNCTION(BlueprintCallable)
 	void OpenCase();
@@ -95,5 +104,7 @@ public:
 	void CrateDataReceived(const TSharedPtr<FJsonObject>* Data);
 	UFUNCTION(BlueprintCallable)
 	void OnCaseOpeningAnimationFinished();
+		
+	void OnServerSearchCompleteCallback(TArray<FOnlineSessionSearchResult>& Results);
 	
 };

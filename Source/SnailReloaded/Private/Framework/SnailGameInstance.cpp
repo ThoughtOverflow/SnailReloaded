@@ -58,7 +58,7 @@ void USnailGameInstance::QueryCommandLineArguments()
 
 void USnailGameInstance::SetupDedicatedServer()
 {
-	CreateDedicatedServerSession();
+	CreateServerSession();
 }
 
 void USnailGameInstance::SetupGameClient()
@@ -100,22 +100,22 @@ void USnailGameInstance::SetupDevClient(int32 id)
 	}
 }
 
-void USnailGameInstance::PostDedicatedSearch(bool bSuccess)
+void USnailGameInstance::Callback_SearchForSessions(bool bSuccess)
 {
 	if(bSuccess)
 	{
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Num of sessions: %d"), SessionSearchSettings->SearchResults.Num());
 		if(SessionSearchSettings->SearchResults.Num() > 0)
 		{
-			FOnlineSessionSearchResult& SearchResult = SessionSearchSettings->SearchResults[0];
-			if(SearchResult.Session.SessionSettings.bIsDedicated||true)
-			{
-				if(OnlineSubsystem)
-				{
-					OnlineSubsystem->GetSessionInterface()->OnJoinSessionCompleteDelegates.AddUObject(this, &USnailGameInstance::OnJoinComplete);
-					OnlineSubsystem->GetSessionInterface()->JoinSession(*InstanceNetId.GetUniqueNetId(), FName(*GameServerName), SearchResult);
-				}	
-			}
+			OnServerSearchComplete.Broadcast(SessionSearchSettings->SearchResults);
+			// if(SearchResult.Session.SessionSettings.bIsDedicated||true)
+			// {
+			// 	if(OnlineSubsystem)
+			// 	{
+			// 		OnlineSubsystem->GetSessionInterface()->OnJoinSessionCompleteDelegates.AddUObject(this, &USnailGameInstance::OnJoinComplete);
+			// 		OnlineSubsystem->GetSessionInterface()->JoinSession(*InstanceNetId.GetUniqueNetId(), FName(*GameServerName), SearchResult);
+			// 	}	
+			// }
 		}
 		
 	}else
@@ -334,17 +334,15 @@ void USnailGameInstance::CheckForTravelReady()
 	}
 }
 
-void USnailGameInstance::SearchAndConnectToMasterServer()
+void USnailGameInstance::SearchForSessions()
 {
 	if(OnlineSubsystem)
 	{
 		if(IOnlineSessionPtr SessionManager = OnlineSubsystem->GetSessionInterface())
 		{
 			SessionSearchSettings = MakeShareable(new FOnlineSessionSearch());
-
 			SessionSearchSettings->bIsLanQuery = false;
-
-			SessionManager->OnFindSessionsCompleteDelegates.AddUObject(this, &USnailGameInstance::PostDedicatedSearch);
+			SessionManager->OnFindSessionsCompleteDelegates.AddUObject(this, &USnailGameInstance::Callback_SearchForSessions);
 			SessionManager->FindSessions(0, SessionSearchSettings.ToSharedRef());
 		}
 	}
@@ -402,7 +400,7 @@ void USnailGameInstance::OnJoinComplete(FName SessionName, EOnJoinSessionComplet
 	}
 }
 
-void USnailGameInstance::CreateDedicatedServerSession()
+void USnailGameInstance::CreateServerSession()
 {
 	if(OnlineSubsystem)
 	{
@@ -569,10 +567,7 @@ void USnailGameInstance::SetApiInventoryDataReady(bool bReady)
 
 void USnailGameInstance::HostServer()
 {
-	CreateDedicatedServerSession();
+	CreateServerSession();
 }
 
-void USnailGameInstance::JoinFirstServer()
-{
-	SearchAndConnectToMasterServer();
-}
+
