@@ -199,6 +199,10 @@ void ADefaultPlayerState::OnLoginComplete()
 	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
 	{
 		SnailGameInstance->MainStatusMessage = TEXT("Query API data");
+		if(SnailGameInstance)
+		{
+			SetPlayerName(SnailGameInstance->GetAccountUsername());
+		}
 		API_ValidateUser();
 	}
 
@@ -366,5 +370,6 @@ void ADefaultPlayerState::CopyProperties(APlayerState* PlayerState)
 	{
 		DefaultPlayerState->AccountData = AccountData;
 		DefaultPlayerState->PlayerOwnedItems = PlayerOwnedItems;
+		DefaultPlayerState->SetPlayerName(GetPlayerName());
 	}
 }

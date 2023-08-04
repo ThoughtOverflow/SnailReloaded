@@ -261,7 +261,10 @@ void USnailGameInstance::DedicatedSessionCreated(FName SessionName, bool bWasSuc
 	{
 		UE_LOG(LogOnlineGameSession, Log, TEXT("Created dedicated session (%s)"), *SessionName.ToString());
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Registered as authenticated server: %d"), bIsAuthServer);
-		GetWorld()->ServerTravel(TEXT("Shipyard_v1?listen"));
+		// EnableListenServer(true);
+		// GetWorld()->GetGameInstance()->EnableListenServer(true);
+		GetWorld()->ServerTravel(TEXT("/Game/Levels/Shipyard_v1?Listen"), false, false);
+		
 	}else
 	{
 		UE_LOG(LogOnlineGameSession, Error, TEXT("Failed to create dedicated session!"));
@@ -569,5 +572,14 @@ void USnailGameInstance::JoinFoundSession(const FName& SessionName, const FOnlin
 		OnlineSubsystem->GetSessionInterface()->OnJoinSessionCompleteDelegates.AddUObject(this, &USnailGameInstance::OnJoinComplete);
 		OnlineSubsystem->GetSessionInterface()->JoinSession(*InstanceNetId.GetUniqueNetId(), FName(*GameServerName), SearchResult);
 	}
+}
+
+FString USnailGameInstance::GetAccountUsername()
+{
+	if(OnlineSubsystem)
+	{
+		return OnlineSubsystem->GetIdentityInterface()->GetPlayerNickname(0);
+	}
+	return "";
 }
 

@@ -256,5 +256,8 @@ public:
 
 	
 	void JoinFoundSession(const FName& SessionName, const FOnlineSessionSearchResult& SearchResult);
+
+	UFUNCTION(BlueprintPure)
+	FString GetAccountUsername();
 	
 };
