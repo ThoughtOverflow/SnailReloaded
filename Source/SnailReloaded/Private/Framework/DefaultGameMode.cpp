@@ -18,3 +18,5 @@ ADefaultGameMode::ADefaultGameMode()
 {
 	bUseSeamlessTravel = true;
 }
+
+

@@ -261,8 +261,7 @@ void USnailGameInstance::DedicatedSessionCreated(FName SessionName, bool bWasSuc
 	{
 		UE_LOG(LogOnlineGameSession, Log, TEXT("Created dedicated session (%s)"), *SessionName.ToString());
 		UE_LOG(LogOnlineGameSession, Warning, TEXT("Registered as authenticated server: %d"), bIsAuthServer);
-		// EnableListenServer(true);
-		// GetWorld()->GetGameInstance()->EnableListenServer(true);
+		EnableListenServer(true, 7777);
 		GetWorld()->ServerTravel(TEXT("/Game/Levels/Shipyard_v1?Listen"), false, false);
 		
 	}else

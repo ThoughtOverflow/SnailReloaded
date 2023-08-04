@@ -41,7 +41,7 @@ public:
 	
 };
 
-UCLASS(Config = ServerSettings)
+UCLASS(Config = "Game")
 class SNAILRELOADED_API ADefaultGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
@@ -60,7 +60,7 @@ public:
 	TMap<FString, FOutfitData> RegisteredOutfits;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TMap<FString, USkeletalMesh*> HeadgearAssets;
-	
+
 
 	
 };
