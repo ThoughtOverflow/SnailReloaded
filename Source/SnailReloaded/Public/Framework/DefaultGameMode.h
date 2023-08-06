@@ -41,7 +41,7 @@ public:
 	
 };
 
-UCLASS(Config = "Game")
+UCLASS(Config = ServerSettings)
 class SNAILRELOADED_API ADefaultGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
