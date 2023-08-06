@@ -6,9 +6,11 @@
 #include "Blueprint/UserWidget.h"
 #include "Gameplay/Player/DefaultPlayerCharacter.h"
 #include "Gameplay/UI/PauseWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "Kismet/KismetTextLibrary.h"
+#include "World/Objects/SkinDisplayActor.h"
 
 FMenuWidgetData::FMenuWidgetData()
 {
@@ -90,6 +92,7 @@ void ADefaultPlayerController::TogglePauseMenu(bool bOpen)
 	}
 }
 
+
 void ADefaultPlayerController::Client_TogglePauseMenu_Implementation(bool bOpen)
 {
 	TogglePauseMenu(bOpen);
@@ -130,7 +133,7 @@ void ADefaultPlayerController::OnCloseCurrentlyOpenMenu(const FInputActionInstan
 
 void ADefaultPlayerController::ResetNonMenuInputMode()
 {
-	SetInputMode(FInputModeUIOnly());
+	SetInputMode(FInputModeGameAndUI());
 }
 
 bool ADefaultPlayerController::IsAnyMenuOpen()
@@ -197,4 +200,31 @@ void ADefaultPlayerController::ToggleMenuWidget(UUserWidget* MenuWidget, bool bO
 		}
 	}
 	
+}
+
+
+void ADefaultPlayerController::ToggleGameInitWidget(bool bOn)
+{
+	if(IsLocalController())
+	{
+		if(GameInitWidgetClass && !GameInitWidget) GameInitWidget = CreateWidget(this, GameInitWidgetClass);
+		if(GameInitWidget)
+		{
+			if(bOn)
+			{
+				GameInitWidget->AddToViewport();
+			}else
+			{
+				GameInitWidget->RemoveFromParent();
+			}
+		}
+	}else
+	{
+		Client_ToggleGameInitWidget(bOn);
+	}
+}
+
+void ADefaultPlayerController::Client_ToggleGameInitWidget_Implementation(bool bOn)
+{
+	ToggleGameInitWidget(bOn);
 }

@@ -6,8 +6,11 @@
 #include "CombatPlayerState.h"
 #include "Components/ArmoredHealthComponent.h"
 #include "Framework/DefaultGameMode.h"
+#include "Gameplay/Gadgets/Gadget.h"
 #include "CombatGameMode.generated.h"
 
+class USoundCue;
+enum class EGadgetType : uint8;
 class AWeaponBase;
 class ADefaultPlayerCharacter;
 struct FDamageRequest;
@@ -25,6 +28,14 @@ enum class EGamePhase : uint8
 	PostPlant = 3,
 	EndPhase = 4
 };
+
+UENUM(BlueprintType)
+enum class EAnnouncement : uint8
+{
+	BombPlanted = 0,
+	BombDefused = 1
+};
+
 
 USTRUCT(BlueprintType)
 struct FGamePhase
@@ -48,6 +59,8 @@ class SNAILRELOADED_API ACombatGameMode : public ADefaultGameMode
 {
 	GENERATED_BODY()
 
+friend class ACombatGameState;
+	
 public:
 
 	ACombatGameMode();
@@ -60,6 +73,9 @@ protected:
 	TMap<EItemIdentifier, TSubclassOf<AWeaponBase>> WeaponIdTable;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Buy system")
 	TArray<FShieldProperties> ShieldDataTable;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gadgets")
+	TMap<EGadgetType, TSubclassOf<AGadget>> GadgetBlueprints;
 
 	FShieldProperties* FindShieldDataByType(EItemIdentifier ShieldIdentifier);
 	
@@ -118,7 +134,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void ProcessPlayerDeath(ACombatPlayerState* PlayerState);
 
-	//Color:
+	//Gadgets:
 
+	UFUNCTION(BlueprintCallable)
+	bool SpawnGadget(EGadgetType GadgetType, ADefaultPlayerCharacter* SpawningPlayer);
+	
 	
 };

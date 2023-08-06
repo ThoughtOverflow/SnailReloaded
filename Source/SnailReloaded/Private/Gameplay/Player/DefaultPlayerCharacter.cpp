@@ -20,6 +20,8 @@
 #include "Framework/Combat/Standard/StandardCombatGameMode.h"
 #include "Framework/Combat/Standard/StandardCombatGameState.h"
 #include "Framework/Savegames/SettingsSavegame.h"
+#include "Gameplay/Gadgets/ScanMine.h"
+#include "Gameplay/Gadgets/Turret.h"
 #include "Gameplay/UI/HudData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -66,7 +68,12 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 
 	InteractionCastDistance = 1000.f;
 	PlayerInteractionData = FInteractionData();
-	
+	AssignedGadget = FGadgetProperty();
+
+	HeadgearMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HeadgearMesh"));
+	HeadgearMesh->SetupAttachment(GetMesh(), FName("headgear_socket"));
+	HeadgearMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HeadgearMesh->SetOwnerNoSee(true);
 	
 }
 
@@ -101,6 +108,7 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsInDefuseRadius);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowDefuse);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsBombEquipped);
+	DOREPLIFETIME(ADefaultPlayerCharacter, EquippedHeadgear);
 }
 
 void ADefaultPlayerCharacter::FellOutOfWorld(const UDamageType& dmgType)
@@ -195,7 +203,10 @@ void ADefaultPlayerCharacter::Look(const FInputActionInstance& Action)
 	float SensMultiplier = 1.f;
 	if(USnailGameInstance* SnailGameInstance = Cast<USnailGameInstance>(GetGameInstance()))
 	{
-		SensMultiplier = SnailGameInstance->SavedSettings->MouseSensitivity * GOLDEN_SENS;
+		if(SnailGameInstance->SavedSettings)
+		{
+			SensMultiplier = SnailGameInstance->SavedSettings->MouseSensitivity * GOLDEN_SENS;	
+		}
 	}
 	
 	if(LookVector.X != 0.f)
@@ -358,6 +369,14 @@ void ADefaultPlayerCharacter::HandleDropInput(const FInputActionInstance& Action
 	if(Action.GetValue().Get<bool>())
 	{
 		DropCurrentWeapon();
+	}
+}
+
+void ADefaultPlayerCharacter::HandleSpecialGadgetInput(const FInputActionInstance& Action)
+{
+	if(Action.GetValue().Get<bool>())
+	{
+		UseGadget();
 	}
 }
 
@@ -641,6 +660,28 @@ void ADefaultPlayerCharacter::DropBomb()
 	}
 }
 
+void ADefaultPlayerCharacter::ApplyHeadgear(USkeletalMesh* NewMesh)
+{
+	if(HasAuthority())
+	{
+		EquippedHeadgear = NewMesh;
+		OnRep_HeadgearMesh();
+	}
+}
+
+void ADefaultPlayerCharacter::Client_SetRevealPlayer_Implementation(ADefaultPlayerCharacter* Player, bool bReveal)
+{
+	if(bReveal)
+	{
+		Player->GetMesh()->SetRenderCustomDepth(true);
+		Player->GetMesh()->CustomDepthStencilValue = 1;
+	}else
+	{
+		Player->GetMesh()->SetRenderCustomDepth(false);
+		Player->GetMesh()->CustomDepthStencilValue = 0;
+	}
+}
+
 
 void ADefaultPlayerCharacter::Server_DropCurrentWeapon_Implementation()
 {
@@ -791,6 +832,59 @@ void ADefaultPlayerCharacter::InteractionTimerCallback()
 	}
 }
 
+void ADefaultPlayerCharacter::UseGadget()
+{
+	if(!HasAuthority())
+	{
+		Server_UseGadget();
+	}
+
+	//mine:
+
+	if(HasAuthority())
+	{
+		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			CombatGameMode->SpawnGadget(AssignedGadget.GadgetType, this);
+		}
+	}
+	
+}
+
+void ADefaultPlayerCharacter::Server_UseGadget_Implementation()
+{
+	UseGadget();
+}
+
+void ADefaultPlayerCharacter::OnRep_HeadgearMesh()
+{
+	if(EquippedHeadgear)
+	{
+		HeadgearMesh->SetRelativeScale3D(FVector(1.f));
+		HeadgearMesh->SetRelativeLocation(FVector::ZeroVector);
+		HeadgearMesh->SetRelativeRotation(FRotator::ZeroRotator);
+		HeadgearMesh->SetSkeletalMesh(EquippedHeadgear);
+		HeadgearMesh->SetRelativeScale3D(HeadgearMesh->GetRelativeScale3D() * HeadgearMesh->GetSocketTransform(FName("mount_socket"),RTS_ParentBoneSpace).GetScale3D());
+		FRotator actorDeltaRotation = GetActorRotation() - FRotator(0.f, 90.f, 0.f);
+		//UE_LOG(LogTemp,	Warning, TEXT("%s AND %s"), *(BaseSkeleton->GetSocketLocation(FName("headgear_socket"))/ BaseSkeleton->GetRelativeScale3D()).ToString(), *(HeadgearMesh->GetSocketLocation(FName("mount_socket"))/ BaseSkeleton->GetRelativeScale3D()).ToString());
+		// FVector DeltaTransform = (BaseSkeleton->GetSocketLocation(FName("headgear_socket")) - HeadgearMesh->GetSocketLocation(FName("mount_socket"))) / BaseSkeleton->GetRelativeScale3D();
+		FVector DeltaTransform = -HeadgearMesh->GetSocketTransform(FName("mount_socket"), RTS_ParentBoneSpace).GetLocation() * HeadgearMesh->GetSocketTransform(FName("mount_socket"),RTS_ParentBoneSpace).GetScale3D();
+		// DeltaTransform = actorDeltaRotation.UnrotateVector(DeltaTransform);
+		HeadgearMesh->SetRelativeLocation(DeltaTransform);
+		//ROTATION::
+		FRotator correctedRotation = HeadgearMesh->GetSocketTransform(FName("mount_socket"), RTS_ParentBoneSpace).Rotator();// - actorDeltaRotation;
+		// UE_LOG(LogTemp, Warning, TEXT("YOMOM: %s"), *correctedRotation.ToString());
+		FVector NewLoc = correctedRotation.Quaternion().RotateVector(-DeltaTransform);
+		// UE_LOG(LogTemp, Warning, TEXT("YOMOM: %s"), *NewLoc.ToString());
+		HeadgearMesh->SetRelativeLocation(-NewLoc);
+		HeadgearMesh->SetRelativeRotation(correctedRotation);
+		
+	}else
+	{
+		HeadgearMesh->SetSkeletalMesh(nullptr);
+	}
+}
+
 // Called every frame
 void ADefaultPlayerCharacter::Tick(float DeltaTime)
 {
@@ -826,6 +920,7 @@ void ADefaultPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleInteract);
 	EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ADefaultPlayerCharacter::HandleInteract);
 	EnhancedInputComponent->BindAction(DropItemInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleDropInput);
+	EnhancedInputComponent->BindAction(SpecialGadgetInput, ETriggerEvent::Triggered, this, &ADefaultPlayerCharacter::HandleSpecialGadgetInput);
 	
 }
 

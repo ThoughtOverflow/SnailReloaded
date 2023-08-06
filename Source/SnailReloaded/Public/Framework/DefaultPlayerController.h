@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/PlayerController.h"
+#include "Gameplay/UI/OutfitSelectionWidget.h"
 #include "DefaultPlayerController.generated.h"
 
 USTRUCT(BlueprintType)
@@ -45,6 +46,10 @@ public:
 	TSubclassOf<UPauseWidget> PauseWidgetClass;
 	UPROPERTY(BlueprintReadWrite)
 	UPauseWidget* PauseWidget;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game UI")
+	TSubclassOf<UUserWidget> GameInitWidgetClass;
+	UPROPERTY(BlueprintReadWrite)
+	UUserWidget* GameInitWidget;
 	
 
 	UPROPERTY(BlueprintReadWrite)
@@ -74,6 +79,7 @@ protected:
 
 	UFUNCTION()
 	virtual void ResetNonMenuInputMode();
+	
 
 
 public:
@@ -86,5 +92,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleMenuWidget(UUserWidget* MenuWidget, bool bOn, bool bShowsCursor = true);
+
+//Main menu calls:
+	
+	UFUNCTION(BlueprintCallable)
+	void ToggleGameInitWidget(bool bOn);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleGameInitWidget(bool bOn);
 	
 };

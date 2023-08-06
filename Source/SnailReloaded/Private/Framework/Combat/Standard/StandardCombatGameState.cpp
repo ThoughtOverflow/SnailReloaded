@@ -90,6 +90,12 @@ void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
 			{
 				actor->Destroy();
 			}
+			//Destroy all gadgets:
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGadget::StaticClass(), RefPickups);
+			for(AActor*& actor : RefPickups)
+			{
+				actor->Destroy();
+			}
 		}
 
 	}
@@ -138,6 +144,7 @@ void AStandardCombatGameState::OnPhaseSelected(EGamePhase NewPhase)
 	}
 	if (NewPhase == EGamePhase::PostPlant)
 	{
+		PlayAnnouncement(EAnnouncement::BombPlanted);
 		for (auto& PlayerState : GetAllGamePlayers())
 		{
 			if (ACombatPlayerController* CombatPlayerController = Cast<ACombatPlayerController>(
@@ -164,7 +171,11 @@ void AStandardCombatGameState::StartNewRound()
 	//Only restart if the game isn't already over:
 	if(AStandardCombatGameMode* StandardCombatGameMode = Cast<AStandardCombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
-		if(StandardCombatGameMode->IsMatchOver()) return;
+		if(StandardCombatGameMode->IsMatchOver())
+		{
+			ApplyLevelScoring();
+			return;
+		}
 	}
 	
 	if(HasAuthority())
@@ -363,6 +374,9 @@ void AStandardCombatGameState::RespawnPlayers()
 					{
 						CurrentCharacter->AssignWeapon(DefaultSecondary, EEquipCondition::EquipIfStronger);
 					}
+
+					//Reset gadget:
+					CurrentCharacter->AssignedGadget = CombatPlayerState->GetAssignedGadget();
 					
 					CurrentCharacter->SetActorLocation(RandStart->GetActorLocation());
 					PlayerController->SetRespawnRotation(RandStart->GetActorRotation());
@@ -463,6 +477,7 @@ void AStandardCombatGameState::OnBombDefused()
 {
 	if(HasAuthority())
 	{
+		PlayAnnouncement(EAnnouncement::BombDefused);
 		SetPlayerDefusing(LatestBombInteractor, false);
 		SetPlayerPlanting(LatestBombInteractor, false);
 		LatestBombInteractor->GetController()->GetPlayerState<ACombatPlayerState>()->AddDefuse();
