@@ -344,6 +344,7 @@ void ACombatPlayerState::API_RegisterScoreChange()
 		Request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
 		Request->SetContentAsString(FString::Printf(TEXT("token=%s&utoken=%s&uid=%s&val=%d"), *DefaultGameMode->APIToken, *GetPlayerAuthToken(), *GetPlayerEpicID(), GetScores()));
 		Request->OnProcessRequestComplete().BindUObject(this, &ACombatPlayerState::OnRegisterScoreChangeComplete);
+		UE_LOG(LogTemp, Warning, TEXT("Registered score change for %s - amount: %d"), *GetPlayerName(), GetScores());
 		Request->ProcessRequest();
 	}
 }
