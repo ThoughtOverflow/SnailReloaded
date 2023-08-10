@@ -71,6 +71,24 @@ void AGadget::OnInitialized()
 	bGadgetInitialized = true;
 }
 
+void AGadget::EnteredPlacementMode(ACombatPlayerState* OwningState)
+{
+	//Set the state early;
+	if(HasAuthority())
+	{
+		OwningPlayerState = OwningState;
+	}
+}
+
+void AGadget::CancelledPlacementMode(ACombatPlayerState* OwningState)
+{
+	//Set the state early;
+	if(HasAuthority())
+	{
+		OwningPlayerState = OwningState;
+	}
+}
+
 void AGadget::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -92,7 +110,11 @@ void AGadget::InitializeGadget(ACombatPlayerState* OwningState)
 		OwningPlayerState = OwningState;
 		if(OwningPlayerState)
 		{
-			OnInitialized();
+			if(ADefaultPlayerCharacter* OwningCharacter = Cast<ADefaultPlayerCharacter>(OwningState->GetPlayerController()->GetPawn()))
+			{
+				OwningCharacter->AssignedGadget.PlacedGadgets++;
+				OnInitialized();
+			}			
 		}
 	}
 	

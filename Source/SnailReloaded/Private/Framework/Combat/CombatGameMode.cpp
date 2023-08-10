@@ -316,8 +316,14 @@ bool ACombatGameMode::SpawnGadget(EGadgetType GadgetType, ADefaultPlayerCharacte
 		{
 			TSubclassOf<AGadget> GadgetClass = *GadgetBlueprints.Find(GadgetType);
 			AGadget* Gadget = GetWorld()->SpawnActor<AGadget>(GadgetClass, SpawningPlayer->CameraComponent->GetComponentLocation(), SpawningPlayer->GetActorRotation());
-			Gadget->InitializeGadget(Cast<ACombatPlayerState>(SpawningPlayer->GetPlayerState()));
-			SpawningPlayer->AssignedGadget.PlacedGadgets++;
+			//Check for placement mode:
+			if(SpawningPlayer->AssignedGadget.bUsePlacementMode)
+			{
+				Gadget->EnteredPlacementMode(Cast<ACombatPlayerState>(SpawningPlayer->GetPlayerState()));
+			}else
+			{
+				Gadget->InitializeGadget(Cast<ACombatPlayerState>(SpawningPlayer->GetPlayerState()));
+			}
 			return true;
 		}
 	}

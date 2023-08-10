@@ -30,6 +30,8 @@ public:
 	int32 NumberOfGadgets;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	int32 PlacedGadgets;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bUsePlacementMode;
 
 	int32 GetRemainingGadgets();
 	
@@ -82,6 +84,10 @@ public:
 	bool IsGadgetInitialized();
 	UFUNCTION(BlueprintPure)
 	ACombatPlayerState* GetOwningPlayerState();
+	UFUNCTION()
+	virtual void EnteredPlacementMode(ACombatPlayerState* OwningState);
+	UFUNCTION()
+	virtual void CancelledPlacementMode(ACombatPlayerState* OwningState);
 
 
 };
