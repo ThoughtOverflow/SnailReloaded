@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Framework/Combat/CombatGameState.h"
+#include "World/Objects/Barrier.h"
 #include "StandardCombatGameState.generated.h"
 
 
@@ -41,8 +42,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	ABomb* PlantedBomb;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TSubclassOf<AActor> BarrierClass;
 	UPROPERTY(ReplicatedUsing = OnRep_Barriers)
 	bool bBarriersActive;
 

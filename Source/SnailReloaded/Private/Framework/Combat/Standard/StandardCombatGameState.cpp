@@ -26,13 +26,7 @@ AStandardCombatGameState::AStandardCombatGameState()
 
 void AStandardCombatGameState::OnRep_Barriers()
 {
-	TArray<AActor*> BarrierActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), BarrierClass, BarrierActors);
-	for(auto& actor : BarrierActors)
-	{
-		actor->SetActorHiddenInGame(!bBarriersActive);
-		actor->SetActorEnableCollision(bBarriersActive);
-	}
+	//Additional repl functions when barrier is changed.
 }
 
 void AStandardCombatGameState::OnPhaseExpired(EGamePhase ExpiredPhase)
@@ -248,6 +242,15 @@ void AStandardCombatGameState::ToggleBarriers(bool bShow)
 		if(bShow != bBarriersActive)
 		{
 			bBarriersActive = bShow;
+			TArray<AActor*> BarrierActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABarrier::StaticClass(), BarrierActors);
+			for(auto& actor : BarrierActors)
+			{
+				if(ABarrier* BarrierActor = Cast<ABarrier>(actor))
+				{
+					BarrierActor->ToggleBarrier(bBarriersActive);
+				}
+			}
 			OnRep_Barriers();
 		}
 		

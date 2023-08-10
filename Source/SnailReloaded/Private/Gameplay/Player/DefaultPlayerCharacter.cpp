@@ -845,7 +845,13 @@ void ADefaultPlayerCharacter::UseGadget()
 	{
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
-			CombatGameMode->SpawnGadget(AssignedGadget.GadgetType, this);
+			// if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
+			// {
+				// if(CombatGameState->GetCurrentGamePhase().GamePhase != EGamePhase::Preparation)
+				// {
+					CombatGameMode->SpawnGadget(AssignedGadget.GadgetType, this);		
+				// }
+			// }
 		}
 	}
 	
