@@ -150,6 +150,11 @@ void AScanMine::PlayerExit(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 void AScanMine::OnBoxCollide(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
+	//Check for the barrier - ignore:
+	if(OtherActor->GetClass()->IsChildOf(ABarrier::StaticClass()))
+	{
+		return;
+	}
 	RootBox->SetNotifyRigidBodyCollision(false);
 	RootBox->SetSimulatePhysics(false);
 	FVector StartV = GetActorUpVector();
