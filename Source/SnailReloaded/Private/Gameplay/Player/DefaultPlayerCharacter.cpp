@@ -271,12 +271,26 @@ void ADefaultPlayerCharacter::HandleFireInput(const FInputActionInstance& Action
 	
 	if(ShootingInput)
 	{
-		//Begin Shooting
-		BeginShooting();
+		if(bIsPlacementModeActive)
+		{
+			if(AssignedGadget.SpawnedGadgetPtr)
+			{
+				AssignedGadget.SpawnedGadgetPtr->InitializeGadget(GetPlayerState<ACombatPlayerState>());
+				ToggleGadgetPlacementMode(false);
+			}
+		}else
+		{
+			//Begin Shooting
+			BeginShooting();
+		}
+		
 	}else
 	{
-		// End Shooting
-		EndShooting();
+		if(!bIsPlacementModeActive)
+		{
+			// End Shooting
+			EndShooting();
+		}
 	}
 }
 
