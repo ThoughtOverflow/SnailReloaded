@@ -15,27 +15,6 @@ enum class EGadgetType : uint8
 	Turret = 2
 };
 
-USTRUCT(BlueprintType)
-struct FGadgetProperty
-{
-	GENERATED_BODY()
-
-public:
-
-	FGadgetProperty();
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	EGadgetType GadgetType;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	int32 NumberOfGadgets;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	int32 PlacedGadgets;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	bool bUsePlacementMode;
-
-	int32 GetRemainingGadgets();
-	
-};
 
 class ADefaultPlayerCharacter;
 class ACombatPlayerState;
@@ -55,6 +34,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USkeletalMeshComponent* GadgetMesh;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bUsePlacementMode;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -68,8 +50,10 @@ protected:
 	UFUNCTION()
 	virtual void OnInitialized();
 	
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	bool bGadgetInitialized;
+	UPROPERTY(Replicated)
+	bool bGadgetInPlacementMode;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	ACombatPlayerState* OwningPlayerState;
 
@@ -83,6 +67,8 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool IsGadgetInitialized();
 	UFUNCTION(BlueprintPure)
+	bool IsGadgetInPlacementMode();
+	UFUNCTION(BlueprintPure)
 	ACombatPlayerState* GetOwningPlayerState();
 	UFUNCTION()
 	virtual void EnteredPlacementMode(ACombatPlayerState* OwningState);
@@ -90,4 +76,27 @@ public:
 	virtual void CancelledPlacementMode(ACombatPlayerState* OwningState);
 
 
+};
+
+USTRUCT(BlueprintType)
+struct FGadgetProperty
+{
+	GENERATED_BODY()
+
+public:
+
+	FGadgetProperty();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	EGadgetType GadgetType;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	int32 NumberOfGadgets;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	int32 PlacedGadgets;
+
+	UPROPERTY(BlueprintReadWrite)
+	AGadget* SpawnedGadgetPtr;
+
+	int32 GetRemainingGadgets();
+	
 };

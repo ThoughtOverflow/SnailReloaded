@@ -74,6 +74,8 @@ ADefaultPlayerCharacter::ADefaultPlayerCharacter()
 	HeadgearMesh->SetupAttachment(GetMesh(), FName("headgear_socket"));
 	HeadgearMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HeadgearMesh->SetOwnerNoSee(true);
+
+	bIsPlacementModeActive = false;
 	
 }
 
@@ -109,6 +111,8 @@ void ADefaultPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ADefaultPlayerCharacter, bAllowDefuse);
 	DOREPLIFETIME(ADefaultPlayerCharacter, bIsBombEquipped);
 	DOREPLIFETIME(ADefaultPlayerCharacter, EquippedHeadgear);
+	DOREPLIFETIME(ADefaultPlayerCharacter, bIsPlacementModeActive);
+	DOREPLIFETIME(ADefaultPlayerCharacter, AssignedGadget);
 }
 
 void ADefaultPlayerCharacter::FellOutOfWorld(const UDamageType& dmgType)
@@ -669,6 +673,14 @@ void ADefaultPlayerCharacter::ApplyHeadgear(USkeletalMesh* NewMesh)
 	}
 }
 
+void ADefaultPlayerCharacter::ToggleGadgetPlacementMode(bool bEnable)
+{
+	if(HasAuthority())
+	{
+		bIsPlacementModeActive = bEnable;
+	}
+}
+
 void ADefaultPlayerCharacter::Client_SetRevealPlayer_Implementation(ADefaultPlayerCharacter* Player, bool bReveal)
 {
 	if(bReveal)
@@ -845,13 +857,17 @@ void ADefaultPlayerCharacter::UseGadget()
 	{
 		if(ACombatGameMode* CombatGameMode = Cast<ACombatGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
-			// if(ACombatGameState* CombatGameState = Cast<ACombatGameState>(UGameplayStatics::GetGameState(GetWorld())))
-			// {
-				// if(CombatGameState->GetCurrentGamePhase().GamePhase != EGamePhase::Preparation)
-				// {
-					CombatGameMode->SpawnGadget(AssignedGadget.GadgetType, this);		
-				// }
-			// }
+			if(AssignedGadget.SpawnedGadgetPtr && AssignedGadget.SpawnedGadgetPtr->bUsePlacementMode)
+			{
+				if(bIsPlacementModeActive)
+				{
+					AssignedGadget.SpawnedGadgetPtr->CancelledPlacementMode(GetPlayerState<ACombatPlayerState>());
+					ToggleGadgetPlacementMode(false);
+				}
+			}else
+			{
+				CombatGameMode->SpawnGadget(AssignedGadget.GadgetType, this);
+			}
 		}
 	}
 	

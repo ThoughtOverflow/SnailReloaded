@@ -14,12 +14,15 @@
 ATurret::ATurret()
 {
 
+	bUsePlacementMode = true;
 	GadgetHealthComponent->GameObjectType.ObjectType = EGameObjectTypes::Turret;
 	SightRadius = CreateDefaultSubobject<USphereComponent>(TEXT("SightRadius"));
 	SightRadius->SetupAttachment(GadgetMesh);
 	SightRadius->OnComponentEndOverlap.AddDynamic(this, &ATurret::PlayerExit);
 	SightRadius->OnComponentBeginOverlap.AddDynamic(this, &ATurret::PlayerEnter);
-
+	TurretPlacementDistance = 300.f;
+	ActorRadialPadding = 30.f;
+	
 }
 
 void ATurret::FireTurret()
@@ -75,7 +78,13 @@ void ATurret::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	CheckTarget();
+	if(IsGadgetInitialized())
+	{
+		CheckTarget();	
+	}else if(IsGadgetInPlacementMode())
+	{
+		UpdatePlacementLocation();
+	}
 	
 	
 }
@@ -170,6 +179,45 @@ void ATurret::CheckTarget()
 	}*/
 }
 
+void ATurret::UpdatePlacementLocation()
+{
+	if(ADefaultPlayerCharacter* OwningPlayer = Cast<ADefaultPlayerCharacter>(OwningPlayerState->GetPawn()))
+	{
+		FHitResult HitResult;
+		FVector StartLoc;
+		FRotator StartRot;
+		FVector EndLoc;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+		Params.AddIgnoredActor(OwningPlayer);
+		OwningPlayer->GetController()->GetActorEyesViewPoint(StartLoc, StartRot);
+		StartLoc = OwningPlayer->CameraComponent->GetComponentLocation();
+		EndLoc = StartLoc + StartRot.Vector() * TurretPlacementDistance;
+
+		//Second trace - straight down:
+
+		FHitResult HitResult2;
+		float ActivePadding = 0.f;
+		bool bFirstCast = GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility, Params);
+		if(bFirstCast && HitResult.ImpactNormal.Z < 0.5f)
+		{
+			ActivePadding = ActorRadialPadding;
+			Params.AddIgnoredActor(HitResult.GetActor());
+		}
+
+		if(GetWorld()->LineTraceSingleByChannel(HitResult2, bFirstCast ? HitResult.ImpactPoint : EndLoc, (bFirstCast ? FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, -50.f) : FVector(EndLoc.X, EndLoc.Y, -50.f)), ECC_Visibility, Params))
+		{
+			if(HitResult2.ImpactNormal.Z > 0.5f)
+			{
+				SetActorLocation(HitResult2.ImpactPoint - StartRot.Vector() * FVector(1.f,1.f,0.f) * ActivePadding);
+			}
+		}
+
+		SetActorRotation(FRotator(0.f, OwningPlayer->GetControlRotation().Yaw, 0.f));
+		
+	}
+}
+
 void ATurret::OnInitialized()
 {
 	Super::OnInitialized();
@@ -181,5 +229,18 @@ void ATurret::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ATurret, CurrentTarget);
+}
+
+void ATurret::CancelledPlacementMode(ACombatPlayerState* OwningState)
+{
+	Super::CancelledPlacementMode(OwningState);
+}
+
+void ATurret::EnteredPlacementMode(ACombatPlayerState* OwningState)
+{
+	Super::EnteredPlacementMode(OwningState);
+	// AttachToActor(OwningState->GetPawn(), FAttachmentTransformRules::KeepWorldTransform);
+	UE_LOG(LogTemp, Warning, TEXT("Entered placement mode for turret."));
+	
 }
 

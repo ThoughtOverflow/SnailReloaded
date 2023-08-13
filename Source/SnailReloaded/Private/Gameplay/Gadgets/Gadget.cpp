@@ -14,6 +14,7 @@ FGadgetProperty::FGadgetProperty()
 	GadgetType = EGadgetType::None;
 	NumberOfGadgets = 1;
 	PlacedGadgets = 0;
+	SpawnedGadgetPtr = nullptr;
 }
 
 int32 FGadgetProperty::GetRemainingGadgets()
@@ -29,7 +30,10 @@ AGadget::AGadget()
 
 	bReplicates = true;
 	SetReplicateMovement(true);
-
+	bUsePlacementMode = false;
+	bGadgetInPlacementMode = false;
+	bGadgetInitialized = false;
+	
 	GadgetHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("GadgetHeath"));
 	GadgetHealthComponent->DefaultObjectHealth = 100.f;
 	GadgetHealthComponent->SetObjectMaxHealth(100.f);
@@ -68,7 +72,19 @@ void AGadget::OnGadgetDestroyed(const FDamageResponse& LatestDamage)
 
 void AGadget::OnInitialized()
 {
-	bGadgetInitialized = true;
+	if(HasAuthority())
+	{
+		bGadgetInitialized = true;
+		GadgetMesh->SetOnlyOwnerSee(false);
+		if(bUsePlacementMode)
+		{
+			if(ADefaultPlayerCharacter* OwningPlayer = Cast<ADefaultPlayerCharacter>(OwningPlayerState->GetPawn()))
+			{
+				//Clear the spawned gadget reference, so a new gadget (with placement mode enabled) can be spawned.
+				OwningPlayer->AssignedGadget.SpawnedGadgetPtr = nullptr;
+			}
+		}
+	}
 }
 
 void AGadget::EnteredPlacementMode(ACombatPlayerState* OwningState)
@@ -77,15 +93,23 @@ void AGadget::EnteredPlacementMode(ACombatPlayerState* OwningState)
 	if(HasAuthority())
 	{
 		OwningPlayerState = OwningState;
+		bGadgetInPlacementMode = true;
+		GadgetMesh->SetOnlyOwnerSee(true);
 	}
 }
 
 void AGadget::CancelledPlacementMode(ACombatPlayerState* OwningState)
 {
-	//Set the state early;
+	//Destroy the actor;
 	if(HasAuthority())
 	{
-		OwningPlayerState = OwningState;
+		bGadgetInPlacementMode = false;
+		Destroy();
+		if(ADefaultPlayerCharacter* OwningPlayer = Cast<ADefaultPlayerCharacter>(OwningPlayerState->GetPawn()))
+		{
+			//Clear the spawned gadget reference, so a new gadget (with placement mode enabled) can be spawned.
+			OwningPlayer->AssignedGadget.SpawnedGadgetPtr = nullptr;
+		}
 	}
 }
 
@@ -94,6 +118,8 @@ void AGadget::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AGadget, OwningPlayerState);
+	DOREPLIFETIME(AGadget, bGadgetInPlacementMode);
+	DOREPLIFETIME(AGadget, bGadgetInitialized);
 }
 
 // Called every frame
@@ -123,6 +149,11 @@ void AGadget::InitializeGadget(ACombatPlayerState* OwningState)
 bool AGadget::IsGadgetInitialized()
 {
 	return bGadgetInitialized;
+}
+
+bool AGadget::IsGadgetInPlacementMode()
+{
+	return bGadgetInPlacementMode;
 }
 
 ACombatPlayerState* AGadget::GetOwningPlayerState()

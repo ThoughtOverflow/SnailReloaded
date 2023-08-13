@@ -25,6 +25,14 @@ public:
 	AActor* CurrentTarget;
 	UPROPERTY(BlueprintReadWrite)
 	FTimerHandle ShootingTimer;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Turret Properties")
+	float TurretPlacementDistance;
+	
+	/**
+	 * @brief A padding to assign when placing the actor close to a wall or an obstacle.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Turret Properties")
+	float ActorRadialPadding;
 
 
 	UFUNCTION(BlueprintCallable)
@@ -42,9 +50,14 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void CheckTarget();
 
+	UFUNCTION()
+	void UpdatePlacementLocation();
+
 	virtual void OnInitialized() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void CancelledPlacementMode(ACombatPlayerState* OwningState) override;
+	virtual void EnteredPlacementMode(ACombatPlayerState* OwningState) override;
 	
 	
 };

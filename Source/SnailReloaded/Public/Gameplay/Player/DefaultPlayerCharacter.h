@@ -125,7 +125,7 @@ public:
 	void OnRep_BombEquipped();
 
 	//Gadgets
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Replicated)
 	FGadgetProperty AssignedGadget;
 
 protected:
@@ -277,6 +277,8 @@ protected:
 	void UseGadget();
 	UFUNCTION(Server, Reliable)
 	void Server_UseGadget();
+	UPROPERTY(Replicated)
+	bool bIsPlacementModeActive;
 
 	UFUNCTION()
 	void OnRep_HeadgearMesh();
@@ -460,6 +462,9 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_HeadgearMesh)
 	USkeletalMesh* EquippedHeadgear;
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleGadgetPlacementMode(bool bEnable);
 	
 };
 
