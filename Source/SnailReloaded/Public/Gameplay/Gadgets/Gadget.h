@@ -36,7 +36,21 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	bool bUsePlacementMode;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gadget Properties", meta = (EditCondition = bUsePlacementMode, EditConditionHides = true))
+	float GadgetPlacementDistance;
+	/**
+	* @brief A padding to assign when placing the actor close to a wall or an obstacle.
+	*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gadget Properties", meta = (EditCondition = bUsePlacementMode, EditConditionHides = true))
+	float ActorRadialPadding;
 
+	UPROPERTY(BlueprintReadWrite)
+	TArray<UMaterialInterface*> DefaultMaterials;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gadget Properties", meta = (EditCondition = bUsePlacementMode, EditConditionHides = true))
+	UMaterialInterface* PlacementAllowedMaterial;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gadget Properties", meta = (EditCondition = bUsePlacementMode, EditConditionHides = true))
+	UMaterialInterface* PlacementBlockedMaterial;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -50,15 +64,23 @@ protected:
 	UFUNCTION()
 	virtual void OnInitialized();
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_MaterialChange)
 	bool bGadgetInitialized;
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_MaterialChange)
 	bool bGadgetInPlacementMode;
+	UPROPERTY(ReplicatedUsing = OnRep_MaterialChange)
+	bool bGadgetPlacementBlocked;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
 	ACombatPlayerState* OwningPlayerState;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION()
+	void OnRep_MaterialChange();
+
+	UFUNCTION()
+	void UpdatePlacementLocation();
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

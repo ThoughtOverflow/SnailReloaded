@@ -20,8 +20,6 @@ ATurret::ATurret()
 	SightRadius->SetupAttachment(GadgetMesh);
 	SightRadius->OnComponentEndOverlap.AddDynamic(this, &ATurret::PlayerExit);
 	SightRadius->OnComponentBeginOverlap.AddDynamic(this, &ATurret::PlayerEnter);
-	TurretPlacementDistance = 300.f;
-	ActorRadialPadding = 30.f;
 	
 }
 
@@ -81,9 +79,6 @@ void ATurret::Tick(float DeltaTime)
 	if(IsGadgetInitialized())
 	{
 		CheckTarget();	
-	}else if(IsGadgetInPlacementMode())
-	{
-		UpdatePlacementLocation();
 	}
 	
 	
@@ -177,45 +172,6 @@ void ATurret::CheckTarget()
 	{
 		if(HitResult.GetActor() == Actor)
 	}*/
-}
-
-void ATurret::UpdatePlacementLocation()
-{
-	if(ADefaultPlayerCharacter* OwningPlayer = Cast<ADefaultPlayerCharacter>(OwningPlayerState->GetPawn()))
-	{
-		FHitResult HitResult;
-		FVector StartLoc;
-		FRotator StartRot;
-		FVector EndLoc;
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(this);
-		Params.AddIgnoredActor(OwningPlayer);
-		OwningPlayer->GetController()->GetActorEyesViewPoint(StartLoc, StartRot);
-		StartLoc = OwningPlayer->CameraComponent->GetComponentLocation();
-		EndLoc = StartLoc + StartRot.Vector() * TurretPlacementDistance;
-
-		//Second trace - straight down:
-
-		FHitResult HitResult2;
-		float ActivePadding = 0.f;
-		bool bFirstCast = GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility, Params);
-		if(bFirstCast && HitResult.ImpactNormal.Z < 0.5f)
-		{
-			ActivePadding = ActorRadialPadding;
-			Params.AddIgnoredActor(HitResult.GetActor());
-		}
-
-		if(GetWorld()->LineTraceSingleByChannel(HitResult2, bFirstCast ? HitResult.ImpactPoint : EndLoc, (bFirstCast ? FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, -50.f) : FVector(EndLoc.X, EndLoc.Y, -50.f)), ECC_Visibility, Params))
-		{
-			if(HitResult2.ImpactNormal.Z > 0.5f)
-			{
-				SetActorLocation(HitResult2.ImpactPoint - StartRot.Vector() * FVector(1.f,1.f,0.f) * ActivePadding);
-			}
-		}
-
-		SetActorRotation(FRotator(0.f, OwningPlayer->GetControlRotation().Yaw, 0.f));
-		
-	}
 }
 
 void ATurret::OnInitialized()

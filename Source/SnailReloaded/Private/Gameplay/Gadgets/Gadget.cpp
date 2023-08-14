@@ -32,7 +32,10 @@ AGadget::AGadget()
 	SetReplicateMovement(true);
 	bUsePlacementMode = false;
 	bGadgetInPlacementMode = false;
+	bGadgetPlacementBlocked = true;
 	bGadgetInitialized = false;
+	GadgetPlacementDistance = 300.f;
+	ActorRadialPadding = 30.f;
 	
 	GadgetHealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("GadgetHeath"));
 	GadgetHealthComponent->DefaultObjectHealth = 100.f;
@@ -48,6 +51,8 @@ AGadget::AGadget()
 void AGadget::BeginPlay()
 {
 	Super::BeginPlay();
+
+	DefaultMaterials = GadgetMesh->GetMaterials();
 	
 }
 
@@ -75,6 +80,8 @@ void AGadget::OnInitialized()
 	if(HasAuthority())
 	{
 		bGadgetInitialized = true;
+		bGadgetInPlacementMode = false;
+		OnRep_MaterialChange();
 		GadgetMesh->SetOnlyOwnerSee(false);
 		if(bUsePlacementMode)
 		{
@@ -94,6 +101,7 @@ void AGadget::EnteredPlacementMode(ACombatPlayerState* OwningState)
 	{
 		OwningPlayerState = OwningState;
 		bGadgetInPlacementMode = true;
+		OnRep_MaterialChange();
 		GadgetMesh->SetOnlyOwnerSee(true);
 	}
 }
@@ -104,6 +112,7 @@ void AGadget::CancelledPlacementMode(ACombatPlayerState* OwningState)
 	if(HasAuthority())
 	{
 		bGadgetInPlacementMode = false;
+		OnRep_MaterialChange();
 		Destroy();
 		if(ADefaultPlayerCharacter* OwningPlayer = Cast<ADefaultPlayerCharacter>(OwningPlayerState->GetPawn()))
 		{
@@ -120,12 +129,41 @@ void AGadget::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(AGadget, OwningPlayerState);
 	DOREPLIFETIME(AGadget, bGadgetInPlacementMode);
 	DOREPLIFETIME(AGadget, bGadgetInitialized);
+	DOREPLIFETIME(AGadget, bGadgetPlacementBlocked);
+}
+
+void AGadget::OnRep_MaterialChange()
+{
+	for(int i=0; i<GadgetMesh->GetNumMaterials(); i++)
+	{
+		
+		if(bGadgetInitialized)
+		{
+			GadgetMesh->SetMaterial(i, DefaultMaterials[i]);
+		}else
+		{
+			if(bGadgetPlacementBlocked)
+			{
+				GadgetMesh->SetMaterial(i, PlacementBlockedMaterial);
+			}else
+			{
+				GadgetMesh->SetMaterial(i, PlacementAllowedMaterial);
+			}
+		}
+	}
+	
+	
 }
 
 // Called every frame
 void AGadget::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if(IsGadgetInPlacementMode())
+	{
+		UpdatePlacementLocation();
+	}
 
 }
 
@@ -161,3 +199,46 @@ ACombatPlayerState* AGadget::GetOwningPlayerState()
 	return OwningPlayerState;
 }
 
+void AGadget::UpdatePlacementLocation()
+{
+	if(ADefaultPlayerCharacter* OwningPlayer = Cast<ADefaultPlayerCharacter>(OwningPlayerState->GetPawn()))
+	{
+		FHitResult HitResult;
+		FVector StartLoc;
+		FRotator StartRot;
+		FVector EndLoc;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+		Params.AddIgnoredActor(OwningPlayer);
+		OwningPlayer->GetController()->GetActorEyesViewPoint(StartLoc, StartRot);
+		StartLoc = OwningPlayer->CameraComponent->GetComponentLocation();
+		EndLoc = StartLoc + StartRot.Vector() * GadgetPlacementDistance;
+
+		//Second trace - straight down:
+
+		FHitResult HitResult2;
+		float ActivePadding = 0.f;
+		bool bFirstCast = GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility, Params);
+		if(bFirstCast && HitResult.ImpactNormal.Z < 0.5f)
+		{
+			ActivePadding = ActorRadialPadding;
+			Params.AddIgnoredActor(HitResult.GetActor());
+		}
+
+		if(GetWorld()->LineTraceSingleByChannel(HitResult2, bFirstCast ? HitResult.ImpactPoint : EndLoc, (bFirstCast ? FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, -50.f) : FVector(EndLoc.X, EndLoc.Y, -50.f)), ECC_Visibility, Params))
+		{
+			if(HitResult2.ImpactNormal.Z > 0.5f)
+			{
+				SetActorLocation(HitResult2.ImpactPoint - StartRot.Vector() * FVector(1.f,1.f,0.f) * ActivePadding);
+				if(bGadgetPlacementBlocked)
+				{
+					bGadgetPlacementBlocked = false;
+					OnRep_MaterialChange();
+				}
+			}
+		}
+
+		SetActorRotation(FRotator(0.f, OwningPlayer->GetControlRotation().Yaw, 0.f));
+		
+	}
+}
